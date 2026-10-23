@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.4** in this repository.
+The current implementation baseline is **0.1.0-beta.5** in this repository.
 It includes Easee device selection, HAN power input in W or kW, EnergyTariff
 hourly energy inputs, optional clock scheduling, diagnostic entities, and
 opt-in dynamic current control. The Norwegian and English manuals and a
@@ -49,14 +49,14 @@ standard Lovelace example are included.
 
 ## Validation
 
-The beta.4 calculation tests pass in the supplied development workspace. This
+The beta.5 calculation tests pass in the supplied development workspace. This
 does **not** establish that the integration has started successfully in a real
 Home Assistant instance or that its service calls have been tested against a
 physical charger. No such validation is recorded here yet.
 
 ## Next work
 
-1. Use a beta.4 package in a controlled Home Assistant test setup with
+1. Use a beta.5 package in a controlled Home Assistant test setup with
    automatic control initially off; verify entity discovery and displayed
    status, phase, voltage, current, and recommendation values.
 2. Validate schedule behavior and dynamic-limit service calls without the old
@@ -71,5 +71,6 @@ physical charger. No such validation is recorded here yet.
 
 ## Release state
 
-Beta.4 is a private development beta, not a production release and not yet a
-published HACS release.
+Beta.5 is a public development beta, not a production release and not yet a
+published HACS release. Beta.5 changes dependency loading and corrects the
+GitHub Actions metadata paths; it has not yet been retried in the user's HA.
