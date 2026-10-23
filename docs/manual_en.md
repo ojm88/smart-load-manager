@@ -1,4 +1,4 @@
-# User manual — Smart Load Manager OJM beta.12
+# User manual — Smart Load Manager OJM beta.13
 
 ## What beta 12 does
 
