@@ -1,6 +1,6 @@
 # User manual — Smart Load Manager OJM beta.14
 
-## What beta 13 fixes
+## What beta 14 fixes
 
 Beta 14 fixes a missing coordinator value that prevented the sensor platform from loading, and corrects entity registration so diagnostic sensors use actual short `sensor.slm_*` IDs. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
 
