@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.13
+
+- Fix diagnostic sensors failing to load when the coordinator omitted measured charger current.
+- Add a safe fallback for that optional current value so it cannot prevent unrelated sensors from loading.
+- Add a Home Assistant runtime regression test for the missing-field case.
+
 ## 0.1.0-beta.12
 
 - Give every diagnostic sensor a short, stable `sensor.slm_*` entity ID and migrate existing registry IDs on upgrade while preserving unique IDs and history. Keep the agreed Forbruksgrense ID unchanged.
