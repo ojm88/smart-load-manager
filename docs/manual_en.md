@@ -1,8 +1,8 @@
 # User manual — Smart Load Manager OJM beta.13
 
-## What beta 12 does
+## What beta 13 fixes
 
-Beta 13 assigns short, stable entity IDs to diagnostic sensors using the `sensor.slm_` prefix. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
+Beta 13 fixes a missing coordinator value that prevented the sensor platform from loading, and corrects entity registration so diagnostic sensors use actual short `sensor.slm_*` IDs. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
 
 When **Automatic load control** is on, the automatic controller owns the charging limit. **Manual current** becomes unavailable; the **Manual control** status sensor says it is locked and tells you to turn automatic control off first. The integration also rejects attempts to write a manual value while locked. When automatic control is turned off, the slider becomes available again. Easee keeps the last dynamic limit until a new manual value is sent.
 
