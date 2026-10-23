@@ -1,8 +1,8 @@
 # Brukermanual — Smart Load Manager OJM beta.13
 
-## Hva beta 12 gjør
+## Hva beta 13 retter
 
-Beta 13 gir sensorene korte, faste entity-ID-er som begynner med `sensor.slm_`. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
+Beta 13 retter både en manglende verdi som hindret sensorplattformen i å starte, og registreringen av korte ID-er. `sensor.slm_*` brukes nå som faktisk entity-ID i Home Assistant. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
 
 Når **Automatisk laststyring** er på, eier automatikken strømgrensen. **Manuell ladestrøm** blir da utilgjengelig, og sensoren **Manuell styring** viser at skyveren er låst og at automatisk styring må slås av først. Forsøk på å skrive strømgrensen mens den er låst avvises også av integrasjonen. Når automatikken slås av, blir skyveren tilgjengelig igjen; Easee beholder siste dynamiske grense helt til en ny manuell grense sendes.
 
