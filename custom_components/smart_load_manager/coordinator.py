@@ -315,6 +315,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "energy_estimate_kwh": energy_estimate,
                 "hourly_limit_kwh": hourly_limit,
                 "charger_power_w": round(charger_power_w, 1),
+                "charger_current_a": round(_number(current_state), 2),
                 "recommended_current_a": recommended,
                 "control_reason": control_reason,
                 "minimum_current_a": current_minimum,
