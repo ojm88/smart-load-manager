@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-beta.6
+
+- Fix config-flow import: load Home Assistant selectors from `homeassistant.helpers`, the module where the selector API is provided. Beta.5 used a nonexistent `homeassistant.components.selector` import, which prevented the setup handler from loading and produced “Invalid handler specified”.
+- Keep Easee and EnergyTariff as `after_dependencies`; entity availability is validated by the setup flow.
+
 ## 0.1.0-beta.5
 
 - Fix configuration-flow loading: Easee and EnergyTariff are ordered as `after_dependencies`, so a setup failure in either integration does not prevent Smart Load Manager's form from opening. Selected devices and sensors are still validated before creating an entry.

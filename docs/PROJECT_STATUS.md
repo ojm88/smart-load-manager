@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.5** in this repository.
+The current implementation baseline is **0.1.0-beta.6** in this repository.
 It includes Easee device selection, HAN power input in W or kW, EnergyTariff
 hourly energy inputs, optional clock scheduling, diagnostic entities, and
 opt-in dynamic current control. The Norwegian and English manuals and a
@@ -49,15 +49,18 @@ standard Lovelace example are included.
 
 ## Validation
 
-The beta.5 calculation tests pass in the supplied development workspace. This
-does **not** establish that the integration has started successfully in a real
-Home Assistant instance or that its service calls have been tested against a
-physical charger. No such validation is recorded here yet.
+The beta.6 calculation tests pass in the supplied development workspace. Code
+inspection found that beta.5 imported selectors from the nonexistent
+`homeassistant.components.selector` module. Beta.6 imports them from
+`homeassistant.helpers`, matching Home Assistant Core. This is consistent with
+the reported “Invalid handler specified” error, but the user's HA logs have not
+been inspected. The config flow has not yet been retried in the user's running
+Home Assistant, and no physical charger service call has been validated.
 
 ## Next work
 
-1. Use a beta.5 package in a controlled Home Assistant test setup with
-   automatic control initially off; verify entity discovery and displayed
+1. Install beta.6, restart Home Assistant, and confirm that the setup form
+   loads. Keep automatic control off; verify entity discovery and displayed
    status, phase, voltage, current, and recommendation values.
 2. Validate schedule behavior and dynamic-limit service calls without the old
    automation active.
@@ -71,6 +74,7 @@ physical charger. No such validation is recorded here yet.
 
 ## Release state
 
-Beta.5 is a public development beta, not a production release and not yet a
-published HACS release. Beta.5 changes dependency loading and corrects the
-GitHub Actions metadata paths; it has not yet been retried in the user's HA.
+Beta.6 is a public development beta, not a production release and not yet a
+published HACS release. It corrects the selector import behind beta.5's
+config-flow failure and adds a Home Assistant import smoke test to CI. The
+beta.6 flow has not yet been retried in the user's HA.

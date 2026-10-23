@@ -7,9 +7,9 @@ from datetime import time
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components import selector
 from homeassistant.config_entries import OptionsFlow
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import selector
 
 from .const import (
     CONF_CHARGER_DEVICE,

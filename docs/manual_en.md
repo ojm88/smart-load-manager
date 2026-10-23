@@ -1,8 +1,8 @@
-# User manual — Smart Load Manager beta.5
+# User manual — Smart Load Manager beta.6
 
 ## What this beta does
 
-Beta.5 fixes configuration-flow loading when Easee or EnergyTariff has not completed setup. It reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
+Beta.6 fixes a configuration-flow import error that prevented beta.5 from loading in Home Assistant. It reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
 
 This is still a beta. It has not been validated in a live Home Assistant installation or with a physical charger. Verify the sensors and recommendation before enabling automatic control.
 
@@ -85,6 +85,7 @@ Disable the old **Dynamisk styring av Easee-lader Opptimalisert V3.0** automatio
 
 ## Troubleshooting and limitations
 
+- If Home Assistant reports “Config flow could not be loaded” or “Invalid handler specified,” make sure beta.6 or newer has downloaded and restart Home Assistant. If it continues, retrieve the `custom_components.smart_load_manager.config_flow` log entry from **Settings → System → Logs**.
 - Setup fails if selected input entities are unavailable/non-numeric or the HAN power unit is not W/kW.
 - If Easee Current/Voltage diagnostic sensors are disabled, enable them and reload the integration.
 - Unknown phase or voltage means the integration does not have enough reliable data; automatic control sends 0 A.

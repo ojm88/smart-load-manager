@@ -21,3 +21,15 @@ jobs:
           python -m json.tool custom_components/smart_load_manager/manifest.json >/dev/null
           python -m json.tool custom_components/smart_load_manager/strings.json >/dev/null
           python -m json.tool hacs.json >/dev/null
+
+  config-flow-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Home Assistant runtime
+        run: python -m pip install homeassistant
+      - name: Import config flow in Home Assistant runtime
+        run: PYTHONPATH=custom_components python -c "from smart_load_manager import config_flow; from homeassistant.helpers import selector; assert config_flow.selector is selector"

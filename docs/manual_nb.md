@@ -1,8 +1,8 @@
-# Brukermanual — Smart Load Manager beta.5
+# Brukermanual — Smart Load Manager beta.6
 
 ## Hva betaen gjør
 
-Beta.5 retter lasting av oppsettsflyten når Easee eller EnergyTariff ikke er ferdig satt opp. Den leser målinger fra Easee, HAN-måleren og EnergyTariff, viser hvordan Easee-fasene tolkes, beregner en anbefalt ladestrøm og kan sende en dynamisk strømgrense til Easee. Den har kontroll av HAN-målingens alder og valgfri tidsstyring. Automatisk styring er avslått ved første oppstart og etter omstart av Home Assistant. Denne versjonen styrer ikke varmtvannstank eller varmekabler.
+Beta.6 retter en importfeil i oppsettsflyten som hindret beta.5 i å laste i Home Assistant. Den leser målinger fra Easee, HAN-måleren og EnergyTariff, viser hvordan Easee-fasene tolkes, beregner en anbefalt ladestrøm og kan sende en dynamisk strømgrense til Easee. Den har kontroll av HAN-målingens alder og valgfri tidsstyring. Automatisk styring er avslått ved første oppstart og etter omstart av Home Assistant. Denne versjonen styrer ikke varmtvannstank eller varmekabler.
 
 Dette er fortsatt en beta. Den er ikke validert mot en fysisk Home Assistant-instans eller lader. Kontroller sensorene og anbefalingen før du aktiverer automatisk styring.
 
@@ -85,6 +85,7 @@ Deaktiver den gamle automasjonen **Dynamisk styring av Easee-lader Opptimalisert
 
 ## Feilsøking og begrensninger
 
+- Hvis Home Assistant viser «Config flow could not be loaded» eller «Invalid handler specified», kontroller at beta.6 eller nyere er lastet ned og at Home Assistant er startet på nytt. Hvis feilen fortsetter, hent loggen for `custom_components.smart_load_manager.config_flow` fra **Innstillinger → System → Logger**.
 - Oppsettet feiler hvis de valgte kildeentitetene ikke er tilgjengelige/numeriske eller hvis HAN-sensoren ikke er W/kW.
 - Hvis Easees strøm-/spenningssensorer er deaktivert, aktiver dem og last integrasjonen på nytt.
 - «Ukjent» fase eller spenning betyr at pakken ikke har nok pålitelige data; automatisk styring sender da 0 A.

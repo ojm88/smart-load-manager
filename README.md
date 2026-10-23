@@ -1,10 +1,10 @@
-# Smart Load Manager — beta.5
+# Smart Load Manager — beta.6
 
 Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
 
 ## Beta status
 
-Beta.5 fixes Home Assistant dependency loading so the configuration flow can open and validate the required Easee and EnergyTariff entities. Beta.4 adds HAN freshness protection and optional clock scheduling. Automatic control is **off by default** and resets to off after a Home Assistant restart. Easee current limits use `time_to_live: 0` (indefinite) and are replaced as conditions change. A stale or invalid HAN reading, unavailable EnergyTariff input, missing electrical data, or closed schedule sends 0 A while automatic control is active.
+Beta.6 fixes a configuration-flow import error in beta.5: Home Assistant selectors are imported from `homeassistant.helpers`, allowing the setup handler to load. Beta.5 keeps Easee and EnergyTariff as optional startup-order dependencies; selected entities are validated by the flow. Beta.4 adds HAN freshness protection and optional clock scheduling. Automatic control is **off by default** and resets to off after a Home Assistant restart. Easee current limits use `time_to_live: 0` (indefinite) and are replaced as conditions change. A stale or invalid HAN reading, unavailable EnergyTariff input, missing electrical data, or closed schedule sends 0 A while automatic control is active.
 
 This package has automated unit tests, static validation, and a Lovelace example, but has not been started inside a real Home Assistant instance or tested against physical chargers. Treat it as a beta. Do not enable automatic control until the sensors and calculated values have been checked against the installation.
 
