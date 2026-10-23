@@ -47,7 +47,7 @@ Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migra
 
 ## Validation
 
-Beta 12 automated local checks pass: 37 unit tests, Python compilation, JSON validation, and Lovelace YAML parsing. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed beta.10 and completed setup; screenshots
+Local beta.12 validation passed 38 unit tests, Python compilation, and JSON validation. Beta.13 adds a Home Assistant-runtime regression for both the missing sensor field and stable ID registration; its GitHub Actions result must be checked before calling beta.13 validated. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed beta.10 and completed setup; screenshots
 confirm the integration entities and disconnected-car status in HA. The config-entry
 migration, actual Easee dynamic-limit service calls, and charging behavior have not
 been confirmed in the live setup. No physical charging command has been confirmed.
@@ -112,4 +112,4 @@ through the implementation, tests, both manuals, README, and dashboard example:
 
 ## Release state
 
-Beta.13 is a public development beta, not a production release. It fixes the missing `charger_current_a` coordinator field that caused all diagnostic sensors to fail during setup, adds a safe fallback so that one missing diagnostic value cannot prevent other sensor entities from loading, and adds a Home Assistant runtime regression test. It also includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. Automated tests and static checks pass; live HA/Easee validation of phase writes and charging behavior remains pending. Automated checks pass; live HA and charger validation are still pending.
+Beta.13 is a public development beta, not a production release. It adds the missing `charger_current_a` coordinator field, safely handles an absent optional value, and registers the short `slm_*` IDs that beta.12's internal attribute did not apply. A Home Assistant-runtime regression test covers the missing field and ID registration. It also includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. The beta.13 Home Assistant-runtime regression and GitHub Actions workflow are pending verification. The user has confirmed beta.12 sensors were unavailable because of the missing key; beta.13 has not yet been retested in the live HA/Easee instance.
