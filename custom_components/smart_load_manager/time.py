@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_SCHEDULE_START_TIME, DEFAULT_SCHEDULE_START_TIME, DOMAIN
 from .coordinator import ChargingCoordinator
+from .entity_ids import suggested_entity_id
 
 
 async def async_setup_entry(
@@ -30,6 +31,7 @@ class ChargingScheduleStartTime(CoordinatorEntity[ChargingCoordinator], TimeEnti
 
     def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
         super().__init__(coordinator)
+        self.entity_id = f"time.{suggested_entity_id('time', 'schedule_start_time')}"
         self._attr_unique_id = f"{entry.entry_id}_schedule_start_time"
         self._attr_has_entity_name = True
         self._attr_translation_key = "schedule_start_time"
