@@ -1,4 +1,4 @@
-# Smart Load Manager OJM beta.12 — full example for the Bil dashboard.
+# Smart Load Manager OJM beta.13 — full example for the Bil dashboard.
 # Built-in Home Assistant cards only. Forbruksgrense intentionally keeps the
 # installation-wide entity ID agreed for beta.10.
 type: sections
