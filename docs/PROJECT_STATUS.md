@@ -91,20 +91,28 @@ manuals, Lovelace example, changelog, decisions, and project status synchronized
 
 ## Next work
 
-1. Prepare the next beta around the feedback from beta.10: clearly explain the
-   manual current control, add the requested Easee phase-mode control, and
-   repair the dashboard example so its setup instructions and entity IDs are
-   usable and unambiguous.
-2. Preserve the verified beta.10 behavior: Forbruksgrense remains the actual
+Before the next beta, carry the new site-wide budget and naming decisions
+through the implementation, tests, both manuals, README, and dashboard example:
+
+1. Treat the integration-owned Forbruksgrense as one shared installation
+   budget, not a per-charger setting. Keep the current beta.10 entity ID
+   compatible, or provide a deliberate registry migration before changing it.
+2. Use concise, consistent entity names with English technical IDs and
+   Norwegian/English localized display names. Avoid changing existing IDs
+   without compatibility handling.
+3. Clearly explain manual current control, add the requested Easee phase-mode
+   control, and repair the dashboard example so setup instructions and entity
+   IDs are usable and unambiguous.
+4. Preserve the verified beta.10 behavior: Forbruksgrense remains the actual
    calculation target, EnergyTariff used energy is the measured input, the
    estimate is diagnostic, and Easee's configured maximum is read-only.
-3. Keep automatic control opt-in and off initially. Test the next beta with the
+5. Keep automatic control opt-in and off initially. Test the next beta with the
    old YAML automation disabled, then restore the old automation before
    removing the integration's automatic control.
-4. Do not mark phase-mode changes, dynamic current service calls, or charging
+6. Do not mark phase-mode changes, dynamic current service calls, or charging
    behavior as validated until they are observed in the user's live HA/Easee
    setup.
-5. Add multi-charger allocation and other load types only after the first
+7. Add multi-charger allocation and other load types only after the first
    charging flow is stable and the owner has selected the allocation policy.
 
 ## Release state
