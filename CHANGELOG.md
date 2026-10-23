@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-beta.14
+
+- Ensure the coordinator always publishes measured charger current and make sensor rendering tolerant of a missing optional current value, preventing one missing field from blocking all diagnostic sensors.
+- Run the Home Assistant-dependent sensor regression in the HA-runtime CI job, separate from pure unit tests.
+- Verify stable `sensor.slm_*` entity registration and the sensor payload fallback in Home Assistant runtime tests.
+
+
 ## 0.1.0-beta.13
 
 - Fix diagnostic sensors failing to load when the coordinator omitted measured charger current.
