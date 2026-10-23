@@ -29,70 +29,76 @@
   "entity": {
     "sensor": {
       "status": {
-        "name": "Charger status"
+        "name": "Charging status"
       },
       "phase_mode": {
-        "name": "Reported phase mode"
+        "name": "Charger phase setting"
       },
       "output_phase": {
-        "name": "Output phase"
+        "name": "Phase output"
       },
       "active_phases": {
-        "name": "Active phases"
+        "name": "Phases in use"
       },
       "grid_type": {
         "name": "Grid type"
       },
       "voltage_type": {
-        "name": "Detected voltage system"
+        "name": "Voltage type"
       },
       "line_voltage": {
-        "name": "Line voltage"
+        "name": "Voltage between phases"
       },
       "ln_voltage": {
-        "name": "Phase-to-neutral voltage"
+        "name": "Phase to neutral voltage"
       },
       "minimum_current": {
-        "name": "Minimum current"
+        "name": "Minimum charging current"
       },
       "recommended_current": {
-        "name": "Recommended current"
+        "name": "Recommended charging current"
       },
       "max_current": {
-        "name": "Max current from Easee"
+        "name": "Maximum charging current"
+      },
+      "charger_current": {
+        "name": "Current to car"
       },
       "charger_power": {
-        "name": "Charging power"
+        "name": "Power to car"
       },
       "han_power": {
-        "name": "Home power (HAN)"
+        "name": "Power from meter"
       },
       "energy_used": {
-        "name": "Used this hour"
+        "name": "Energy used so far this hour"
       },
       "energy_estimate": {
-        "name": "Hourly estimate"
+        "name": "Expected energy this hour"
       },
       "confidence": {
-        "name": "Detection confidence"
+        "name": "Measurement confidence"
       },
       "reason": {
-        "name": "Detection basis"
+        "name": "Phase and voltage basis"
       },
       "control_reason": {
-        "name": "Why this control?"
+        "name": "Why is this happening?"
+      },
+      "manual_control_status": {
+        "name": "Manual control"
       },
       "no_current_reason": {
-        "name": "Easee limit reason"
+        "name": "Reason for limit"
       },
       "auto_control": {
         "name": "Automatic load control"
       },
       "han_age": {
-        "name": "HAN age"
+        "name": "Measurement age"
       },
       "han_fresh": {
-        "name": "HAN valid"
+        "name": "Measurement valid"
       },
       "schedule_enabled": {
         "name": "Schedule enabled"
@@ -111,7 +117,7 @@
     },
     "number": {
       "manual_current_limit": {
-        "name": "Manual charging current"
+        "name": "Manual current (auto off)"
       }
     },
     "time": {

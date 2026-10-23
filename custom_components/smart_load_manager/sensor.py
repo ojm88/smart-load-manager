@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import ChargingCoordinator
+from .entity_ids import suggested_entity_id
 
 
 SENSORS = {
@@ -25,6 +26,7 @@ SENSORS = {
     "minimum_current": ("A", SensorDeviceClass.CURRENT, "mdi:current-ac"),
     "recommended_current": ("A", SensorDeviceClass.CURRENT, "mdi:current-ac"),
     "max_current": ("A", SensorDeviceClass.CURRENT, "mdi:current-ac"),
+    "charger_current": ("A", SensorDeviceClass.CURRENT, "mdi:current-ac"),
     "charger_power": ("W", SensorDeviceClass.POWER, "mdi:ev-station"),
     "han_power": ("W", SensorDeviceClass.POWER, "mdi:home-lightning-bolt"),
     "energy_used": ("kWh", SensorDeviceClass.ENERGY, "mdi:lightning-bolt"),
@@ -32,6 +34,7 @@ SENSORS = {
     "confidence": (None, None, "mdi:check-decagram-outline"),
     "reason": (None, None, "mdi:text-box-check-outline"),
     "control_reason": (None, None, "mdi:comment-question-outline"),
+    "manual_control_status": (None, None, "mdi:lock-outline"),
     "no_current_reason": (None, None, "mdi:alert-circle-outline"),
     "auto_control": (None, None, "mdi:robot"),
     "han_age": ("s", SensorDeviceClass.DURATION, "mdi:timer-outline"),
@@ -62,6 +65,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_translation_key = key
+        self._attr_suggested_object_id = suggested_entity_id("sensor", key)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -74,7 +78,8 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         if key in {
             "status", "phase_mode", "output_phase", "grid_type", "voltage_type",
             "confidence", "reason", "control_reason", "no_current_reason",
-            "auto_control", "han_fresh", "schedule_enabled", "schedule_reason",
+            "manual_control_status", "auto_control", "han_fresh",
+            "schedule_enabled", "schedule_reason",
         }:
             self._attr_state_class = None
 
@@ -106,6 +111,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             "minimum_current": data["minimum_current_a"],
             "recommended_current": data["recommended_current_a"],
             "max_current": data["max_current_a"],
+            "charger_current": data["charger_current_a"],
             "charger_power": data["charger_power_w"],
             "han_power": data["han_power_w"],
             "energy_used": data["energy_used_kwh"],
@@ -113,6 +119,19 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             "confidence": electrical["confidence"],
             "reason": electrical["reason"],
             "control_reason": data["control_reason"],
+            "manual_control_status": (
+                (
+                    "Låst – slå av automatisk laststyring for å endre"
+                    if self.hass.config.language.startswith("nb")
+                    else "Locked – turn off automatic control to change"
+                )
+                if data["auto_control"]
+                else (
+                    "Klar – automatisk laststyring er av"
+                    if self.hass.config.language.startswith("nb")
+                    else "Ready – automatic control is off"
+                )
+            ),
             "no_current_reason": electrical["no_current_reason"],
             "auto_control": "on" if data["auto_control"] else "off",
             "han_age": data["han_age_seconds"],

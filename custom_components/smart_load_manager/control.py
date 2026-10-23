@@ -11,6 +11,11 @@ from .const import (
 )
 
 
+def manual_control_is_available(automatic_control: bool) -> bool:
+    """Manual charging current is editable only when automatic control is off."""
+    return not automatic_control
+
+
 def target_current_for_control(
     *,
     enabled: bool,

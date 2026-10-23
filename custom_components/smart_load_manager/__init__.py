@@ -33,6 +33,12 @@ async def async_setup_entry(hass, entry) -> bool:
     if options != dict(entry.options) or title != entry.title:
         hass.config_entries.async_update_entry(entry, options=options, title=title)
 
+    # Keep short, predictable object IDs through upgrades while preserving
+    # unique IDs and the user's entity history/automations.
+    from .entity_ids import migrate_entity_ids
+
+    migrate_entity_ids(hass, entry)
+
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

@@ -1,12 +1,16 @@
-# User manual — Smart Load Manager OJM beta.11
+# User manual — Smart Load Manager OJM beta.12
 
-## What beta 11 does
+## What beta 12 does
+
+Beta 12 assigns short, stable entity IDs to diagnostic sensors using the `sensor.slm_` prefix. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
+
+When **Automatic load control** is on, the automatic controller owns the charging limit. **Manual current** becomes unavailable; the **Manual control** status sensor says it is locked and tells you to turn automatic control off first. The integration also rejects attempts to write a manual value while locked. When automatic control is turned off, the slider becomes available again. Easee keeps the last dynamic limit until a new manual value is sent.
 
 **Forbruksgrense** is one shared hourly limit for the installation, not a separate budget per load. It offers the former helper's 4.5–20 kWh choices in 0.5 kWh steps. This select is the authoritative target for the calculation. EnergyTariff provides measured energy used so far this hour; its `target_energy` does not override Forbruksgrense. The EnergyTariff estimate is diagnostic only.
 
 Smart Load Manager OJM reads the Easee charger's status, current, voltage, phase information, and current limits. It uses the HAN power meter and EnergyTariff's energy used this hour to calculate a recommended dynamic current limit. The integration sends the limit to Easee when you enable **Automatic load control**.
 
-Beta 11 adds a **Phase selection** control: Automatic, Single phase, or Three phases. It sends the selected mode through the Easee integration. This setting is separate from measured active phases. Display names are shorter and localized in Norwegian and English. Easee's maximum current remains read-only.
+**Phase selection** offers Automatic, Single phase, or Three phases through the Easee integration. This setting is separate from measured active phases. Sensor display names are concise and localized in Norwegian and English. Easee's maximum current remains read-only.
 
 The agreed minimum-current rule is implemented directly, with no learning and no vehicle identification:
 
@@ -40,7 +44,38 @@ Forbruksgrense and the safety margin are stored by the integration. You do not c
 
 ## Sensors and control
 
-The integration creates Forbruksgrense and phase selection controls, plus automatic load control, manual current, and schedule controls. Its concise sensor list includes charger status, reported mode, measured active phases, voltage, grid type, minimum and recommended current, Easee maximum current, charging and HAN power, energy used, hourly estimate, meter freshness, and control explanation.
+The integration creates Forbruksgrense and phase selection controls, plus automatic load control, manual current, and schedule controls. Its sensor list includes charger status, reported mode, measured active phases, voltage, grid type, minimum and recommended current, Easee maximum current, charging and HAN power, energy used, hourly estimate, meter freshness, and control explanation.
+
+### Sensor entity IDs
+
+| Entity ID | Home Assistant name |
+|---|---|
+| `sensor.slm_charger_status` | Charging status |
+| `sensor.slm_charger_phase_mode` | Charger phase setting |
+| `sensor.slm_output_phase` | Charger output phase |
+| `sensor.slm_active_phases` | Phases in use |
+| `sensor.slm_grid_type` | Grid type |
+| `sensor.slm_voltage_system` | Voltage system |
+| `sensor.slm_line_voltage` | Voltage between phases |
+| `sensor.slm_phase_neutral_voltage` | Phase-to-neutral voltage |
+| `sensor.slm_min_current` | Minimum charging current |
+| `sensor.slm_recommended_current` | Recommended charging current |
+| `sensor.slm_max_current` | Maximum charging current |
+| `sensor.slm_charger_current` | Current to car |
+| `sensor.slm_charger_power` | Charging power |
+| `sensor.slm_home_power` | Power from meter |
+| `sensor.slm_energy_used_hour` | Energy used so far this hour |
+| `sensor.slm_energy_estimate_hour` | Expected energy this hour |
+| `sensor.slm_detection_confidence` | Measurement confidence |
+| `sensor.slm_phase_detection_reason` | Phase and voltage basis |
+| `sensor.slm_control_reason` | Why is this happening? |
+| `sensor.slm_manual_control_status` | Manual current control |
+| `sensor.slm_charger_pause_reason` | Reason for charging limit |
+| `sensor.slm_auto_control_status` | Automatic control status |
+| `sensor.slm_meter_age` | Measurement age |
+| `sensor.slm_meter_valid` | Measurement valid |
+| `sensor.slm_schedule_active` | Schedule active |
+| `sensor.slm_schedule_status` | Schedule status |
 
 **Automatic load control** is off during setup and after a Home Assistant restart. When enabled, the integration recalculates every 30 seconds. It sends the recommended current when charging is allowed, and 0 A when the car is disconnected, the schedule window is closed, required source data is invalid/stale, or the electrical setup cannot be determined reliably. Easee receives a command when the recommendation changes and a refresh every five minutes. `time_to_live: 0` leaves the last command in place until it is replaced.
 
@@ -60,18 +95,18 @@ This test leaves your existing solution intact, except that the automation is te
 
 1. Create a Home Assistant backup. Note how to re-enable **Dynamisk styring av Easee-lader Opptimalisert V3.0**.
 2. Disable that automation before sending current limits with the new integration. Do not delete it or edit its YAML.
-3. Install beta 11 and restart Home Assistant. Keep **Automatic load control** off.
+3. Install beta 12 and restart Home Assistant. Keep **Automatic load control** off.
 4. Check the setup form: it must not ask for the EnergyTariff estimate or maximum current. After setup, confirm that the EnergyTariff estimate and Easee maximum current appear as sensors.
 5. With automatic control still off, compare measured voltage, active phases, minimum current, Easee maximum current, HAN power, EnergyTariff used energy, and recommended current with the Easee app and your existing measurements. No dynamic limit is sent during this observation stage.
 6. Once the sensor values match, enable automatic control while present and watching the charger. Keep the old automation disabled. Confirm that the recommendation and reported Easee limit track each other and that charging responds as expected.
 7. Do not deliberately make the meter invalid or close the schedule window while charging needs to continue. Automated tests cover those cases; a real 0 A pause can be tested separately when interrupting charging is acceptable.
 8. To roll back, turn off **Automatic load control** and re-enable the old automation. It will send its calculated limit on its next trigger. Do not leave both controllers active at the same time.
 
-If anything looks wrong, turn off automatic control, re-enable the old automation, and capture the sensor values/log before further troubleshooting. Beta 11 does not enable automatic control after restart.
+If anything looks wrong, turn off automatic control, re-enable the old automation, and capture the sensor values/log before further troubleshooting. Beta 12 does not enable automatic control after restart.
 
 ## Dashboard
 
-`examples/lovelace/charging_view.yaml` is an example built with standard Home Assistant cards. It shows the controls, recommended current, minimum current, Easee maximum current, electrical detection, and EnergyTariff sensors. Replace the placeholder entity IDs with those created for your Smart Load Manager device before adding the YAML to a dashboard.
+`examples/lovelace/charging_view.yaml` is a complete example built with standard Home Assistant cards. It includes a descriptive Markdown status summary, controls, charger and meter readings, and history graphs. Sensor IDs use `sensor.slm_*`; the shared Forbruksgrense selector has its own documented stable ID. No device-specific placeholder IDs need to be replaced.
 
 ## Validation and limitations
 

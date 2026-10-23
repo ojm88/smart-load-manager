@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.12
+
+- Give every diagnostic sensor a short, stable `sensor.slm_*` entity ID and migrate existing registry IDs on upgrade while preserving unique IDs and history. Keep the agreed Forbruksgrense ID unchanged.
+- Simplify and localize all sensor names; add measured charger current and a clear manual-control status sensor.
+- Make manual current unavailable while automatic load control is on; refresh it immediately when automatic control is turned off, and reject service/UI writes while locked.
+- Restore the dashboard's descriptive Markdown charging status, clear control and measurement sections, and graphs for recommended versus measured charging current, hourly energy, and power.
+- Update both manuals, setup guidance, changelog, and beta validation steps.
+
 ## 0.1.0-beta.11
 
 - Add an integration-owned phase selector (Automatic / Single phase / Three phases) using Easee's `set_charger_phase_mode` service.

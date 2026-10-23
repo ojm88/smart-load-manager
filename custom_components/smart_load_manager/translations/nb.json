@@ -29,70 +29,76 @@
   "entity": {
     "sensor": {
       "status": {
-        "name": "Laderstatus"
+        "name": "Ladestatus"
       },
       "phase_mode": {
-        "name": "Fasemodus (rapportert)"
+        "name": "Laderens fasevalg"
       },
       "output_phase": {
-        "name": "Utgangsfase"
+        "name": "Fase ut fra laderen"
       },
       "active_phases": {
-        "name": "Aktive faser"
+        "name": "Faser i bruk"
       },
       "grid_type": {
         "name": "Nettype"
       },
       "voltage_type": {
-        "name": "Detektert spenningssystem"
+        "name": "Spenningstype"
       },
       "line_voltage": {
-        "name": "Linjespenning"
+        "name": "Spenning mellom faser"
       },
       "ln_voltage": {
-        "name": "Fase–nøytral spenning"
+        "name": "Spenning fase til nøytral"
       },
       "minimum_current": {
-        "name": "Min. ladestrøm"
+        "name": "Minste ladestrøm"
       },
       "recommended_current": {
-        "name": "Anbefalt strøm"
+        "name": "Anbefalt ladestrøm"
       },
       "max_current": {
-        "name": "Maks. strøm fra Easee"
+        "name": "Maksimal ladestrøm"
+      },
+      "charger_current": {
+        "name": "Strøm til bilen"
       },
       "charger_power": {
-        "name": "Ladeeffekt"
+        "name": "Effekt til bilen"
       },
       "han_power": {
-        "name": "Huseffekt (HAN)"
+        "name": "Effekt fra strømmåleren"
       },
       "energy_used": {
-        "name": "Brukt denne timen"
+        "name": "Forbruk hittil denne timen"
       },
       "energy_estimate": {
-        "name": "Timeestimat"
+        "name": "Forventet forbruk denne timen"
       },
       "confidence": {
-        "name": "Deteksjonssikkerhet"
+        "name": "Sikkerhet i målingen"
       },
       "reason": {
-        "name": "Grunnlag for deteksjon"
+        "name": "Fase- og spenningsgrunnlag"
       },
       "control_reason": {
-        "name": "Hvorfor denne styringen?"
+        "name": "Hvorfor skjer dette?"
+      },
+      "manual_control_status": {
+        "name": "Manuell styring"
       },
       "no_current_reason": {
-        "name": "Easee-begrensning"
+        "name": "Årsak til begrensning"
       },
       "auto_control": {
         "name": "Automatisk laststyring"
       },
       "han_age": {
-        "name": "HAN-alder"
+        "name": "Alder på måling"
       },
       "han_fresh": {
-        "name": "HAN gyldig"
+        "name": "Måling gyldig"
       },
       "schedule_enabled": {
         "name": "Tidsstyring aktiv"
@@ -111,7 +117,7 @@
     },
     "number": {
       "manual_current_limit": {
-        "name": "Manuell ladestrøm"
+        "name": "Manuell strøm (auto av)"
       }
     },
     "time": {

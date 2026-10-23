@@ -10,6 +10,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ChargingCoordinator
 from .const import DOMAIN
+from .entity_ids import suggested_entity_id
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities: AddEntitiesCallback) -> None:
@@ -30,6 +31,7 @@ class AutomaticLoadControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
         self._attr_unique_id = f"{entry.entry_id}_automatic_control"
         self._attr_has_entity_name = True
         self._attr_translation_key = "automatic_control"
+        self._attr_suggested_object_id = suggested_entity_id("switch", "automatic_control")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -48,6 +50,9 @@ class AutomaticLoadControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
 
     async def async_turn_off(self, **kwargs) -> None:
         self.coordinator.auto_control = False
+        # Refresh coordinator listeners so the manual current number becomes
+        # available immediately when automatic control releases ownership.
+        await self.coordinator.async_request_refresh()
         self.async_write_ha_state()
 
 
@@ -61,6 +66,7 @@ class ChargingScheduleControl(CoordinatorEntity[ChargingCoordinator], SwitchEnti
         self._attr_unique_id = f"{entry.entry_id}_schedule_control"
         self._attr_has_entity_name = True
         self._attr_translation_key = "schedule_control"
+        self._attr_suggested_object_id = suggested_entity_id("switch", "schedule_control")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",

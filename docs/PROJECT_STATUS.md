@@ -94,7 +94,7 @@ manuals, Lovelace example, changelog, decisions, and project status synchronized
 Before the next beta, carry the new site-wide budget and naming decisions
 through the implementation, tests, both manuals, README, and dashboard example:
 
-1. Test beta.11 in HA with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially.
+1. Install beta.12 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
 2. Verify that the phase selector changes Easee's configured mode and that reported mode and active phase measurements remain separate.
 3. Exercise manual current only with automatic control off; confirm 0 A pause and live Easee bounds. Restore the old automation before removing the integration's automatic control.
 4. Do not mark phase-mode changes, dynamic current service calls, or charging behavior as validated until observed in the user's live HA/Easee setup.
@@ -102,7 +102,7 @@ through the implementation, tests, both manuals, README, and dashboard example:
 
 
 
-## Beta 11 control and support boundary
+## Beta 12 control and support boundary
 
 - Setup is designed around EnergyTariff's used-this-hour energy sensor plus the selected instantaneous HAN power sensor; the EnergyTariff estimate is a diagnostic sensor, not a setup field or safety gate.
 - The integration's Forbruksgrense select is the calculation target; EnergyTariff's configured target_energy is not read as a replacement target.
@@ -113,4 +113,4 @@ through the implementation, tests, both manuals, README, and dashboard example:
 
 ## Release state
 
-Beta.11 is a public development beta, not a production release. It includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. Automated tests and static checks pass; live HA/Easee validation of phase writes and charging behavior remains pending. Automated checks pass; live HA and charger validation are still pending.
+Beta.12 is a public development beta, not a production release. It includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. Automated tests and static checks pass; live HA/Easee validation of phase writes and charging behavior remains pending. Automated checks pass; live HA and charger validation are still pending.

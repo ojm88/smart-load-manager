@@ -12,6 +12,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ChargingCoordinator
 from .const import DOMAIN
+from .control import manual_control_is_available
+from .entity_ids import suggested_entity_id
 
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities: AddEntitiesCallback) -> None:
@@ -33,6 +35,7 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
         self._attr_unique_id = f"{entry.entry_id}_manual_current_limit"
         self._attr_has_entity_name = True
         self._attr_translation_key = "manual_current_limit"
+        self._attr_suggested_object_id = suggested_entity_id("number", "manual_current_limit")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -51,6 +54,13 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
             return float(commanded)
         recommended = data.get("recommended_current_a")
         return float(recommended) if recommended is not None else 0.0
+
+    @property
+    def available(self) -> bool:
+        """Disable manual input while automatic control owns the current limit."""
+        return super().available and manual_control_is_available(
+            self.coordinator.auto_control
+        )
 
     @property
     def native_max_value(self) -> float:
@@ -92,4 +102,9 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
             "zero_current": "Pauses charging",
             "positive_current": "Sets an Easee dynamic current limit in amperes",
             "automatic_control_active": self.coordinator.auto_control,
+            "unavailable_reason": (
+                "Turn off automatic load control before changing this value"
+                if self.coordinator.auto_control
+                else None
+            ),
         }

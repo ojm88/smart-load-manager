@@ -1,10 +1,12 @@
-# Smart Load Manager OJM — beta.11
+# Smart Load Manager OJM — beta.12
 
 Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
 
 ## Beta status
 
-Beta.11 adds an integration-owned **Fasevalg** control with Automatic, Single phase, and Three phases options, using Easee's supported `set_charger_phase_mode` service. It keeps measured active phases and measured voltage as separate diagnostics; the minimum current remains the agreed fixed 11 A / 6 A rule, with no vehicle learning. Entity display names are shorter and localized. **Forbruksgrense** remains the installation's hourly target (4.5–20 kWh in 0.5 kWh steps), not a per-load budget. This beta intentionally allows one configured load entry per HA installation so there is only one selector; multi-load support requires the future shared allocator. Manual current control is a separate option for use when automatic control is off; 0 A pauses charging. Automatic control remains off by default and after Home Assistant restarts. Invalid/stale HAN or tariff-used input, missing electrical data/limit, or a closed schedule sends 0 A while automatic control is active. `time_to_live: 0` leaves the last Easee dynamic limit in place until replaced.
+Beta.12 gives all diagnostic sensors concise, localized names and stable `sensor.slm_*` entity IDs. Existing entity IDs are migrated on upgrade without changing their unique IDs; the installation-wide Forbruksgrense entity keeps its agreed ID. It also exposes measured charging current and makes the manual current slider unavailable while automatic control is on. A status sensor explains when it is locked. The Lovelace example restores the descriptive Markdown charging summary and graphs alongside the controls.
+
+The beta.11 behavior remains: **Fasevalg** offers Automatic, Single phase, and Three phases through Easee's supported `set_charger_phase_mode` service. The minimum current is fixed at 11 A for measured 230 V three-phase charging with all three phase currents, otherwise 6 A; there is no vehicle learning. **Forbruksgrense** is the installation's hourly target (4.5–20 kWh in 0.5 kWh steps), not a per-load budget. This beta intentionally allows one configured load entry per HA installation so there is only one selector; multi-load support requires the future shared allocator. Manual current is available only when automatic control is off; 0 A pauses charging. Automatic control remains off by default and after Home Assistant restarts. Invalid/stale HAN or tariff-used input, missing electrical data/limit, or a closed schedule sends 0 A while automatic control is active. `time_to_live: 0` leaves the last Easee dynamic limit in place until replaced.
 
 This package has automated unit tests, static validation, and a Lovelace example, but has not been started inside a real Home Assistant instance or tested against physical chargers. Treat it as a beta. Do not enable automatic control until the sensors and calculated values have been checked against the installation.
 
@@ -45,7 +47,7 @@ The configured phase mode (1/2/3 = one phase/automatic/three phases) is shown se
 Codex project instructions are in [`AGENTS.md`](AGENTS.md). Read it together
 with the project status and decisions before continuing development.
 
-The dashboard YAML is built with standard Home Assistant cards. The documented Forbruksgrense ID is `select.smart_load_manager_ojm_easee_forbruksgrense`; other entity IDs depend on the selected device name and should be confirmed with the entity picker. It does not require Mushroom or navbar-card.
+The dashboard YAML is built with standard Home Assistant cards and includes the status summary, controls, measurements, and history graphs. Sensor entity IDs use the stable `sensor.slm_*` pattern; the Forbruksgrense ID remains `select.smart_load_manager_ojm_easee_forbruksgrense`. It does not require Mushroom or navbar-card.
 
 ## Test
 
