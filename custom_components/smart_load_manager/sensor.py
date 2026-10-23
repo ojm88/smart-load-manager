@@ -65,7 +65,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_translation_key = key
-        self._attr_suggested_object_id = suggested_entity_id("sensor", key)
+        self.entity_id = f"sensor.{suggested_entity_id('sensor', key)}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
