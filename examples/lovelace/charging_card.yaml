@@ -1,0 +1,88 @@
+# Single Lovelace card for a card editor (not a complete dashboard view).
+# Paste the entire YAML into a Manual card's YAML editor.
+type: vertical-stack
+cards:
+  - type: markdown
+    title: 🔍 Status for elbillading
+    content: >-
+      {% set status = states('sensor.slm_charger_status') %}
+      {% set phases = states('sensor.slm_active_phases') | int(0) %}
+      {% set auto = is_state('switch.slm_auto_control', 'on') %}
+      {% set recommended = states('sensor.slm_recommended_current') | float(0) | round(0) %}
+      {% set current = states('sensor.slm_charger_current') | float(0) | round(1) %}
+      {% set used = states('sensor.slm_energy_used_hour') | float(0) | round(2) %}
+      {% set limit = states('select.smart_load_manager_ojm_easee_forbruksgrense') %}
+      {% if status == 'disconnected' %}
+      🔌 **Bilen er ikke tilkoblet**
+      {% elif status == 'charging' %}
+      ⚡ **Lading pågår** · {{ current }} A · {{ states('sensor.slm_charger_power') }} W
+      {% else %}
+      **Laderstatus:** {{ status }}
+      {% endif %}
+
+      **Automatisk laststyring:** {{ 'På' if auto else 'Av' }} · **Faser i bruk:** {{ phases }}  
+      **Forbruksgrense:** {{ limit }} kWh · **Brukt denne timen:** {{ used }} kWh  
+      **Anbefalt ladestrøm:** {{ recommended }} A  
+      **Hvorfor:** {{ states('sensor.slm_control_reason') }}
+  - type: entities
+    title: Styring
+    show_header_toggle: false
+    entities:
+      - entity: switch.slm_auto_control
+        name: Automatisk laststyring
+      - entity: select.smart_load_manager_ojm_easee_forbruksgrense
+        name: Forbruksgrense
+      - entity: select.slm_phase_mode
+        name: Fasevalg
+      - entity: number.slm_manual_current
+        name: Manuell strøm (kun når automatisk styring er av)
+      - entity: switch.slm_schedule
+        name: Tidsstyring
+      - entity: time.slm_charge_start
+        name: Starttid
+  - type: entities
+    title: Lader og målinger
+    show_header_toggle: false
+    entities:
+      - entity: sensor.slm_charger_status
+        name: Ladestatus
+      - entity: sensor.slm_charger_current
+        name: Strøm til bilen
+      - entity: sensor.slm_charger_power
+        name: Ladeeffekt
+      - entity: sensor.slm_min_current
+        name: Minste ladestrøm
+      - entity: sensor.slm_recommended_current
+        name: Anbefalt ladestrøm
+      - entity: sensor.slm_max_current
+        name: Maksimal ladestrøm
+      - entity: sensor.slm_active_phases
+        name: Faser i bruk
+      - entity: sensor.slm_line_voltage
+        name: Spenning mellom faser
+      - entity: sensor.slm_phase_neutral_voltage
+        name: Spenning fase til nøytral
+      - entity: sensor.slm_control_reason
+        name: Hvorfor styringen gjør dette
+  - type: history-graph
+    title: Lading og timebudsjett — siste time
+    hours_to_show: 1
+    entities:
+      - entity: sensor.slm_recommended_current
+        name: Anbefalt strøm
+      - entity: sensor.slm_charger_current
+        name: Målt strøm
+      - entity: sensor.slm_energy_used_hour
+        name: Brukt
+      - entity: sensor.slm_energy_estimate_hour
+        name: Timeestimat
+  - type: history-graph
+    title: Effekt og styring — siste 12 timer
+    hours_to_show: 12
+    entities:
+      - entity: sensor.slm_home_power
+        name: Effekt fra strømmåleren
+      - entity: sensor.slm_charger_power
+        name: Ladeeffekt
+      - entity: sensor.slm_recommended_current
+        name: Anbefalt strøm
