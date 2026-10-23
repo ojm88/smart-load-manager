@@ -50,7 +50,7 @@ standard Lovelace example are included.
 
 ## Validation
 
-Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports pass locally. The “Invalid handler specified” report was consistent with beta.5 importing
+Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports pass locally and in GitHub Actions. The “Invalid handler specified” report was consistent with beta.5 importing
 selectors from the nonexistent `homeassistant.components.selector` module;
 beta.6 corrected it. Beta.7 also removes manually configured schedule helpers.
 The flow has not yet been retried in the user's HA, and no physical charger
@@ -58,8 +58,7 @@ service call has been validated.
 
 ## Next work
 
-1. Verify the beta.7 GitHub Actions run.
-2. Install beta.7, restart Home Assistant, and confirm the setup form loads. Keep automatic control off; verify entity discovery and displayed status, phase, voltage, current, and recommendation values.
+1. Install beta.7, restart Home Assistant, and confirm the setup form loads. Keep automatic control off; verify entity discovery and displayed status, phase, voltage, current, and recommendation values.
 3. Validate schedule behavior and dynamic-limit service calls without the old automation active.
 4. Decide how to learn the lowest stable current for an unknown connected vehicle without identifying it; relearn on phase-count changes, not normal voltage variation.
 5. Review Easee model/firmware differences and consider other controllable loads after Easee validation.
@@ -67,4 +66,4 @@ service call has been validated.
 ## Release state
 
 Beta.7 is a public development beta, not a production release and not yet a
-published HACS release. It bundles schedule controls and removes manual helper setup. Automated local checks pass; the beta.7 config flow has not yet been retried in the user's HA.
+published HACS release. It bundles schedule controls and removes manual helper setup. Automated local checks and GitHub Actions pass; the beta.7 config flow has not yet been retried in the user's HA.
