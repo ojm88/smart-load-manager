@@ -1,20 +1,20 @@
-# Smart Load Manager OJM — beta.10
+# Smart Load Manager OJM — beta.11
 
 Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
 
 ## Beta status
 
-Beta.10 adds an integration-owned Forbruksgrense selector matching the former input_select options (4.5–20 kWh in 0.5 kWh steps). This value is the authoritative target used by the charging calculation. Existing beta.9 entries carry their prior limit into the new selector when it is within 4.5–20 kWh; older values outside that range are clamped to the nearest supported option. The visible integration name is Smart Load Manager OJM; the internal domain remains unchanged for compatibility. Beta.8 removed manual maximum-current setup and uses the live upper current limit reported by Easee. Beta.7 makes clock scheduling self-contained: the integration provides its own schedule switch and start-time control, so users do not create HA helpers. Easee and EnergyTariff remain optional startup-order dependencies; selected entities are validated by the flow. Automatic control is **off by default** and resets to off after a Home Assistant restart. Easee current limits use `time_to_live: 0` (indefinite) and are replaced as conditions change. A stale or invalid HAN reading, unavailable EnergyTariff input, missing electrical data/limit, or closed schedule sends 0 A while automatic control is active.
+Beta.11 adds an integration-owned **Fasevalg** control with Automatic, Single phase, and Three phases options, using Easee's supported `set_charger_phase_mode` service. It keeps measured active phases and measured voltage as separate diagnostics; the minimum current remains the agreed fixed 11 A / 6 A rule, with no vehicle learning. Entity display names are shorter and localized. **Forbruksgrense** remains the installation's hourly target (4.5–20 kWh in 0.5 kWh steps), not a per-load budget. This beta intentionally allows one configured load entry per HA installation so there is only one selector; multi-load support requires the future shared allocator. Manual current control is a separate option for use when automatic control is off; 0 A pauses charging. Automatic control remains off by default and after Home Assistant restarts. Invalid/stale HAN or tariff-used input, missing electrical data/limit, or a closed schedule sends 0 A while automatic control is active. `time_to_live: 0` leaves the last Easee dynamic limit in place until replaced.
 
 This package has automated unit tests, static validation, and a Lovelace example, but has not been started inside a real Home Assistant instance or tested against physical chargers. Treat it as a beta. Do not enable automatic control until the sensors and calculated values have been checked against the installation.
 
 ## Setup
 
-Requires the Easee Home Assistant integration and EnergyTariff to be installed and working first. In the Smart Load Manager OJM setup flow, select the Easee device, the same instantaneous HAN power sensor used by EnergyTariff (unit W or kW), EnergyTariff's used-this-hour sensor, and a safety margin. After setup, set the integration-owned Forbruksgrense select entity (4.5–20 kWh in 0.5 kWh steps), which replaces the old `input_select.forbruksgrense` helper and is used directly as the hourly target. The estimate is exposed as a diagnostic sensor and is not needed as a setup input. Maximum current is read from the selected Easee device and shown as a read-only sensor; no manual maximum is entered. If Easee does not report a valid limit, charging control remains at 0 A. Do not select a kWh energy counter as the HAN power sensor. Enable the Easee diagnostic Current and Voltage entities in the Easee device options if they are disabled.
+Requires the Easee Home Assistant integration and EnergyTariff to be installed and working first. Select the Easee device, the instantaneous HAN power sensor used by EnergyTariff (W or kW), EnergyTariff's used-this-hour sensor, and a safety margin. After setup, set **Forbruksgrense** (4.5–20 kWh in 0.5 kWh steps). It is the installation-wide hourly target and replaces the old `input_select.forbruksgrense`; EnergyTariff's `target_energy` is not a competing target. The estimate is a diagnostic sensor, not a setup input. Easee maximum current is read-only. Do not select a kWh counter as HAN power. Enable Easee diagnostic Current and Voltage entities if disabled.
 
 Forbruksgrense is the Smart Load Manager control target. EnergyTariff supplies measured energy used so far this hour; its `target_energy` is configured separately and does not override Forbruksgrense. Use the same HAN power meter in both integrations so the measurements agree.
 
-Clock scheduling is optional and is provided by the integration. It creates a `Tidsstyring` switch and a `Starttid lading` time control (default 23:00). When enabled, charging is allowed during the 12-hour daily window beginning at that time, including across midnight. When disabled, charging follows the energy budget without a clock window. The schedule setting and start time are stored by the integration; automatic current control remains off after Home Assistant restarts.
+Clock scheduling is optional and is provided by the integration. It creates a `Tidsstyring` switch and a `Starttid lading` time control (default 23:00). When enabled, charging is allowed during the 12-hour daily window beginning at that time, including across midnight. The setting and time persist; automatic current control remains off after restart.
 
 ## Easee interpretation
 
@@ -25,7 +25,8 @@ The configured phase mode (1/2/3 = one phase/automatic/three phases) is shown se
 ## Controls and behaviour
 
 - **Automatisk laststyring**: opt-in switch, initially off; when on, the integration computes a recommended current every 30 seconds and sends a new Easee dynamic current limit when it changes, with a five-minute refresh. It does not change Easee's persistent maximum current, wiring configuration, or phase mode.
-- **Manuell ladestrømgrense**: slider routed to `easee.set_charger_dynamic_limit`; `0 A` pauses charging. Positive settings below the currently detected minimum are rejected.
+- **Fasevalg**: Automatic, Single phase, or Three phases. This sets Easee's configured mode; it is not the same as the live active-phase measurement. Verify the reported mode and measured phases after changing. Make phase changes while present and follow the charger.
+- **Manuell ladestrøm**: slider routed to `easee.set_charger_dynamic_limit`; use only while Automatic load control is off. `0 A` pauses charging. Positive settings below the detected minimum or above Easee's live maximum are rejected.
 - The selected HAN sensor must be positive and its value must have changed within 60 seconds. If it stops changing, becomes unavailable, or is zero while automatic control is active, the controller sends and holds 0 A until valid data returns. Its age and validity are shown in diagnostic sensors.
 - Easee documents `time_to_live: 0` as indefinite. This matches the existing automation. Turning automatic control off stops further updates but leaves the last Easee limit in place; set a manual limit or resume automatic control to replace it.
 - Disable the old Easee dynamic-current automation before enabling Smart Load Manager automatic control. Both write the same dynamic limit and could otherwise overwrite one another.
@@ -44,7 +45,7 @@ The configured phase mode (1/2/3 = one phase/automatic/three phases) is shown se
 Codex project instructions are in [`AGENTS.md`](AGENTS.md). Read it together
 with the project status and decisions before continuing development.
 
-The dashboard YAML is built with standard Home Assistant cards. After setup, use the entity picker to replace the clearly marked entity IDs with the IDs created for the selected charger and the EnergyTariff entities chosen during setup. It does not require Mushroom or navbar-card.
+The dashboard YAML is built with standard Home Assistant cards. The documented Forbruksgrense ID is `select.smart_load_manager_ojm_easee_forbruksgrense`; other entity IDs depend on the selected device name and should be confirmed with the entity picker. It does not require Mushroom or navbar-card.
 
 ## Test
 

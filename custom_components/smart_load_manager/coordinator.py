@@ -306,6 +306,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             return {
                 "status": status_state.state,
                 "phase_code": phase_code,
+                "phase_mode_code": phase_mode,
                 "electrical": asdict(electrical),
                 "han_power_w": round(han_w, 1) if han_w is not None else None,
                 "han_age_seconds": round(han_age, 1) if han_age is not None else None,

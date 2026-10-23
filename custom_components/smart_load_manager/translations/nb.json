@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Konfigurer Smart Load Manager OJM",
-        "description": "Velg lader og målekilder. EnergyTariff må være installert først. Forbruksgrensen velges etter oppsett og brukes direkte i beregningen. Automatisk styring er avslått til du selv aktiverer den. {validation_error}",
+        "description": "Velg Easee-lader og målekilder. EnergyTariff må være installert og konfigurert først. Etter oppsett får du én Forbruksgrense for installasjonen, brukt som felles mål i beregningen. Automatisk styring starter avslått. {validation_error}",
         "data": {
           "charger_device": "Lader – Easee-enhet",
           "han_power_entity": "Husmåling – HAN-effektmåler",
@@ -20,7 +20,8 @@
           "invalid_setup": "Kontroller kildeverdiene. HAN-sensoren må være tilgjengelig i W eller kW, EnergyTariff brukt energi må være tilgjengelig i kWh, og Easee må ha nødvendige sensorer."
         },
         "abort": {
-          "already_configured": "Denne Easee-laderen er allerede konfigurert."
+          "already_configured": "Denne Easee-laderen er allerede konfigurert.",
+          "single_instance": "Denne betaen støtter én Smart Load Manager-konfigurasjon per Home Assistant-installasjon, slik at Forbruksgrense forblir felles. Støtte for flere ladere kommer først når felles lastfordeling er implementert."
         }
       }
     }
@@ -31,67 +32,67 @@
         "name": "Laderstatus"
       },
       "phase_mode": {
-        "name": "Valgt fasemodus"
+        "name": "Fasemodus (rapportert)"
       },
       "output_phase": {
-        "name": "Easee utgangsfase"
+        "name": "Utgangsfase"
       },
       "active_phases": {
         "name": "Aktive faser"
       },
       "grid_type": {
-        "name": "Easee detektert nettype"
+        "name": "Nettype"
       },
       "voltage_type": {
         "name": "Detektert spenningssystem"
       },
       "line_voltage": {
-        "name": "Beregnet linjespenning"
+        "name": "Linjespenning"
       },
       "ln_voltage": {
-        "name": "Målt fase–nøytral spenning"
+        "name": "Fase–nøytral spenning"
       },
       "minimum_current": {
-        "name": "Nedre ladestrømgrense"
+        "name": "Min. ladestrøm"
       },
       "recommended_current": {
-        "name": "Anbefalt ladestrøm"
+        "name": "Anbefalt strøm"
       },
       "max_current": {
-        "name": "Maksimal strømgrense fra Easee"
+        "name": "Maks. strøm fra Easee"
       },
       "charger_power": {
         "name": "Ladeeffekt"
       },
       "han_power": {
-        "name": "HAN-effekt"
+        "name": "Huseffekt (HAN)"
       },
       "energy_used": {
-        "name": "EnergyTariff brukt denne timen"
+        "name": "Brukt denne timen"
       },
       "energy_estimate": {
-        "name": "EnergyTariff estimat denne timen"
+        "name": "Timeestimat"
       },
       "confidence": {
         "name": "Deteksjonssikkerhet"
       },
       "reason": {
-        "name": "Elektrisk deteksjonsgrunnlag"
+        "name": "Grunnlag for deteksjon"
       },
       "control_reason": {
-        "name": "Styringens forklaring"
+        "name": "Hvorfor denne styringen?"
       },
       "no_current_reason": {
-        "name": "Easee årsak til begrensning"
+        "name": "Easee-begrensning"
       },
       "auto_control": {
         "name": "Automatisk laststyring"
       },
       "han_age": {
-        "name": "Alder på HAN-måling"
+        "name": "HAN-alder"
       },
       "han_fresh": {
-        "name": "HAN-måling gyldig"
+        "name": "HAN gyldig"
       },
       "schedule_enabled": {
         "name": "Tidsstyring aktiv"
@@ -110,7 +111,7 @@
     },
     "number": {
       "manual_current_limit": {
-        "name": "Manuell ladestrømgrense"
+        "name": "Manuell ladestrøm"
       }
     },
     "time": {
@@ -121,6 +122,14 @@
     "select": {
       "consumption_limit": {
         "name": "Forbruksgrense"
+      },
+      "phase_mode_control": {
+        "name": "Fasevalg",
+        "state": {
+          "1_phase": "Én fase",
+          "auto_phase": "Automatisk",
+          "3_phase": "Tre faser"
+        }
       }
     }
   }

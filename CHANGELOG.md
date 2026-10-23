@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-beta.11
+
+- Add an integration-owned phase selector (Automatic / Single phase / Three phases) using Easee's `set_charger_phase_mode` service.
+- Enforce one configured load entry per Home Assistant installation in this beta, keeping **Forbruksgrense** genuinely installation-wide until shared multi-load allocation exists.
+- Keep configured phase mode distinct from measured active phases and voltage. Preserve the agreed fixed 11 A minimum for measured 230 V three-phase charging, and 6 A otherwise; no car identification, probing, or learning.
+- Clarify that Forbruksgrense is the installation-wide hourly target and that EnergyTariff `target_energy` is not a competing setting.
+- Clarify manual current as an intentional alternate mode while automatic control is off; 0 A pauses charging, and positive current remains bounded by Easee and the detected minimum.
+- Shorten and localize entity display names; update the standard Lovelace example, Norwegian/English manuals, and regression tests.
+- Keep automatic control opt-in/off after restart, preserve existing entities and legacy automation behavior, and update the full beta checklist.
+
 ## 0.1.0-beta.10
 
 - Add an integration-owned **Forbruksgrense** select control with the former `input_select.forbruksgrense` options (4.5–20 kWh, 0.5 kWh steps); use this setpoint directly in the charging calculation.

@@ -24,5 +24,9 @@ TARIFF_ESTIMATE_ENTITY = "sensor.energy_estimate_this_hour"
 
 EASEE_DOMAIN = "easee"
 EASEE_DYNAMIC_LIMIT_SERVICE = "set_charger_dynamic_limit"
+EASEE_PHASE_MODE_SERVICE = "set_charger_phase_mode"
+PHASE_MODE_OPTIONS = ("1_phase", "auto_phase", "3_phase")
+PHASE_MODE_CODES = {"1_phase": 1, "auto_phase": 2, "3_phase": 3}
+PHASE_MODE_FROM_CODE = {value: key for key, value in PHASE_MODE_CODES.items()}
 DYNAMIC_LIMIT_TTL_MINUTES = 0  # Easee: zero keeps the command until replaced.
 

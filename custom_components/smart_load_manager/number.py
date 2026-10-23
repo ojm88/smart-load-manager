@@ -83,3 +83,13 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
                 )
         await self.coordinator.async_set_current(requested)
         await self.coordinator.async_request_refresh()
+
+    @property
+    def extra_state_attributes(self):
+        """Explain when this manual actuator is available and what zero means."""
+        return {
+            "use_when": "Automatic load control is off",
+            "zero_current": "Pauses charging",
+            "positive_current": "Sets an Easee dynamic current limit in amperes",
+            "automatic_control_active": self.coordinator.auto_control,
+        }

@@ -58,6 +58,11 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
+        # The current beta exposes one installation-wide Forbruksgrense.
+        # Prevent duplicate per-charger selectors until shared multi-load
+        # allocation is implemented in a future beta.
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance")
         errors: dict[str, str] = {}
         self._error_detail = ""
         if user_input is not None:

@@ -20,7 +20,8 @@
           "invalid_setup": "Kontroller kildeverdiene. HAN-sensoren må være tilgjengelig i W eller kW, EnergyTariff brukt energi må være tilgjengelig i kWh, og Easee må ha nødvendige sensorer."
         },
         "abort": {
-          "already_configured": "Denne Easee-laderen er allerede konfigurert."
+          "already_configured": "Denne Easee-laderen er allerede konfigurert.",
+          "single_instance": "Denne betaen støtter én Smart Load Manager-konfigurasjon per Home Assistant-installasjon, slik at Forbruksgrense forblir felles. Støtte for flere ladere kommer først når felles lastfordeling er implementert."
         }
       }
     }
@@ -29,6 +30,14 @@
     "select": {
       "consumption_limit": {
         "name": "Forbruksgrense"
+      },
+      "phase_mode_control": {
+        "name": "Fasevalg",
+        "state": {
+          "1_phase": "Én fase",
+          "auto_phase": "Automatisk",
+          "3_phase": "Tre faser"
+        }
       }
     }
   }

@@ -134,3 +134,12 @@ chat history. Add a dated entry when a decision changes.
   Assistant display names (Norwegian and English translations); avoid long,
   redundant names such as repeating the full product name in every sensor.
 - Apply this naming convention consistently to all entities, not only sensors.
+
+
+## 2026-10-23 — Beta 11 controls and shared budget boundary
+
+- Add an integration-owned phase-mode selector for Easee Automatic, Single phase, and Three phases using the documented Easee service. Keep configured phase mode separate from live measured phase use.
+- Keep manual current as a deliberate alternate control, usable only while automatic load control is off. Zero pauses charging; positive commands remain capped by Easee's live maximum and the calculated minimum.
+- Preserve the legacy automation's behavior: disabling automatic control stops further writes and leaves Easee's last dynamic limit in place (time_to_live: 0). Invalid/stale required inputs or closed schedule send 0 A only while automatic control is enabled.
+- For beta.11, allow one configured load entry per HA installation so there is exactly one installation-wide Forbruksgrense selector. Do not claim multi-charger/shared allocation support yet. Keep extension points load-specific and keep future multi-load policy choices documented; choose sequential/simultaneous/priority behavior with the owner before implementing an allocator.
+- Update entity display names, Norwegian and English manuals, dashboard YAML, changelog, status, and tests together for each beta.

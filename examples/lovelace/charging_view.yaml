@@ -1,7 +1,6 @@
-# Smart Load Manager OJM beta.10 — standalone example view (built-in cards only).
-# Example entity IDs only: use the entity picker after setup to select the controls created for this Smart Load Manager device.
-# After setup, use the entity picker to confirm/replace each ID; entity IDs can
-# be renamed in HA. The EnergyTariff estimate is a Smart Load Manager sensor; use the entity picker to select it. The charger maximum is read-only.
+# Smart Load Manager OJM beta.11 — standalone example view (built-in cards only).
+# Forbruksgrense uses the known site budget entity ID. Device-specific entities
+# vary by charger name; replace those IDs with the entity picker results once.
 type: sections
 title: Bil — Smart laststyring
 path: smart-lading
@@ -14,27 +13,29 @@ sections:
         show_header_toggle: false
         state_color: true
         entities:
-          - entity: switch.smart_load_manager_ab12cd34_automatisk_laststyring
+          - entity: switch.smart_load_manager_ojm_easee_automatisk_laststyring
             name: Automatisk laststyring (av som standard)
-          - entity: switch.smart_load_manager_ab12cd34_tidsstyring
+          - entity: switch.smart_load_manager_ojm_easee_tidsstyring
             name: Tidsstyring (på/av)
-          - entity: time.smart_load_manager_ab12cd34_starttid_lading
+          - entity: time.smart_load_manager_ojm_easee_starttid_for_lading
             name: Starttid for 12-timersvindu
-          - entity: number.smart_load_manager_ab12cd34_manuell_ladestr_mgrense
-            name: Manuell ladestrømgrense (0 A = pause)
-          - entity: sensor.smart_load_manager_ab12cd34_anbefalt_ladestr_m
+          - entity: number.smart_load_manager_ojm_easee_manuell_ladestr_m
+            name: Manuell ladestrøm (bruk når automatikken er av; 0 A = pause)
+          - entity: select.smart_load_manager_ojm_easee_fasevalg
+            name: Fasevalg (automatisk / én / tre faser)
+          - entity: sensor.smart_load_manager_ojm_easee_anbefalt_strom
             name: Anbefalt ladestrøm
-          - entity: sensor.smart_load_manager_ab12cd34_nedre_ladestr_mgrense
+          - entity: sensor.smart_load_manager_ojm_easee_min_ladestr_m
             name: Nedre grense for aktiv ladeform
-          - entity: sensor.smart_load_manager_ab12cd34_maksimal_str_mgrense_fra_easee
+          - entity: sensor.smart_load_manager_ojm_easee_maks_strom_fra_easee
             name: Maksimal strøm fra Easee
-          - entity: sensor.smart_load_manager_ab12cd34_styringens_forklaring
+          - entity: sensor.smart_load_manager_ojm_easee_hvorfor_denne_styringen
             name: Hvorfor denne anbefalingen?
-          - entity: sensor.smart_load_manager_ab12cd34_han_m_ling_alder
+          - entity: sensor.smart_load_manager_ojm_easee_han_alder
             name: Alder på HAN-måling (sekunder)
-          - entity: sensor.smart_load_manager_ab12cd34_han_m_ling_gyldig
+          - entity: sensor.smart_load_manager_ojm_easee_han_gyldig
             name: HAN-data gyldige?
-          - entity: sensor.smart_load_manager_ab12cd34_tidsstyring_status
+          - entity: sensor.smart_load_manager_ojm_easee_tidsstyring_status
             name: Tidsvindu status
   - type: grid
     cards:
@@ -42,44 +43,44 @@ sections:
         title: Lader — målt status og elektriske data
         show_header_toggle: false
         entities:
-          - entity: sensor.smart_load_manager_ab12cd34_laderstatus
-          - entity: sensor.smart_load_manager_ab12cd34_valgt_fasemodus
+          - entity: sensor.smart_load_manager_ojm_easee_laderstatus
+          - entity: sensor.smart_load_manager_ojm_easee_fasemodus_rapportert
             name: Valgt modus (Auto / 1 / 3 faser)
-          - entity: sensor.smart_load_manager_ab12cd34_easee_utgangsfase
+          - entity: sensor.smart_load_manager_ojm_easee_utgangsfase
             name: Easee utgangsfase (dekodet)
-          - entity: sensor.smart_load_manager_ab12cd34_aktive_faser
-          - entity: sensor.smart_load_manager_ab12cd34_easee_detektert_nettype
-          - entity: sensor.smart_load_manager_ab12cd34_detektert_spenningssystem
-          - entity: sensor.smart_load_manager_ab12cd34_beregnet_linjespenning
-          - entity: sensor.smart_load_manager_ab12cd34_m_lt_fase_n_ytral_spenning
-          - entity: sensor.smart_load_manager_ab12cd34_ladeeffekt
-          - entity: sensor.smart_load_manager_ab12cd34_easee_rsak_til_begrensning
+          - entity: sensor.smart_load_manager_ojm_easee_aktive_faser
+          - entity: sensor.smart_load_manager_ojm_easee_nettype
+          - entity: sensor.smart_load_manager_ojm_easee_detektert_spenningssystem
+          - entity: sensor.smart_load_manager_ojm_easee_linjespenning
+          - entity: sensor.smart_load_manager_ojm_easee_fase_noytral_spenning
+          - entity: sensor.smart_load_manager_ojm_easee_ladeeffekt
+          - entity: sensor.smart_load_manager_ojm_easee_easee_begrensning
   - type: grid
     cards:
       - type: entities
         title: Huslast og timebudsjett
         show_header_toggle: false
         entities:
-          - entity: sensor.smart_load_manager_ab12cd34_han_effekt_normalisert
-          - entity: sensor.smart_load_manager_ab12cd34_energytariff_brukt_denne_timen
-          - entity: sensor.smart_load_manager_ab12cd34_energytariff_estimat_denne_timen
-          - entity: select.smart_load_manager_ab12cd34_forbruksgrense
-            name: Forbruksgrense (kWh per klokketime)
-          - entity: sensor.smart_load_manager_ab12cd34_deteksjonssikkerhet
-          - entity: sensor.smart_load_manager_ab12cd34_deteksjonsgrunnlag
+          - entity: sensor.smart_load_manager_ojm_easee_huseffekt_han
+          - entity: sensor.smart_load_manager_ojm_easee_brukt_denne_timen
+          - entity: sensor.smart_load_manager_ojm_easee_timeestimat
+          - entity: select.smart_load_manager_ojm_easee_forbruksgrense
+            name: Forbruksgrense — felles grense (kWh per klokketime)
+          - entity: sensor.smart_load_manager_ojm_easee_deteksjonssikkerhet
+          - entity: sensor.smart_load_manager_ojm_easee_grunnlag_for_deteksjon
       - type: history-graph
         title: Lading og timebudsjett — siste 3 timer
         hours_to_show: 3
         entities:
-          - entity: sensor.smart_load_manager_ab12cd34_anbefalt_ladestr_m
+          - entity: sensor.smart_load_manager_ojm_easee_anbefalt_strom
             name: Anbefalt A
-          - entity: number.smart_load_manager_ab12cd34_manuell_ladestr_mgrense
+          - entity: number.smart_load_manager_ojm_easee_manuell_ladestr_m
             name: Dynamisk grense A
-          - entity: sensor.smart_load_manager_ab12cd34_han_effekt_normalisert
+          - entity: sensor.smart_load_manager_ojm_easee_huseffekt_han
             name: HAN W
-          - entity: sensor.smart_load_manager_ab12cd34_ladeeffekt
+          - entity: sensor.smart_load_manager_ojm_easee_ladeeffekt
             name: Lader W
           - entity: sensor.energy_used_this_hour
             name: EnergyTariff brukt
-          - entity: sensor.smart_load_manager_ab12cd34_energytariff_estimat_denne_timen
+          - entity: sensor.smart_load_manager_ojm_easee_timeestimat
             name: EnergyTariff estimat (Smart Load Manager-sensor)

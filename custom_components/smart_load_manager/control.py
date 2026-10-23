@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from .const import DYNAMIC_LIMIT_TTL_MINUTES, EASEE_DOMAIN, EASEE_DYNAMIC_LIMIT_SERVICE
+from .const import (
+    DYNAMIC_LIMIT_TTL_MINUTES,
+    EASEE_DOMAIN,
+    EASEE_DYNAMIC_LIMIT_SERVICE,
+    EASEE_PHASE_MODE_SERVICE,
+    PHASE_MODE_CODES,
+)
 
 
 def target_current_for_control(
@@ -31,5 +37,17 @@ async def async_send_dynamic_limit(hass, device_id: str, current: int) -> None:
             "current": int(current),
             "time_to_live": DYNAMIC_LIMIT_TTL_MINUTES,
         },
+        blocking=True,
+    )
+
+
+async def async_send_phase_mode(hass, device_id: str, phase_mode: str) -> None:
+    """Set the charger phase mode using the Easee integration's service API."""
+    if phase_mode not in PHASE_MODE_CODES:
+        raise ValueError(f"Unsupported Easee phase mode: {phase_mode}")
+    await hass.services.async_call(
+        EASEE_DOMAIN,
+        EASEE_PHASE_MODE_SERVICE,
+        {"device_id": device_id, "phase_mode": phase_mode},
         blocking=True,
     )

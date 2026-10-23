@@ -11,8 +11,8 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.10** in this repository.
-Beta 10 adds the integration-owned Forbruksgrense select control (4.5–20 kWh, 0.5 kWh steps), makes it the calculation setpoint, and migrates beta.9 values on upgrade (clamping values outside the new selector range). The visible name is Smart Load Manager OJM while the internal domain remains stable. It keeps EnergyTariff used energy as a required input and its estimate as a diagnostic sensor.
+The current implementation baseline is **0.1.0-beta.11** in this repository.
+Beta 11 adds an integration-owned Easee phase-mode selector, concise localized entity display names, and clearer manual-current guidance. Forbruksgrense remains a single installation-wide setting. To enforce that scope until a shared allocator exists, this beta permits only one configured load entry per HA installation. The visible name is Smart Load Manager OJM; the internal domain and prior entity identities are preserved where possible. EnergyTariff used energy remains required and its estimate is diagnostic only.
 
 ## Electrical interpretation
 
@@ -47,13 +47,13 @@ Beta 10 adds the integration-owned Forbruksgrense select control (4.5–20 kWh, 
 
 ## Validation
 
-Beta 10 automated local checks pass: 31 unit tests, Python compilation, and
-JSON validation. The user has installed beta.10 and completed setup; screenshots
+Beta 11 automated local checks pass: 33 unit tests, Python compilation, and
+JSON validation. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed beta.10 and completed setup; screenshots
 confirm the integration entities and disconnected-car status in HA. The config-entry
 migration, actual Easee dynamic-limit service calls, and charging behavior have not
 been confirmed in the live setup. No physical charging command has been confirmed.
 
-The beta.10 setup no longer asks for an hourly target. A per-entry `select`
+The beta.11 setup no longer asks for an hourly target. A per-entry `select`
 entity named **Forbruksgrense** provides 4.5–20 kWh in 0.5 kWh steps and is the
 authoritative calculation target. A beta.9 entry migrates its prior value to
 the new select (values outside the select range are clamped to its nearest
@@ -94,27 +94,23 @@ manuals, Lovelace example, changelog, decisions, and project status synchronized
 Before the next beta, carry the new site-wide budget and naming decisions
 through the implementation, tests, both manuals, README, and dashboard example:
 
-1. Treat the integration-owned Forbruksgrense as one shared installation
-   budget, not a per-charger setting. Keep the current beta.10 entity ID
-   compatible, or provide a deliberate registry migration before changing it.
-2. Use concise, consistent entity names with English technical IDs and
-   Norwegian/English localized display names. Avoid changing existing IDs
-   without compatibility handling.
-3. Clearly explain manual current control, add the requested Easee phase-mode
-   control, and repair the dashboard example so setup instructions and entity
-   IDs are usable and unambiguous.
-4. Preserve the verified beta.10 behavior: Forbruksgrense remains the actual
-   calculation target, EnergyTariff used energy is the measured input, the
-   estimate is diagnostic, and Easee's configured maximum is read-only.
-5. Keep automatic control opt-in and off initially. Test the next beta with the
-   old YAML automation disabled, then restore the old automation before
-   removing the integration's automatic control.
-6. Do not mark phase-mode changes, dynamic current service calls, or charging
-   behavior as validated until they are observed in the user's live HA/Easee
-   setup.
-7. Add multi-charger allocation and other load types only after the first
-   charging flow is stable and the owner has selected the allocation policy.
+1. Test beta.11 in HA with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially.
+2. Verify that the phase selector changes Easee's configured mode and that reported mode and active phase measurements remain separate.
+3. Exercise manual current only with automatic control off; confirm 0 A pause and live Easee bounds. Restore the old automation before removing the integration's automatic control.
+4. Do not mark phase-mode changes, dynamic current service calls, or charging behavior as validated until observed in the user's live HA/Easee setup.
+5. Keep one config entry per HA instance until a genuinely shared budget/allocator exists. Add other loads only after the owner selects allocation policy.
+
+
+
+## Beta 11 control and support boundary
+
+- Setup is designed around EnergyTariff's used-this-hour energy sensor plus the selected instantaneous HAN power sensor; the EnergyTariff estimate is a diagnostic sensor, not a setup field or safety gate.
+- The integration's Forbruksgrense select is the calculation target; EnergyTariff's configured target_energy is not read as a replacement target.
+- Fasevalg controls Easee's configured mode (Automatic / Single phase / Three phases). Reported phase mode, actual output phase, and measured current-bearing conductors are distinct data.
+- Manual ladestrøm is an explicit alternative when automatic load control is off. At 0 A it pauses charging; positive current uses the live Easee maximum and fixed electrical minimum rules.
+- Automatic control remains opt-in and defaults off after restart. With it enabled, stale/invalid inputs, missing necessary electrical values, disconnect, or a closed schedule cause 0 A. Disabling automatic control stops new writes and leaves the last Easee dynamic limit in effect, matching time_to_live: 0 behavior in the user's existing automation.
+- One load entry per HA instance is an intentional temporary boundary for a truly shared site budget. Multi-charger/master-slave control and hot-water/floor-heating remain future work, with allocation policy not yet selected.
 
 ## Release state
 
-Beta.10 is a public development beta, not a production release. It includes the integration-owned Forbruksgrense select, built-in schedule controls, localized setup explanations, and beta.9 value migration. Automated checks pass; live HA and charger validation are still pending.
+Beta.11 is a public development beta, not a production release. It includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. Automated tests and static checks pass; live HA/Easee validation of phase writes and charging behavior remains pending. Automated checks pass; live HA and charger validation are still pending.

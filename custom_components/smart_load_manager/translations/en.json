@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Configure Smart Load Manager OJM",
-        "description": "Select the charger and meter sources. EnergyTariff must be installed first. Choose the consumption limit after setup; it is used directly in the calculation. Automatic control stays off until you enable it. {validation_error}",
+        "description": "Select the Easee charger and meter sources. EnergyTariff must be installed and configured first. After setup, one Forbruksgrense setting is shared by the installation and used as the calculation target. Automatic control starts off. {validation_error}",
         "data": {
           "charger_device": "Charger – Easee device",
           "han_power_entity": "Home measurement – HAN power meter",
@@ -20,7 +20,8 @@
           "invalid_setup": "Check the selected sources. The HAN sensor must be available in W or kW, EnergyTariff used energy must be available in kWh, and Easee must expose the required sensors."
         },
         "abort": {
-          "already_configured": "This Easee charger is already configured."
+          "already_configured": "This Easee charger is already configured.",
+          "single_instance": "This beta supports one Smart Load Manager entry per Home Assistant installation so the consumption limit stays shared. Multi-charger support will follow when shared load allocation is implemented."
         }
       }
     }
@@ -31,67 +32,67 @@
         "name": "Charger status"
       },
       "phase_mode": {
-        "name": "Configured phase mode"
+        "name": "Reported phase mode"
       },
       "output_phase": {
-        "name": "Easee output phase"
+        "name": "Output phase"
       },
       "active_phases": {
         "name": "Active phases"
       },
       "grid_type": {
-        "name": "Easee detected grid type"
+        "name": "Grid type"
       },
       "voltage_type": {
         "name": "Detected voltage system"
       },
       "line_voltage": {
-        "name": "Calculated line voltage"
+        "name": "Line voltage"
       },
       "ln_voltage": {
-        "name": "Measured phase-to-neutral voltage"
+        "name": "Phase-to-neutral voltage"
       },
       "minimum_current": {
-        "name": "Minimum charging current"
+        "name": "Minimum current"
       },
       "recommended_current": {
-        "name": "Recommended charging current"
+        "name": "Recommended current"
       },
       "max_current": {
-        "name": "Maximum current limit from Easee"
+        "name": "Max current from Easee"
       },
       "charger_power": {
         "name": "Charging power"
       },
       "han_power": {
-        "name": "HAN power"
+        "name": "Home power (HAN)"
       },
       "energy_used": {
-        "name": "EnergyTariff used this hour"
+        "name": "Used this hour"
       },
       "energy_estimate": {
-        "name": "EnergyTariff estimate this hour"
+        "name": "Hourly estimate"
       },
       "confidence": {
         "name": "Detection confidence"
       },
       "reason": {
-        "name": "Electrical detection basis"
+        "name": "Detection basis"
       },
       "control_reason": {
-        "name": "Control explanation"
+        "name": "Why this control?"
       },
       "no_current_reason": {
-        "name": "Easee reason for no current"
+        "name": "Easee limit reason"
       },
       "auto_control": {
         "name": "Automatic load control"
       },
       "han_age": {
-        "name": "HAN reading age"
+        "name": "HAN age"
       },
       "han_fresh": {
-        "name": "HAN reading valid"
+        "name": "HAN valid"
       },
       "schedule_enabled": {
         "name": "Schedule enabled"
@@ -110,7 +111,7 @@
     },
     "number": {
       "manual_current_limit": {
-        "name": "Manual charging current limit"
+        "name": "Manual charging current"
       }
     },
     "time": {
@@ -121,6 +122,14 @@
     "select": {
       "consumption_limit": {
         "name": "Consumption limit"
+      },
+      "phase_mode_control": {
+        "name": "Phase selection",
+        "state": {
+          "1_phase": "Single phase",
+          "auto_phase": "Automatic",
+          "3_phase": "Three phases"
+        }
       }
     }
   }

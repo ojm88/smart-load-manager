@@ -5,6 +5,7 @@ import unittest
 
 from custom_components.smart_load_manager.control import (
     async_send_dynamic_limit,
+    async_send_phase_mode,
     target_current_for_control,
 )
 
@@ -68,6 +69,36 @@ class EaseeServicePayloadTests(unittest.TestCase):
                 }, True),
             ],
         )
+
+    def test_phase_mode_uses_documented_easee_service_values(self):
+        calls = []
+
+        class Services:
+            async def async_call(self, domain, service, data, *, blocking):
+                calls.append((domain, service, data, blocking))
+
+        class Hass:
+            services = Services()
+
+        async def run():
+            for mode in ("1_phase", "auto_phase", "3_phase"):
+                await async_send_phase_mode(Hass(), "charger-device-id", mode)
+
+        asyncio.run(run())
+        self.assertEqual(
+            calls,
+            [
+                ("easee", "set_charger_phase_mode", {"device_id": "charger-device-id", "phase_mode": mode}, True)
+                for mode in ("1_phase", "auto_phase", "3_phase")
+            ],
+        )
+
+    def test_phase_mode_rejects_unsupported_values(self):
+        class Hass:
+            services = None
+
+        with self.assertRaises(ValueError):
+            asyncio.run(async_send_phase_mode(Hass(), "charger-device-id", "2_phase"))
 
 
 if __name__ == "__main__":
