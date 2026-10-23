@@ -112,7 +112,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             "minimum_current": data["minimum_current_a"],
             "recommended_current": data["recommended_current_a"],
             "max_current": data["max_current_a"],
-            "charger_current": data["charger_current_a"],
+            "charger_current": data.get("charger_current_a"),
             "charger_power": data["charger_power_w"],
             "han_power": data["han_power_w"],
             "energy_used": data["energy_used_kwh"],
