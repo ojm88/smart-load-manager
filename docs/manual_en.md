@@ -1,8 +1,10 @@
-# User manual — Smart Load Manager OJM beta.15
+# User manual — Smart Load Manager OJM beta.16
 
-## What beta 15 fixes
+## What beta 16 includes
 
-Beta 15 makes diagnostic sensors resilient when charger or measurement data is missing, so one missing value cannot prevent the other sensors from loading. Each diagnostic sensor also has a concise Norwegian or English explanation in its attributes. Beta 14 established the short `sensor.slm_*` IDs, which are retained on upgrade. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
+Beta 16 adds the Smart Load Manager OJM icon and light/dark logos to the integration. HACS installs these image files with the integration; Home Assistant 2026.3 or newer can display the branding automatically.
+
+Beta 15 made diagnostic sensors resilient when charger or measurement data is missing, so one missing value cannot prevent the other sensors from loading. Each diagnostic sensor also has a concise Norwegian or English explanation in its attributes. Beta 14 established the short `sensor.slm_*` IDs, which are retained on upgrade. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
 
 When **Automatic load control** is on, the automatic controller owns the charging limit. **Manual current** becomes unavailable; the **Manual control** status sensor says it is locked and tells you to turn automatic control off first. The integration also rejects attempts to write a manual value while locked. When automatic control is turned off, the slider becomes available again. Easee keeps the last dynamic limit until a new manual value is sent.
 
@@ -102,7 +104,7 @@ This test leaves your existing solution intact, except that the automation is te
 7. Do not deliberately make the meter invalid or close the schedule window while charging needs to continue. Automated tests cover those cases; a real 0 A pause can be tested separately when interrupting charging is acceptable.
 8. To roll back, turn off **Automatic load control** and re-enable the old automation. It will send its calculated limit on its next trigger. Do not leave both controllers active at the same time.
 
-If anything looks wrong, turn off automatic control, re-enable the old automation, and capture the sensor values/log before further troubleshooting. Beta 15 does not enable automatic control after restart.
+If anything looks wrong, turn off automatic control, re-enable the old automation, and capture the sensor values/log before further troubleshooting. Beta 16 does not enable automatic control after restart.
 
 ## Dashboard
 

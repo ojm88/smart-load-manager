@@ -1,3 +1,9 @@
+## 2026-10-23 — Beta 16 integration branding
+
+- Bundle Smart Load Manager OJM icon and light/dark logo files in `custom_components/smart_load_manager/brand/`, including Home Assistant's standard high-resolution variants.
+- This is a custom integration: keep its brand files in the integration repository; do not depend on a pull request to the Home Assistant brands repository. Home Assistant 2026.3+ serves these local assets.
+- Keep the large project illustration in the README separate from the compact icon/logo used by the Home Assistant integration UI.
+
 # Product and technical decisions
 
 ## 2026-10-23 — Beta 15 sensor explanations and Lovelace paste targets

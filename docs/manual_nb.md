@@ -1,8 +1,10 @@
-# Brukermanual — Smart Load Manager OJM beta.15
+# Brukermanual — Smart Load Manager OJM beta.16
 
-## Hva beta 15 retter
+## Hva beta 16 inneholder
 
-Beta 15 gjør alle diagnostikksensorene robuste når laderen eller en målekilde mangler data. En manglende verdi skal ikke lenger hindre resten av sensorene i å lastes. Hver diagnostikksensor har også en kort forklaring på norsk eller engelsk under attributtene. Beta 14 etablerte de korte `sensor.slm_*`-ID-ene, som beholdes ved oppgradering. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
+Beta 16 legger til Smart Load Manager OJM-ikon og lyse/mørke logoer i integrasjonen. HACS installerer bildefilene sammen med integrasjonen; Home Assistant 2026.3 eller nyere kan vise merkingen automatisk.
+
+Beta 15 gjorde alle diagnostikksensorene robuste når laderen eller en målekilde mangler data. En manglende verdi skal ikke lenger hindre resten av sensorene i å lastes. Hver diagnostikksensor har også en kort forklaring på norsk eller engelsk under attributtene. Beta 14 etablerte de korte `sensor.slm_*`-ID-ene, som beholdes ved oppgradering. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
 
 Når **Automatisk laststyring** er på, eier automatikken strømgrensen. **Manuell ladestrøm** blir da utilgjengelig, og sensoren **Manuell styring** viser at skyveren er låst og at automatisk styring må slås av først. Forsøk på å skrive strømgrensen mens den er låst avvises også av integrasjonen. Når automatikken slås av, blir skyveren tilgjengelig igjen; Easee beholder siste dynamiske grense helt til en ny manuell grense sendes.
 
@@ -102,7 +104,7 @@ Testen lar din eksisterende løsning være urørt, bortsett fra at automasjonen 
 7. Ikke fremprovoser ugyldig måler eller lukket klokkevindu mens lading må fortsette. Disse tilfellene dekkes av automatiserte tester; en faktisk 0 A-pause kan testes separat når det er greit å avbryte ladingen.
 8. For å gå tilbake: slå av **Automatisk laststyring** og reaktiver den gamle automasjonen. Den vil sende sin beregnede grense ved neste trigger. Ikke la begge styringene være aktive samtidig.
 
-Hvis noe ikke stemmer: slå av automatisk styring, reaktiver den gamle automasjonen og send sensorverdier/logg før videre feilsøking. Beta 15 skal ikke aktivere automatisk laststyring etter omstart.
+Hvis noe ikke stemmer: slå av automatisk styring, reaktiver den gamle automasjonen og send sensorverdier/logg før videre feilsøking. Beta 16 skal ikke aktivere automatisk laststyring etter omstart.
 
 ## Dashboard
 

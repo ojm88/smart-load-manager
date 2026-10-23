@@ -1,16 +1,20 @@
-# Smart Load Manager OJM — beta.15
+# Smart Load Manager OJM — beta.16
 
 Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
 
 ![Smart Load Manager OJM — EV charging and household load management](docs/images/smart-load-manager-ojm.jpg)
 
+![Smart Load Manager OJM integration logo](custom_components/smart_load_manager/brand/logo.png)
+
 ## Beta status
+
+Beta.16 adds the Smart Load Manager OJM icon and light/dark logos inside the custom integration, so Home Assistant 2026.3 and newer can display the integration branding from the installed package. The assets ship through HACS with the integration.
 
 Beta.15 hardens diagnostic sensors against missing coordinator data, adds a plain-language explanation to each sensor, and tests sensor availability plus the single-card Lovelace format. Beta 14 established the short `slm_*` object IDs and recovery for the missing measured-current field. The beta.12 feature set gives all diagnostic sensors concise, localized names and stable `sensor.slm_*` entity IDs. Existing entity IDs are migrated on upgrade without changing their unique IDs; the installation-wide Forbruksgrense entity keeps its agreed ID. It also exposes measured charging current and makes the manual current slider unavailable while automatic control is on. A status sensor explains when it is locked. The Lovelace example restores the descriptive Markdown charging summary and graphs alongside the controls.
 
 The beta.11 behavior remains: **Fasevalg** offers Automatic, Single phase, and Three phases through Easee's supported `set_charger_phase_mode` service. The minimum current is fixed at 11 A for measured 230 V three-phase charging with all three phase currents, otherwise 6 A; there is no vehicle learning. **Forbruksgrense** is the installation's hourly target (4.5–20 kWh in 0.5 kWh steps), not a per-load budget. This beta intentionally allows one configured load entry per HA installation so there is only one selector; multi-load support requires the future shared allocator. Manual current is available only when automatic control is off; 0 A pauses charging. Automatic control remains off by default and after Home Assistant restarts. Invalid/stale HAN or tariff-used input, missing electrical data/limit, or a closed schedule sends 0 A while automatic control is active. `time_to_live: 0` leaves the last Easee dynamic limit in place until replaced.
 
-This package has automated unit tests, static validation, and a Lovelace example, but has not been started inside a real Home Assistant instance or tested against physical chargers. Treat it as a beta. Do not enable automatic control until the sensors and calculated values have been checked against the installation.
+This beta has automated unit tests and Home Assistant-runtime checks, but beta.16 has not yet been verified in the user’s live Home Assistant setup or against a physical charger. Do not enable automatic control until the sensors and calculated values have been checked in the installation.
 
 ## Setup
 

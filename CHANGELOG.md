@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.16
+
+- Add Smart Load Manager OJM integration branding (square icon and light/dark logos, including high-resolution files) under the custom integration so Home Assistant 2026.3+ can show it without relying on a separate brands repository.
+- Keep the README project illustration and add the compact integration logo preview.
+- Update both manuals, project status, and recorded decisions.
+
 ## 0.1.0-beta.15
 
 - Make diagnostic sensor values tolerant of missing coordinator keys so a partial/unavailable reading cannot prevent the sensor platform from loading.
