@@ -1,6 +1,6 @@
 # Brukermanual — Smart Load Manager OJM beta.14
 
-## Hva beta 13 retter
+## Hva beta 14 retter
 
 Beta 14 retter både en manglende verdi som hindret sensorplattformen i å starte, og registreringen av korte ID-er. `sensor.slm_*` brukes nå som faktisk entity-ID i Home Assistant. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
 
