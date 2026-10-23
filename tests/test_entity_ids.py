@@ -1,6 +1,8 @@
 """Stable entity ID and manual-control ownership regressions."""
 
 import unittest
+import json
+from pathlib import Path
 
 from custom_components.smart_load_manager.control import manual_control_is_available
 from custom_components.smart_load_manager.entity_ids import (
@@ -14,6 +16,15 @@ class EntityIdTests(unittest.TestCase):
     def test_sensor_ids_use_short_slm_prefix(self):
         self.assertTrue(SENSOR_OBJECT_IDS)
         self.assertTrue(all(value.startswith("slm_") for value in SENSOR_OBJECT_IDS.values()))
+
+    def test_every_translated_sensor_has_a_stable_id(self):
+        root = Path(__file__).parents[1] / "custom_components" / "smart_load_manager"
+        for language in ("nb", "en"):
+            translated_keys = set(
+                json.loads((root / "translations" / f"{language}.json").read_text())
+                ["entity"]["sensor"]
+            )
+            self.assertEqual(translated_keys, set(SENSOR_OBJECT_IDS))
 
     def test_shared_consumption_limit_keeps_agreed_id(self):
         self.assertEqual(
