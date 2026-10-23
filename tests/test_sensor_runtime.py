@@ -3,10 +3,19 @@
 from types import SimpleNamespace
 import unittest
 
-from smart_load_manager.sensor import ChargingDiagnosticSensor
+from smart_load_manager.sensor import ChargingDiagnosticSensor, SENSORS
 
 
 class SensorRuntimeTests(unittest.TestCase):
+    def test_new_sensor_uses_the_stable_slm_entity_id(self):
+        coordinator = SimpleNamespace(data={}, last_update_success=True)
+        entry = SimpleNamespace(entry_id="test-entry", title="Smart Load Manager OJM")
+        entity = ChargingDiagnosticSensor(
+            coordinator, entry, "status", *SENSORS["status"]
+        )
+
+        self.assertEqual(entity.entity_id, "sensor.slm_charger_status")
+
     def test_other_diagnostics_still_load_if_current_field_is_missing(self):
         data = {
             "electrical": {
