@@ -1,4 +1,4 @@
-# Smart Load Manager OJM — beta.12
+# Smart Load Manager OJM — beta.13
 
 Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
 
