@@ -1,8 +1,8 @@
-# User manual — Smart Load Manager OJM beta.13
+# User manual — Smart Load Manager OJM beta.14
 
 ## What beta 13 fixes
 
-Beta 13 fixes a missing coordinator value that prevented the sensor platform from loading, and corrects entity registration so diagnostic sensors use actual short `sensor.slm_*` IDs. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
+Beta 14 fixes a missing coordinator value that prevented the sensor platform from loading, and corrects entity registration so diagnostic sensors use actual short `sensor.slm_*` IDs. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
 
 When **Automatic load control** is on, the automatic controller owns the charging limit. **Manual current** becomes unavailable; the **Manual control** status sensor says it is locked and tells you to turn automatic control off first. The integration also rejects attempts to write a manual value while locked. When automatic control is turned off, the slider becomes available again. Easee keeps the last dynamic limit until a new manual value is sent.
 
@@ -95,14 +95,14 @@ This test leaves your existing solution intact, except that the automation is te
 
 1. Create a Home Assistant backup. Note how to re-enable **Dynamisk styring av Easee-lader Opptimalisert V3.0**.
 2. Disable that automation before sending current limits with the new integration. Do not delete it or edit its YAML.
-3. Install beta 12 and restart Home Assistant. Keep **Automatic load control** off.
+3. Install beta 14 and restart Home Assistant. Keep **Automatic load control** off.
 4. Check the setup form: it must not ask for the EnergyTariff estimate or maximum current. After setup, confirm that the EnergyTariff estimate and Easee maximum current appear as sensors.
 5. With automatic control still off, compare measured voltage, active phases, minimum current, Easee maximum current, HAN power, EnergyTariff used energy, and recommended current with the Easee app and your existing measurements. No dynamic limit is sent during this observation stage.
 6. Once the sensor values match, enable automatic control while present and watching the charger. Keep the old automation disabled. Confirm that the recommendation and reported Easee limit track each other and that charging responds as expected.
 7. Do not deliberately make the meter invalid or close the schedule window while charging needs to continue. Automated tests cover those cases; a real 0 A pause can be tested separately when interrupting charging is acceptable.
 8. To roll back, turn off **Automatic load control** and re-enable the old automation. It will send its calculated limit on its next trigger. Do not leave both controllers active at the same time.
 
-If anything looks wrong, turn off automatic control, re-enable the old automation, and capture the sensor values/log before further troubleshooting. Beta 12 does not enable automatic control after restart.
+If anything looks wrong, turn off automatic control, re-enable the old automation, and capture the sensor values/log before further troubleshooting. Beta 14 does not enable automatic control after restart.
 
 ## Dashboard
 
