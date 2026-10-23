@@ -2,7 +2,7 @@
 
 ## What beta 12 does
 
-Beta 12 assigns short, stable entity IDs to diagnostic sensors using the `sensor.slm_` prefix. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
+Beta 13 assigns short, stable entity IDs to diagnostic sensors using the `sensor.slm_` prefix. On upgrade, existing registered sensor IDs are migrated to the new names while their Home Assistant unique IDs are kept. **Forbruksgrense** keeps the agreed ID `select.smart_load_manager_ojm_easee_forbruksgrense`. If you have hard-coded old IDs in dashboard YAML or automations, update those references to the IDs in the table below.
 
 When **Automatic load control** is on, the automatic controller owns the charging limit. **Manual current** becomes unavailable; the **Manual control** status sensor says it is locked and tells you to turn automatic control off first. The integration also rejects attempts to write a manual value while locked. When automatic control is turned off, the slider becomes available again. Easee keeps the last dynamic limit until a new manual value is sent.
 
@@ -106,7 +106,7 @@ If anything looks wrong, turn off automatic control, re-enable the old automatio
 
 ## Dashboard
 
-`examples/lovelace/charging_view.yaml` is a complete example built with standard Home Assistant cards. It includes a descriptive Markdown status summary, controls, charger and meter readings, and history graphs. Sensor IDs use `sensor.slm_*`; the shared Forbruksgrense selector has its own documented stable ID. No device-specific placeholder IDs need to be replaced.
+`examples/lovelace/charging_view.yaml` is a complete dashboard view using `type: sections`. Paste it into the raw YAML configuration for a dashboard view, not into the YAML editor for a single card. For the card editor, use `examples/lovelace/charging_card.yaml`, which is one valid `vertical-stack` card. Both examples include status, controls, measurements, and graphs. Sensor IDs use `sensor.slm_*`.
 
 ## Validation and limitations
 
