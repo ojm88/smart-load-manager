@@ -5,7 +5,7 @@ chat history. Add a dated entry when a decision changes.
 
 ## 2026-10-23 — Project scope and naming
 
-- Use **Smart Load Manager** as the project and integration name. Do not name
+- Use **Smart Load Manager OJM** as the visible project and integration name. Keep the internal domain `smart_load_manager` stable to preserve existing config entries. Do not name
   the whole project after Easee because later load types may include hot-water
   tanks and floor heating.
 - Easee EV charging is the first supported load type.
@@ -97,3 +97,10 @@ chat history. Add a dated entry when a decision changes.
   or stale required sources, or unreliable electrical calculation.
 - The user will temporarily disable the existing YAML automation during the
   supervised integration test; do not remove or modify that working automation.
+
+## 2026-10-23 — Forbruksgrense setpoint (beta 10)
+
+- Provide an integration-owned select entity named **Forbruksgrense**, with the former `input_select.forbruksgrense` choices from 4.5 to 20 kWh in 0.5 kWh steps.
+- This is the authoritative hourly target used by the Smart Load Manager calculation. Do not ask for it during setup and do not read EnergyTariff's configured `target_energy` as a competing setpoint.
+- EnergyTariff remains required as the source of measured energy consumed this hour; its estimate remains a diagnostic sensor.
+- When upgrading beta.9 entries, migrate their existing `hourly_limit_kwh` value into the select's initial effective state and persist the user's new selection in config-entry options.

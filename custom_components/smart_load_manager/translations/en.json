@@ -2,19 +2,17 @@
   "config": {
     "step": {
       "user": {
-        "title": "Configure Smart Load Manager",
-        "description": "Select the Easee charger and the HAN power sensor measuring the home’s instantaneous power. EnergyTariff must be installed and configured first. The hourly estimate is created as an integration sensor and is not selected here. The maximum current is read from Easee. Automatic control stays off until you enable it. {validation_error}",
+        "title": "Configure Smart Load Manager OJM",
+        "description": "Select the charger and meter sources. EnergyTariff must be installed first. Choose the consumption limit after setup; it is used directly in the calculation. Automatic control stays off until you enable it. {validation_error}",
         "data": {
-          "charger_device": "Easee charger",
-          "han_power_entity": "HAN power meter",
-          "hourly_limit_kwh": "Hourly energy limit (kWh)",
-          "tariff_used_entity": "EnergyTariff – energy used this hour",
-          "safety_margin_kwh": "Safety margin (kWh)"
+          "charger_device": "Charger – Easee device",
+          "han_power_entity": "Home measurement – HAN power meter",
+          "tariff_used_entity": "Hourly energy – EnergyTariff used this hour",
+          "safety_margin_kwh": "Safety margin – kWh"
         },
         "data_description": {
-          "charger_device": "Select the Easee device. The integration discovers status, measured current, voltage, phase information, and current limits from its entities.",
+          "charger_device": "Select the Easee device to control. Status, current, voltage, phase data, and current limits are discovered from its entities.",
           "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
-          "hourly_limit_kwh": "Maximum total energy for the current clock hour. Use the same limit as EnergyTariff’s target_energy.",
           "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
           "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
         },
@@ -74,9 +72,6 @@
       "energy_estimate": {
         "name": "EnergyTariff estimate this hour"
       },
-      "hourly_limit": {
-        "name": "Hourly energy limit"
-      },
       "confidence": {
         "name": "Detection confidence"
       },
@@ -121,6 +116,11 @@
     "time": {
       "schedule_start_time": {
         "name": "Charging start time"
+      }
+    },
+    "select": {
+      "consumption_limit": {
+        "name": "Consumption limit"
       }
     }
   }

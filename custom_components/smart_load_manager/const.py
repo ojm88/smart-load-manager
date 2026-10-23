@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 DOMAIN = "smart_load_manager"
-PLATFORMS = ["sensor", "number", "switch", "time"]
+PLATFORMS = ["sensor", "select", "number", "switch", "time"]
 UPDATE_INTERVAL = timedelta(seconds=30)
 HAN_MAX_AGE_SECONDS = 60
 SCHEDULE_WINDOW_HOURS = 12
@@ -11,6 +11,8 @@ SCHEDULE_WINDOW_HOURS = 12
 CONF_CHARGER_DEVICE = "charger_device"
 CONF_HAN_POWER_ENTITY = "han_power_entity"
 CONF_HOURLY_LIMIT_KWH = "hourly_limit_kwh"
+CONF_CONSUMPTION_LIMIT_KWH = "consumption_limit_kwh"
+DEFAULT_CONSUMPTION_LIMIT_KWH = 15.0
 CONF_TARIFF_USED_ENTITY = "tariff_used_entity"
 CONF_SAFETY_MARGIN_KWH = "safety_margin_kwh"
 CONF_SCHEDULE_START_TIME = "schedule_start_time"

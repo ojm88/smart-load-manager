@@ -35,6 +35,7 @@ from .const import (
     UPDATE_INTERVAL,
 )
 from .entity_resolution import resolve_easee_entities
+from .budget import consumption_limit_value
 from .control import async_send_dynamic_limit, target_current_for_control
 
 _LOGGER = logging.getLogger(__name__)
@@ -170,7 +171,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     )
 
             minutes_left = 60 - local_now.minute
-            hourly_limit = float(self.entry.data[CONF_HOURLY_LIMIT_KWH])
+            # Keep beta.9's saved value as a migration fallback for existing entries.
+            hourly_limit = consumption_limit_value(self.entry)
             safety_margin = float(self.entry.data.get(CONF_SAFETY_MARGIN_KWH, 0.3))
             circuit_limit = float(status_state.attributes.get("circuit_ratedCurrent", 0) or 0)
             observed_limits = [circuit_limit] if circuit_limit > 0 else []

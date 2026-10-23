@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.10
+
+- Add an integration-owned **Forbruksgrense** select control with the former `input_select.forbruksgrense` options (4.5–20 kWh, 0.5 kWh steps); use this setpoint directly in the charging calculation.
+- Migrate the beta.9 hourly limit into the select on upgrade; values within 4.5–20 kWh are retained, and out-of-range legacy values are clamped to the nearest supported boundary.
+- Remove hourly-limit entry from setup. EnergyTariff remains the source for measured energy used this hour; its `target_energy` is separate and does not override Forbruksgrense.
+- Rename the visible integration/config-entry name to **Smart Load Manager OJM** while retaining the internal `smart_load_manager` domain and existing entries.
+- Update Norwegian and English manuals, setup wording, and dashboard example; add budget migration and selector regression tests.
+
 ## 0.1.0-beta.9
 
 - Add Norwegian and English setup translations, field explanations, entity names, and clearer icons.

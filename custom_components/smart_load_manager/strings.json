@@ -2,19 +2,17 @@
   "config": {
     "step": {
       "user": {
-        "title": "Konfigurer Smart Load Manager",
-        "description": "Velg Easee-laderen og HAN-effektsensoren som måler hele boligens øyeblikkelige effekt. EnergyTariff må være installert og konfigurert først. Timesestimatet opprettes som en sensor av integrasjonen og skal ikke velges her. Maksimal strøm leses fra Easee. Automatisk styring er avslått til du selv aktiverer den. {validation_error}",
+        "title": "Konfigurer Smart Load Manager OJM",
+        "description": "Velg lader og målekilder. EnergyTariff må være installert først. Forbruksgrensen velges etter oppsett og brukes direkte i beregningen. Automatisk styring er avslått til du selv aktiverer den. {validation_error}",
         "data": {
-          "charger_device": "Easee-lader",
-          "han_power_entity": "HAN-effektmåler",
-          "hourly_limit_kwh": "Energigrense per time (kWh)",
-          "tariff_used_entity": "EnergyTariff – brukt energi denne timen",
-          "safety_margin_kwh": "Sikkerhetsmargin (kWh)"
+          "charger_device": "Lader – Easee-enhet",
+          "han_power_entity": "Husmåling – HAN-effektmåler",
+          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
         },
         "data_description": {
-          "charger_device": "Velg Easee-enheten. Integrasjonen finner status, målt strøm, spenning, faseinformasjon og strømgrenser fra enhetens sensorer.",
+          "charger_device": "Velg Easee-enheten som skal styres. Integrasjonen finner status, strøm, spenning, faseinformasjon og strømgrenser fra enhetens sensorer.",
           "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
-          "hourly_limit_kwh": "Maksimal samlet energi i gjeldende klokketime. Bruk samme grense som EnergyTariff sin target_energy.",
           "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
           "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
         },
@@ -24,6 +22,13 @@
         "abort": {
           "already_configured": "Denne Easee-laderen er allerede konfigurert."
         }
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "consumption_limit": {
+        "name": "Forbruksgrense"
       }
     }
   }

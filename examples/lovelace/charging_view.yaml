@@ -1,4 +1,4 @@
-# Smart Load Manager beta.9 — standalone example view (built-in cards only).
+# Smart Load Manager OJM beta.10 — standalone example view (built-in cards only).
 # Example entity IDs only: use the entity picker after setup to select the controls created for this Smart Load Manager device.
 # After setup, use the entity picker to confirm/replace each ID; entity IDs can
 # be renamed in HA. The EnergyTariff estimate is a Smart Load Manager sensor; use the entity picker to select it. The charger maximum is read-only.
@@ -63,7 +63,8 @@ sections:
           - entity: sensor.smart_load_manager_ab12cd34_han_effekt_normalisert
           - entity: sensor.smart_load_manager_ab12cd34_energytariff_brukt_denne_timen
           - entity: sensor.smart_load_manager_ab12cd34_energytariff_estimat_denne_timen
-          - entity: sensor.smart_load_manager_ab12cd34_timegrense
+          - entity: select.smart_load_manager_ab12cd34_forbruksgrense
+            name: Forbruksgrense (kWh per klokketime)
           - entity: sensor.smart_load_manager_ab12cd34_deteksjonssikkerhet
           - entity: sensor.smart_load_manager_ab12cd34_deteksjonsgrunnlag
       - type: history-graph

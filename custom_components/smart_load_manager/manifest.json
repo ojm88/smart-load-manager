@@ -1,6 +1,6 @@
 {
   "domain": "smart_load_manager",
-  "name": "Smart Load Manager",
+  "name": "Smart Load Manager OJM",
   "after_dependencies": [
     "easee",
     "energytariff"
@@ -8,5 +8,5 @@
   "codeowners": [],
   "config_flow": true,
   "iot_class": "local_polling",
-  "version": "0.1.0-beta.9"
+  "version": "0.1.0-beta.10"
 }

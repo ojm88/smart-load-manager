@@ -11,12 +11,8 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.9** in this repository.
-Beta 9 adds localized setup labels/descriptions, removes the EnergyTariff
-estimate picker and safety dependency, exposes the estimate and Easee maximum
-current as sensors, and adds control/service-payload regression tests. It keeps
-Easee selection, W/kW HAN input, used-energy input, integration-owned clock
-scheduling, diagnostic entities, and opt-in current control.
+The current implementation baseline is **0.1.0-beta.10** in this repository.
+Beta 10 adds the integration-owned Forbruksgrense select control (4.5–20 kWh, 0.5 kWh steps), makes it the calculation setpoint, and migrates beta.9 values on upgrade (clamping values outside the new selector range). The visible name is Smart Load Manager OJM while the internal domain remains stable. It keeps EnergyTariff used energy as a required input and its estimate as a diagnostic sensor.
 
 ## Electrical interpretation
 
@@ -51,20 +47,36 @@ scheduling, diagnostic entities, and opt-in current control.
 
 ## Validation
 
-Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports passed in GitHub Actions. The “Invalid handler specified” report was consistent with beta.5 importing selectors from the nonexistent `homeassistant.components.selector` module; beta.6 corrected it. Beta.7 also removed manually configured schedule helpers.
-Beta 9 has automated regression checks; it has not yet been installed and validated in the user's HA. No physical
-charger service call has been validated. Beta 9 removes the estimate input from setup and displays the Easee maximum current as a read-only sensor. It uses the lowest valid live current limit exposed by Easee;
-when no such limit is available, automatic control holds 0 A and positive
-manual commands are rejected.
+Beta 10 automated local checks pass: 31 unit tests, Python compilation, and
+JSON validation. The beta.10 config-entry migration, EnergyTariff entity mapping,
+Home Assistant setup, and Easee service calls have not been validated in the
+user's live HA instance. No physical charger command has been confirmed.
+
+The beta.10 setup no longer asks for an hourly target. A per-entry `select`
+entity named **Forbruksgrense** provides 4.5–20 kWh in 0.5 kWh steps and is the
+authoritative calculation target. A beta.9 entry migrates its prior value to
+the new select (values outside the select range are clamped to its nearest
+boundary). The EnergyTariff used-this-hour sensor remains the measured-energy
+input, while the estimate is diagnostic only. The integration's visible name
+is Smart Load Manager OJM; the domain and unique IDs stay stable.
 
 ## Next work
 
-1. Run the beta.9 Home Assistant test with the old YAML automation disabled and automatic control initially off.
-2. Compare sensor and recommendation values, then enable the integration controller under supervision.
-3. Record actual Easee service behavior and any differences across charger models/firmware.
-4. Consider other controllable loads only after Easee behavior is validated.
+1. Install beta.10 in HA with the old YAML automation disabled; keep automatic
+   control off initially.
+2. Confirm the **Forbruksgrense** select appears on the Smart Load Manager
+   device, has the expected 4.5–20 kWh options, and changing it updates the
+   recommendation after refresh.
+3. For an existing beta.9 entry, confirm its former hourly limit appears as
+   the initial Forbruksgrense value.
+4. Compare diagnostic voltage, active phases, minimum current, HAN power,
+   EnergyTariff used energy, estimate, and recommended current against live
+   values before enabling control.
+5. Only then enable automatic control while present. Confirm the Easee
+   dynamic-limit behavior; disable it before restoring the old automation.
+6. Consider additional controllable loads only after Easee behavior is
+   validated.
 
 ## Release state
 
-Beta.9 is a public development beta, not a production release and not yet a
-published HACS release. It bundles schedule controls, removes manual helper setup, and adds localized setup explanations. Automated local checks and GitHub Actions must pass before testing in the user's HA.
+Beta.10 is a public development beta, not a production release. It includes the integration-owned Forbruksgrense select, built-in schedule controls, localized setup explanations, and beta.9 value migration. Automated checks pass; live HA and charger validation are still pending.

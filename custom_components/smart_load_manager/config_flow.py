@@ -11,7 +11,6 @@ from homeassistant.helpers import device_registry as dr, selector
 from .const import (
     CONF_CHARGER_DEVICE,
     CONF_HAN_POWER_ENTITY,
-    CONF_HOURLY_LIMIT_KWH,
     CONF_SAFETY_MARGIN_KWH,
     CONF_TARIFF_USED_ENTITY,
     DOMAIN,
@@ -72,7 +71,7 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 charger = dr.async_get(self.hass).devices.get(device_id)
                 charger_name = (charger.name_by_user or charger.name) if charger else device_id[:8]
-                title = f"Smart Load Manager – {charger_name}"
+                title = f"Smart Load Manager OJM – {charger_name}"
                 return self.async_create_entry(title=title, data=user_input)
 
         schema = vol.Schema(
@@ -82,11 +81,6 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Required(CONF_HAN_POWER_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_HOURLY_LIMIT_KWH, default=15.0): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=1, max=50, step=0.5, unit_of_measurement="kWh", mode="box"
-                    )
                 ),
                 vol.Required(CONF_TARIFF_USED_ENTITY, default=TARIFF_USED_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
