@@ -16,6 +16,11 @@ from .control import manual_control_is_available
 from .entity_ids import suggested_entity_id
 
 
+def _message(hass: HomeAssistant, norwegian: str, english: str) -> str:
+    """Return the control error in the configured Home Assistant language."""
+    return norwegian if str(hass.config.language or "").startswith("nb") else english
+
+
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities: AddEntitiesCallback) -> None:
     coordinator: ChargingCoordinator = entry.runtime_data
     async_add_entities([ChargingCurrentLimit(coordinator, entry)])
@@ -71,25 +76,51 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
         data = self.coordinator.data or {}
         requested = int(round(value))
         if self.coordinator.auto_control:
-            raise HomeAssistantError("Slå av automatisk laststyring før manuell strømgrense endres.")
+            raise HomeAssistantError(
+                _message(
+                    self.hass,
+                    "Slå av automatisk laststyring før du endrer manuell ladestrøm.",
+                    "Turn off automatic load control before changing manual charging current.",
+                )
+            )
         if requested < 0 or requested > self.native_max_value:
-            raise HomeAssistantError("Strømgrensen er utenfor konfigurert område.")
+            raise HomeAssistantError(
+                _message(self.hass, "Strømgrensen er utenfor tillatt område.", "The current limit is outside the allowed range.")
+            )
         if requested > 0:
             detected_maximum = float(data.get("max_current_a", 0) or 0)
             if detected_maximum <= 0:
-                raise HomeAssistantError("Easee har ikke rapportert en gyldig maksimal kursstrøm ennå.")
+                raise HomeAssistantError(
+                    _message(self.hass, "Easee har ikke rapportert en gyldig maksimal strøm ennå.", "Easee has not reported a valid maximum current yet.")
+                )
             if requested > detected_maximum:
-                raise HomeAssistantError(f"Strømgrensen kan ikke overstige Easees kursgrense på {detected_maximum:g} A.")
+                raise HomeAssistantError(
+                    _message(
+                        self.hass,
+                        f"Strømgrensen kan ikke overstige Easees grense på {detected_maximum:g} A.",
+                        f"The current limit cannot exceed Easee's limit of {detected_maximum:g} A.",
+                    )
+                )
             if not data.get("han_fresh", False):
-                raise HomeAssistantError("HAN-målingen er ugyldig eller eldre enn 60 sekunder.")
+                raise HomeAssistantError(
+                    _message(self.hass, "HAN-målingen er ugyldig eller eldre enn 60 sekunder.", "The HAN meter reading is invalid or older than 60 seconds.")
+                )
             if not data.get("schedule_allowed", True):
-                raise HomeAssistantError("Tidsstyringen sperrer lading akkurat nå.")
+                raise HomeAssistantError(
+                    _message(self.hass, "Tidsstyringen sperrer lading akkurat nå.", "The charging schedule is blocking charging now.")
+                )
             minimum = data.get("control_minimum_current_a")
             if minimum is None:
-                raise HomeAssistantError("Nedre strømgrense er ukjent før lading og fasebruk er målt.")
+                raise HomeAssistantError(
+                    _message(self.hass, "Nedre strømgrense er ukjent før lading og fasebruk er målt.", "The minimum current is unknown until charging and phase use are measured.")
+                )
             if requested < int(minimum):
                 raise HomeAssistantError(
-                    f"Bruk 0 A for pause eller minst {int(minimum)} A for denne ladeformen."
+                    _message(
+                        self.hass,
+                        f"Bruk 0 A for pause eller minst {int(minimum)} A for denne ladeformen.",
+                        f"Use 0 A to pause, or at least {int(minimum)} A for this charging setup.",
+                    )
                 )
         await self.coordinator.async_set_current(requested)
         await self.coordinator.async_request_refresh()
@@ -97,13 +128,16 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
     @property
     def extra_state_attributes(self):
         """Explain when this manual actuator is available and what zero means."""
+        norwegian = str(self.hass.config.language or "").startswith("nb")
         return {
-            "use_when": "Automatic load control is off",
-            "zero_current": "Pauses charging",
-            "positive_current": "Sets an Easee dynamic current limit in amperes",
+            "use_when": "Brukes når automatisk laststyring er av" if norwegian else "Use when automatic load control is off",
+            "zero_current": "0 A setter laderen på pause" if norwegian else "0 A pauses charging",
+            "positive_current": "Setter dynamisk strømgrense på Easee-laderen" if norwegian else "Sets an Easee dynamic current limit",
             "automatic_control_active": self.coordinator.auto_control,
             "unavailable_reason": (
-                "Turn off automatic load control before changing this value"
+                "Slå av automatisk laststyring før du endrer verdien"
+                if norwegian and self.coordinator.auto_control
+                else "Turn off automatic load control before changing this value"
                 if self.coordinator.auto_control
                 else None
             ),
