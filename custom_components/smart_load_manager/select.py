@@ -18,6 +18,7 @@ from .const import (
 )
 from .coordinator import ChargingCoordinator
 from .control import async_send_phase_mode
+from .entity_ids import suggested_entity_id
 
 
 async def async_setup_entry(
@@ -42,6 +43,7 @@ class ConsumptionLimitSelect(
 
     def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
         super().__init__(coordinator)
+        self.entity_id = f"select.{suggested_entity_id('select', 'consumption_limit')}"
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_consumption_limit"
         self._attr_device_info = DeviceInfo(
@@ -76,6 +78,7 @@ class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntit
 
     def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
         super().__init__(coordinator)
+        self.entity_id = f"select.{suggested_entity_id('select', 'phase_mode_control')}"
         self._attr_unique_id = f"{entry.entry_id}_phase_mode_control"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
