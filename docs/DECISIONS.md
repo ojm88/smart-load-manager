@@ -114,3 +114,23 @@ chat history. Add a dated entry when a decision changes.
 - Do not assume whether multiple vehicles charge sequentially or simultaneously. Before implementing allocation, the owner must choose the policy (e.g. priority/sequential, simultaneous sharing, or configurable priorities) and specify how it behaves when a vehicle connects or disconnects.
 - Keep the current load as the first implementation; add hot-water and floor-heating devices as independent controllable loads with their own limits/constraints, then let a shared allocator coordinate them. Preserve the existing user-facing name and entity compatibility.
 - Record future features and unresolved policy choices here and in project status so they are not lost between beta iterations. Every beta must update code, tests, README, both manuals, Lovelace example, changelog, decisions, and project status as one release unit.
+
+
+## 2026-10-23 — Site-wide budget and entity naming
+
+- Treat **Forbruksgrense** as one installation/site-wide hourly energy budget,
+  shared by every present and future load (chargers, hot water, floor heating).
+  It is not a separate target per charger. Individual devices retain their own
+  device limits; a future shared allocator must distribute the common budget.
+- The beta.10 entity `select.smart_load_manager_ojm_easee_forbruksgrense`
+  represents that shared site setting even though its current object ID includes
+  `easee`. Do not create a duplicate budget selector when adding another load.
+- Keep existing entity IDs/unique IDs stable where possible. If a clearer
+  site-level ID is introduced, migrate or preserve the existing entity registry
+  mapping so dashboards and automations do not break.
+- Use short, consistent, namespaced entity object IDs for new entities (English
+  technical IDs, e.g. `slm_ev_power`, `slm_recommended_current`,
+  `slm_active_phases`, `slm_site_budget`). Use concise localized Home
+  Assistant display names (Norwegian and English translations); avoid long,
+  redundant names such as repeating the full product name in every sensor.
+- Apply this naming convention consistently to all entities, not only sensors.
