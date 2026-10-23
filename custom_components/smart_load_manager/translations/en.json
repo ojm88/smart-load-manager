@@ -21,7 +21,7 @@
         },
         "abort": {
           "already_configured": "This Easee charger is already configured.",
-          "single_instance": "This beta supports one Smart Load Manager entry per Home Assistant installation so the consumption limit stays shared. Multi-charger support will follow when shared load allocation is implemented."
+          "single_instance": "This first release supports one Smart Load Manager entry per Home Assistant installation so the consumption limit stays shared. Multi-charger support will follow when shared load allocation is implemented."
         }
       }
     }

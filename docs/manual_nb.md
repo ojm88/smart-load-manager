@@ -49,7 +49,7 @@ De tre siste måler verdier direkte fra EnergyTariff. Smart Load Manager lager i
 
 1. Ta en sikkerhetskopi og noter hvordan du slår på den gamle automasjonen igjen.
 2. Slå av den gamle automasjonen, men ikke slett eller endre den.
-3. Installer betaen og start Home Assistant på nytt. La automatisk laststyring være av.
+3. Installer integrasjonen og start Home Assistant på nytt. La automatisk laststyring være av.
 4. Kontroller at måler, forbruk hittil, fase/spenning, anbefalt strøm og Easee-grenser ser riktige ut.
 5. Når du er til stede og klar til å følge laderen, slå på automatisk laststyring. Bekreft at anbefalingen og Easee-grensen følger hverandre.
 6. Ved feil: slå av automatisk styring og slå på den gamle automasjonen igjen. Ikke la begge styre laderen samtidig.

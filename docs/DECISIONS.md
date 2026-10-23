@@ -1,3 +1,9 @@
+## 2026-10-23 — First stable release 0.1.0
+
+- Release the tested beta.17 build as stable version 0.1.0 after the owner confirms it works in the live HA/Easee setup.
+- Keep later experimental fixes in numbered beta pre-releases; use stable releases for versions ready for general use.
+- Preserve the current one-load-entry limit until the shared allocator and multi-charger policy are designed.
+
 ## 2026-10-23 — Beta 17 pause, dashboard, and compact sensor data
 
 - Add an integration-owned pause toggle. Turning pause on must send 0 A to the configured Easee device and keep it at 0 A while paused. Resume recalculates in automatic mode; in manual mode restore the previous limit only if the current meter, schedule, minimum, and Easee maximum checks still pass. Lock manual-current writes during pause.

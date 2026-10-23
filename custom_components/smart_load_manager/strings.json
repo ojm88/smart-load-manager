@@ -21,7 +21,7 @@
         },
         "abort": {
           "already_configured": "Denne Easee-laderen er allerede konfigurert.",
-          "single_instance": "Denne betaen støtter én Smart Load Manager-konfigurasjon per Home Assistant-installasjon, slik at Forbruksgrense forblir felles. Støtte for flere ladere kommer først når felles lastfordeling er implementert."
+          "single_instance": "Denne første versjonen støtter én Smart Load Manager-konfigurasjon per Home Assistant-installasjon, slik at Forbruksgrense forblir felles. Støtte for flere ladere kommer først når felles lastfordeling er implementert."
         }
       }
     }

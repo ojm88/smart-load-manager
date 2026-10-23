@@ -1,4 +1,4 @@
-# Smart Load Manager OJM — beta.17
+# Smart Load Manager OJM
 
 Smart Load Manager OJM helps keep your home’s electricity use within the hourly limit you choose. It uses your HAN meter and EnergyTariff to adjust Easee charging, leaving room for the rest of the home’s consumption.
 
@@ -34,7 +34,7 @@ The card uses standard Home Assistant cards and EnergyTariff’s own `sensor.ene
 
 Automatic control is opt-in and starts off after a Home Assistant restart. When it is active, invalid meter or tariff data, missing electrical information, a closed schedule, or an unavailable Easee current limit makes the integration send 0 A. The selected Easee dynamic limit remains in place until the integration changes it, matching the previous automation’s behavior.
 
-The agreed minimum current is 11 A for measured 230 V three-phase charging, and 6 A otherwise. There is no vehicle learning. The current beta supports one configured load entry per Home Assistant installation; a shared allocator is needed before multiple chargers or household loads can safely share the same budget.
+The agreed minimum current is 11 A for measured 230 V three-phase charging, and 6 A otherwise. There is no vehicle learning. This release supports one configured load entry per Home Assistant installation; a shared allocator is needed before multiple chargers or household loads can safely share the same budget.
 
 ## Checks
 

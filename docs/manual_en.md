@@ -49,7 +49,7 @@ The EnergyTariff values are read directly; Smart Load Manager does not create ex
 
 1. Make a Home Assistant backup and note how to re-enable your existing automation.
 2. Disable that automation; do not delete or edit it.
-3. Install the beta and restart Home Assistant. Leave automatic load control off.
+3. Install the integration and restart Home Assistant. Leave automatic load control off.
 4. Check the meter, energy used, phase/voltage, recommended current, and Easee limits.
 5. When present and watching the charger, enable automatic control and confirm its recommendation matches the limit sent to Easee.
 6. If anything looks wrong, turn automatic control off and restore your previous automation. Never run both controllers at once.
