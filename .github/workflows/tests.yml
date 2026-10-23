@@ -1,0 +1,23 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run pure calculation regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Compile integration modules
+        run: python -m compileall -q custom_components
+      - name: Validate JSON metadata
+        run: |
+          python -m json.tool custom_components/smart_easee_charging/manifest.json >/dev/null
+          python -m json.tool custom_components/smart_easee_charging/strings.json >/dev/null
+          python -m json.tool hacs.json >/dev/null

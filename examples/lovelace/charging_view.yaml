@@ -1,0 +1,82 @@
+# Smart Load Manager beta.4 — standalone example view (built-in cards only).
+# Replace "ab12cd34" with the first eight characters of the selected HA device ID.
+# After setup, use the entity picker to confirm/replace each ID; entity IDs can
+# be renamed in HA. Replace the EnergyTariff IDs if you selected other entities.
+type: sections
+title: Bil — Smart laststyring
+path: smart-lading
+max_columns: 2
+sections:
+  - type: grid
+    cards:
+      - type: entities
+        title: Lade- og styringskontroller
+        show_header_toggle: false
+        state_color: true
+        entities:
+          - entity: switch.smart_load_manager_ab12cd34_automatisk_laststyring
+            name: Automatisk laststyring (av som standard)
+          - entity: switch.easee_smartlading
+            name: Tidsvindu aktivt (Easee Smartlading)
+          - entity: input_datetime.smartlading_starter_kl
+            name: Starttid for 12-timersvindu
+          - entity: number.smart_load_manager_ab12cd34_manuell_ladestr_mgrense
+            name: Manuell ladestrømgrense (0 A = pause)
+          - entity: sensor.smart_load_manager_ab12cd34_anbefalt_ladestr_m
+            name: Anbefalt ladestrøm
+          - entity: sensor.smart_load_manager_ab12cd34_nedre_ladestr_mgrense
+            name: Nedre grense for aktiv ladeform
+          - entity: sensor.smart_load_manager_ab12cd34_styringens_forklaring
+            name: Hvorfor denne anbefalingen?
+          - entity: sensor.smart_load_manager_ab12cd34_han_m_ling_alder
+            name: Alder på HAN-måling (sekunder)
+          - entity: sensor.smart_load_manager_ab12cd34_han_m_ling_gyldig
+            name: HAN-data gyldige?
+          - entity: sensor.smart_load_manager_ab12cd34_tidsstyring_status
+            name: Tidsvindu status
+  - type: grid
+    cards:
+      - type: entities
+        title: Lader — målt status og elektriske data
+        show_header_toggle: false
+        entities:
+          - entity: sensor.smart_load_manager_ab12cd34_laderstatus
+          - entity: sensor.smart_load_manager_ab12cd34_valgt_fasemodus
+            name: Valgt modus (Auto / 1 / 3 faser)
+          - entity: sensor.smart_load_manager_ab12cd34_easee_utgangsfase
+            name: Easee utgangsfase (dekodet)
+          - entity: sensor.smart_load_manager_ab12cd34_aktive_faser
+          - entity: sensor.smart_load_manager_ab12cd34_easee_detektert_nettype
+          - entity: sensor.smart_load_manager_ab12cd34_detektert_spenningssystem
+          - entity: sensor.smart_load_manager_ab12cd34_beregnet_linjespenning
+          - entity: sensor.smart_load_manager_ab12cd34_m_lt_fase_n_ytral_spenning
+          - entity: sensor.smart_load_manager_ab12cd34_ladeeffekt
+          - entity: sensor.smart_load_manager_ab12cd34_easee_rsak_til_begrensning
+  - type: grid
+    cards:
+      - type: entities
+        title: Huslast og timebudsjett
+        show_header_toggle: false
+        entities:
+          - entity: sensor.smart_load_manager_ab12cd34_han_effekt_normalisert
+          - entity: sensor.smart_load_manager_ab12cd34_energytariff_brukt_denne_timen
+          - entity: sensor.smart_load_manager_ab12cd34_energytariff_estimat_denne_timen
+          - entity: sensor.smart_load_manager_ab12cd34_timegrense
+          - entity: sensor.smart_load_manager_ab12cd34_deteksjonssikkerhet
+          - entity: sensor.smart_load_manager_ab12cd34_deteksjonsgrunnlag
+      - type: history-graph
+        title: Lading og timebudsjett — siste 3 timer
+        hours_to_show: 3
+        entities:
+          - entity: sensor.smart_load_manager_ab12cd34_anbefalt_ladestr_m
+            name: Anbefalt A
+          - entity: number.smart_load_manager_ab12cd34_manuell_ladestr_mgrense
+            name: Dynamisk grense A
+          - entity: sensor.smart_load_manager_ab12cd34_han_effekt_normalisert
+            name: HAN W
+          - entity: sensor.smart_load_manager_ab12cd34_ladeeffekt
+            name: Lader W
+          - entity: sensor.energy_used_this_hour
+            name: EnergyTariff brukt
+          - entity: sensor.energy_estimate_this_hour
+            name: EnergyTariff estimat
