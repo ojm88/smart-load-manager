@@ -11,9 +11,9 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.6** in this repository.
+The current implementation baseline is **0.1.0-beta.7** in this repository.
 It includes Easee device selection, HAN power input in W or kW, EnergyTariff
-hourly energy inputs, optional clock scheduling, diagnostic entities, and
+hourly energy inputs, integration-owned clock scheduling, diagnostic entities, and
 opt-in dynamic current control. The Norwegian and English manuals and a
 standard Lovelace example are included.
 
@@ -28,7 +28,7 @@ standard Lovelace example are included.
 - The observed Garasje example (about 230 V phase-to-neutral readings and
   current on three phase conductors) should be interpreted as roughly 400 V,
   three-phase charging.
-- The current minimum rule in beta.4 is 11 A for measured 230 V three-phase
+- The current minimum rule is 11 A for measured 230 V three-phase
   charging and 6 A otherwise. This reflects the user's Tesla/Charge Up tests;
   broader model and vehicle combinations still need validation.
 - Normal voltage movement by a few volts updates the calculation and should not
@@ -38,10 +38,11 @@ standard Lovelace example are included.
 ## Safety and control status
 
 - Automatic control is opt-in and off by default, including after restart.
-- Beta.4 sends 0 A when required meter, tariff, or electrical data is invalid,
+- The controller sends 0 A when required meter, tariff, or electrical data is invalid,
   unavailable, or stale while automatic control is enabled.
-- Optional scheduling uses a time-only `input_datetime` and the selected Easee
-  Smartlading switch, with the documented repeating 12-hour window.
+- Optional scheduling uses the integration-owned `Tidsstyring` switch and
+  `Starttid lading` time entity. Both settings persist across HA restarts. No
+  user-created helper or Easee Smartlading switch is needed.
 - `time_to_live: 0` is used for dynamic limits, matching the existing HA
   automation's indefinite-limit behavior.
 - The old automation must be disabled before enabling this integration's
@@ -49,32 +50,21 @@ standard Lovelace example are included.
 
 ## Validation
 
-The beta.6 calculation tests pass in the supplied development workspace. Code
-inspection found that beta.5 imported selectors from the nonexistent
-`homeassistant.components.selector` module. Beta.6 imports them from
-`homeassistant.helpers`, matching Home Assistant Core. This is consistent with
-the reported “Invalid handler specified” error, but the user's HA logs have not
-been inspected. The config flow has not yet been retried in the user's running
-Home Assistant, and no physical charger service call has been validated.
+Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports pass locally. The “Invalid handler specified” report was consistent with beta.5 importing
+selectors from the nonexistent `homeassistant.components.selector` module;
+beta.6 corrected it. Beta.7 also removes manually configured schedule helpers.
+The flow has not yet been retried in the user's HA, and no physical charger
+service call has been validated.
 
 ## Next work
 
-1. Install beta.6, restart Home Assistant, and confirm that the setup form
-   loads. Keep automatic control off; verify entity discovery and displayed
-   status, phase, voltage, current, and recommendation values.
-2. Validate schedule behavior and dynamic-limit service calls without the old
-   automation active.
-3. Decide and test how to learn the lowest stable current for an unknown
-   connected vehicle without identifying its make/model. Relearn when the
-   active phase count changes; do not relearn for normal voltage fluctuation.
-4. Review Easee model/firmware differences against supported entity and
-   attribute availability.
-5. Consider hot-water and floor-heating load types only after Easee control is
-   stable and validated.
+1. Verify the beta.7 GitHub Actions run.
+2. Install beta.7, restart Home Assistant, and confirm the setup form loads. Keep automatic control off; verify entity discovery and displayed status, phase, voltage, current, and recommendation values.
+3. Validate schedule behavior and dynamic-limit service calls without the old automation active.
+4. Decide how to learn the lowest stable current for an unknown connected vehicle without identifying it; relearn on phase-count changes, not normal voltage variation.
+5. Review Easee model/firmware differences and consider other controllable loads after Easee validation.
 
 ## Release state
 
-Beta.6 is a public development beta, not a production release and not yet a
-published HACS release. It corrects the selector import behind beta.5's
-config-flow failure and adds a Home Assistant import smoke test to CI. The
-beta.6 flow has not yet been retried in the user's HA.
+Beta.7 is a public development beta, not a production release and not yet a
+published HACS release. It bundles schedule controls and removes manual helper setup. Automated local checks pass; the beta.7 config flow has not yet been retried in the user's HA.

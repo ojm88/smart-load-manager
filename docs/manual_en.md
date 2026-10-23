@@ -1,8 +1,8 @@
-# User manual — Smart Load Manager beta.6
+# User manual — Smart Load Manager beta.7
 
 ## What this beta does
 
-Beta.6 fixes a configuration-flow import error that prevented beta.5 from loading in Home Assistant. It reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
+Beta.7 includes its own Home Assistant schedule controls, so users do not need to create helpers. Beta.6 fixed the configuration-flow import error that prevented beta.5 from loading. It reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
 
 This is still a beta. It has not been validated in a live Home Assistant installation or with a physical charger. Verify the sensors and recommendation before enabling automatic control.
 
@@ -20,23 +20,7 @@ Copy `custom_components/smart_load_manager` into Home Assistant's `custom_compon
 
 Select the Easee charger, HAN power sensor, EnergyTariff used and estimate sensors, hourly energy limit, maximum current cap, and safety margin. Choose a conservative current cap; the integration also considers positive circuit/charger current limits exposed by Easee.
 
-Clock scheduling is optional. To match the previous automation, select the existing Easee Smartlading switch and the `input_datetime` helper used for the start time. Entity IDs can differ; select them from the setup lists.
-
-If an earlier beta is already installed, open the integration's **Configure** option and choose the schedule switch and time helper there. You do not need to remove and add the integration again.
-
-To create a start-time helper, open **Settings → Devices & services → Helpers → Create helper → Date and/or time**. Select time only (no date), name it, for example, **Smartlading starter kl**, then select its `input_datetime` entity during Smart Load Manager setup.
-
-Alternatively, add it in a YAML package:
-
-```yaml
-input_datetime:
-  smartlading_starter_kl:
-    name: Smartlading starter kl
-    has_date: false
-    has_time: true
-```
-
-This is a time helper, not a measurement sensor. Select the created `input_datetime.smartlading_starter_kl` in setup.
+Clock scheduling is optional and is provided by the integration. After setup, the Smart Load Manager device includes a **Tidsstyring** switch and a **Starttid lading** time control (default 23:00). You do not need to create `input_datetime` or other helpers. When scheduling is enabled, charging is allowed during the daily 12-hour window beginning at the selected time. When disabled, no clock window is applied. The schedule setting and start time persist across restarts. Automatic current control still starts off after restart.
 
 ## Easee interpretation
 
@@ -64,7 +48,7 @@ The calculation subtracts measured charging power from HAN power to estimate hou
 
 ### Clock scheduling
 
-To use the schedule, both `Automatisk laststyring` and the selected Easee Smartlading switch must be on. The first enables current control; the Easee switch enables or disables the clock window. When the Easee switch is **off**, charging follows the hourly energy budget without a clock window. When it is **on**, charging is allowed from the selected `input_datetime` start time for the next 12 hours. After the window ends, active automatic control sends 0 A. The window wraps across midnight and repeats daily. Diagnostic sensors show whether the window is active and why.
+Turn on the integration's **Tidsstyring** switch to use the clock window, then set **Starttid lading** to the desired time. When enabled, charging is allowed for 12 hours from that start time; the window crosses midnight and repeats daily. When disabled, charging follows the hourly energy budget without a clock window. The integration stores both schedule settings. **Automatisk laststyring** must also be on before the integration sends current limits.
 
 The HAN sensor must show positive power, and its state must have changed within the last 60 seconds. If the value stops changing, becomes unavailable, or is zero, active automatic control sends 0 A. This matches the `last_changed` guard in the previous automation. Current calculation resumes when a fresh, valid measurement returns.
 
@@ -85,7 +69,7 @@ Disable the old **Dynamisk styring av Easee-lader Opptimalisert V3.0** automatio
 
 ## Troubleshooting and limitations
 
-- If Home Assistant reports “Config flow could not be loaded” or “Invalid handler specified,” make sure beta.6 or newer has downloaded and restart Home Assistant. If it continues, retrieve the `custom_components.smart_load_manager.config_flow` log entry from **Settings → System → Logs**.
+- If Home Assistant reports “Config flow could not be loaded” or “Invalid handler specified,” make sure beta.7 or newer has downloaded and restart Home Assistant. If it continues, retrieve the `custom_components.smart_load_manager.config_flow` log entry from **Settings → System → Logs**.
 - Setup fails if selected input entities are unavailable/non-numeric or the HAN power unit is not W/kW.
 - If Easee Current/Voltage diagnostic sensors are disabled, enable them and reload the integration.
 - Unknown phase or voltage means the integration does not have enough reliable data; automatic control sends 0 A.

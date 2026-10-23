@@ -25,8 +25,9 @@ from .const import (
     CONF_HOURLY_LIMIT_KWH,
     CONF_MAX_CURRENT_A,
     CONF_SAFETY_MARGIN_KWH,
-    CONF_SCHEDULE_SWITCH,
-    CONF_SCHEDULE_TIME_ENTITY,
+    CONF_SCHEDULE_START_TIME,
+    CONF_SCHEDULE_ENABLED,
+    DEFAULT_SCHEDULE_START_TIME,
     HAN_MAX_AGE_SECONDS,
     SCHEDULE_WINDOW_HOURS,
     CONF_TARIFF_ESTIMATE_ENTITY,
@@ -80,6 +81,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             hass, str(entry.data["charger_device"])
         )
         self.auto_control = False
+        self.schedule_enabled = bool(
+            entry.options.get(CONF_SCHEDULE_ENABLED, False)
+        )
         self.last_commanded_current: int | None = None
         self._last_command_at = 0.0
         self.last_known_minimum_current: int | None = None
@@ -221,32 +225,19 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     confidence="cached",
                     reason="Sist målte fase-/spenningsoppsett beholdes mens ladingen er pauset",
                 )
-            schedule_switch_id = self.entry.options.get(
-                CONF_SCHEDULE_SWITCH, self.entry.data.get(CONF_SCHEDULE_SWITCH)
+            schedule_start_time = str(
+                self.entry.options.get(
+                    CONF_SCHEDULE_START_TIME,
+                    self.entry.data.get(CONF_SCHEDULE_START_TIME, DEFAULT_SCHEDULE_START_TIME),
+                )
             )
-            schedule_time_id = self.entry.options.get(
-                CONF_SCHEDULE_TIME_ENTITY, self.entry.data.get(CONF_SCHEDULE_TIME_ENTITY)
-            )
-            schedule_enabled = False
+            schedule_enabled = self.schedule_enabled
             schedule_allowed = True
-            schedule_reason = "Tidsstyring er ikke konfigurert"
-            if schedule_switch_id:
-                switch_state = self.hass.states.get(str(schedule_switch_id))
-                time_state = self.hass.states.get(str(schedule_time_id)) if schedule_time_id else None
-                if switch_state is None or switch_state.state in {"unknown", "unavailable"}:
-                    schedule_allowed = False
-                    schedule_reason = "Tidsstyringsbryteren er utilgjengelig; lading sperres"
-                elif switch_state.state == "on":
-                    schedule_enabled = True
-                    if time_state is None or time_state.state in {"unknown", "unavailable"}:
-                        schedule_allowed = False
-                        schedule_reason = "Starttid er utilgjengelig; lading sperres"
-                    else:
-                        schedule_allowed, schedule_reason = schedule_window_active(
-                            local_now, time_state.state, SCHEDULE_WINDOW_HOURS
-                        )
-                else:
-                    schedule_reason = "Tidsstyring er av; lading følger effektbudsjettet"
+            schedule_reason = "Tidsstyring er av; lading følger timebudsjettet"
+            if schedule_enabled:
+                schedule_allowed, schedule_reason = schedule_window_active(
+                    local_now, schedule_start_time, SCHEDULE_WINDOW_HOURS
+                )
 
             invalid_input_reason = han_error or tariff_error
             if invalid_input_reason:
@@ -322,6 +313,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "auto_control": self.auto_control,
                 "schedule_enabled": schedule_enabled,
                 "schedule_allowed": schedule_allowed,
+                "schedule_start_time": schedule_start_time,
                 "schedule_reason": schedule_reason,
                 "charger_entities": asdict(self.easee),
                 "han_entity": han_entity,
@@ -356,3 +348,11 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         )
         self.last_commanded_current = int(current)
         self._last_command_at = dt_util.now().timestamp()
+
+    async def async_set_schedule_enabled(self, enabled: bool) -> None:
+        """Toggle the built-in daily charging window."""
+        self.schedule_enabled = bool(enabled)
+        options = dict(self.entry.options)
+        options[CONF_SCHEDULE_ENABLED] = self.schedule_enabled
+        self.hass.config_entries.async_update_entry(self.entry, options=options)
+        await self.async_request_refresh()

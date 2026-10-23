@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-beta.7
+
+- Make clock scheduling self-contained: add an integration-owned schedule switch and native start-time entity; no user-created helpers or Easee Smartlading helper are required.
+- Persist schedule enablement and start time in the integration entry. Automatic load control remains opt-in and resets off after restart.
+- Remove obsolete setup validation and documentation for external schedule helpers; update the dashboard example and both manuals.
+
+
 ## 0.1.0-beta.6
 
 - Fix config-flow import: load Home Assistant selectors from `homeassistant.helpers`, the module where the selector API is provided. Beta.5 used a nonexistent `homeassistant.components.selector` import, which prevented the setup handler from loading and produced “Invalid handler specified”.

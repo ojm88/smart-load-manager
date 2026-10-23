@@ -49,9 +49,10 @@ chat history. Add a dated entry when a decision changes.
 - When automatic control is enabled, stale or invalid HAN input, missing
   required tariff data, or unreliable electrical measurements must not produce
   an unsafe positive current command; beta.4 pauses at 0 A.
-- Clock scheduling is optional and uses a time-only `input_datetime` plus the
-  Easee Smartlading switch. Beta.4 documents a repeating 12-hour window after
-  the selected start time.
+- Clock scheduling is optional and is implemented with integration-owned HA
+  switch and time entities. Users do not create schedule helpers or depend on
+  an Easee Smartlading switch. The daily 12-hour window and start time persist
+  across restarts; automatic current control remains off after restart.
 - The integration and legacy automation must not control the same dynamic
   current limit at the same time.
 
@@ -67,3 +68,10 @@ chat history. Add a dated entry when a decision changes.
   `dependencies`. Their entities are required and validated during setup, but
   failure to set up either external integration must not prevent the Smart
   Load Manager configuration flow itself from loading.
+
+## 2026-10-23 — No user-created schedule helpers
+
+- The integration owns the daily schedule switch and native time entity.
+- Persist the schedule state and start time with the config entry.
+- Do not make setup depend on user-created helpers or installation-specific
+  schedule entity IDs.

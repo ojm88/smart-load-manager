@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Sett opp Smart laststyring",
-        "description": "Beta 4: Velg Easee-lader, HAN-effekt og EnergyTariff-sensorer. HAN må være W eller kW. Easees diagnostiske strøm- og spenningssensorer må være aktivert. Tidsstyring er valgfri: velg Easee Smartlading-bryter og en input_datetime-hjelper med bare klokkeslett. Når bryteren er på, gjelder lading i 12 timer fra starttid. Automatisk laststyring er av som standard. {validation_error}",
+        "description": "Beta 7: Velg Easee-lader, HAN-effekt og EnergyTariff-sensorer. HAN må være W eller kW. Aktiver Easees diagnostiske strøm- og spenningssensorer. Tidsstyring leveres som egne kontroller etter oppsett; du trenger ikke opprette helpers. Automatisk laststyring er av som standard. {validation_error}",
         "data": {
           "charger_device": "Easee-lader",
           "han_power_entity": "HAN-effektsensor (W eller kW)",
@@ -11,9 +11,7 @@
           "tariff_used_entity": "EnergyTariff: brukt denne timen",
           "tariff_estimate_entity": "EnergyTariff: estimat denne timen",
           "max_current_a": "Øvre ladestrømgrense (A)",
-          "safety_margin_kwh": "Sikkerhetsmargin (kWh)",
-          "schedule_switch": "Valgfri tidsstyringsbryter (f.eks. Easee Smartlading)",
-          "schedule_time_entity": "Valgfri starttid (input_datetime, kun klokkeslett)"
+          "safety_margin_kwh": "Sikkerhetsmargin (kWh)"
         }
       }
     },
@@ -22,21 +20,6 @@
     },
     "abort": {
       "already_configured": "Denne Easee-laderen er allerede satt opp."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Tidsstyring",
-        "description": "Velg både en tidsstyringsbryter og en input_datetime-hjelper med kun klokkeslett, eller la begge stå tomme. Når bryteren er på, tillates lading i 12 timer fra starttid. {validation_error}",
-        "data": {
-          "schedule_switch": "Valgfri tidsstyringsbryter (f.eks. Easee Smartlading)",
-          "schedule_time_entity": "Valgfri starttid (input_datetime, kun klokkeslett)"
-        }
-      }
-    },
-    "error": {
-      "invalid_schedule": "Tidsstyringen er ugyldig. Se forklaringen og velg en bryter og en klokkeslett-hjelper."
     }
   }
 }

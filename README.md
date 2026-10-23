@@ -1,10 +1,10 @@
-# Smart Load Manager — beta.6
+# Smart Load Manager — beta.7
 
 Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
 
 ## Beta status
 
-Beta.6 fixes a configuration-flow import error in beta.5: Home Assistant selectors are imported from `homeassistant.helpers`, allowing the setup handler to load. Beta.5 keeps Easee and EnergyTariff as optional startup-order dependencies; selected entities are validated by the flow. Beta.4 adds HAN freshness protection and optional clock scheduling. Automatic control is **off by default** and resets to off after a Home Assistant restart. Easee current limits use `time_to_live: 0` (indefinite) and are replaced as conditions change. A stale or invalid HAN reading, unavailable EnergyTariff input, missing electrical data, or closed schedule sends 0 A while automatic control is active.
+Beta.6 fixed the configuration-flow import error that produced “Invalid handler specified”. Beta.7 makes clock scheduling self-contained: the integration provides its own schedule switch and start-time control, so users do not create HA helpers. Beta.5 keeps Easee and EnergyTariff as optional startup-order dependencies; selected entities are validated by the flow. Beta.4 adds HAN freshness protection and optional clock scheduling. Automatic control is **off by default** and resets to off after a Home Assistant restart. Easee current limits use `time_to_live: 0` (indefinite) and are replaced as conditions change. A stale or invalid HAN reading, unavailable EnergyTariff input, missing electrical data, or closed schedule sends 0 A while automatic control is active.
 
 This package has automated unit tests, static validation, and a Lovelace example, but has not been started inside a real Home Assistant instance or tested against physical chargers. Treat it as a beta. Do not enable automatic control until the sensors and calculated values have been checked against the installation.
 
@@ -14,7 +14,7 @@ Requires the Easee Home Assistant integration and EnergyTariff to be installed a
 
 The selected hourly limit should match EnergyTariff's target-energy setting. The power source should be the same HAN meter used by EnergyTariff, so the meter and tariff estimate agree.
 
-Clock scheduling is optional. Create or use an `input_datetime` helper with time only, then select it and the Easee Smartlading switch in setup or in the integration options after setup. When the switch is on, charging is allowed from that start time through the following 12 hours, including across midnight. When it is off, charging follows the energy budget without a clock window.
+Clock scheduling is optional and is provided by the integration. It creates a `Tidsstyring` switch and a `Starttid lading` time control (default 23:00). When enabled, charging is allowed during the 12-hour daily window beginning at that time, including across midnight. When disabled, charging follows the energy budget without a clock window. The schedule setting and start time are stored by the integration; automatic current control remains off after Home Assistant restarts.
 
 ## Easee interpretation
 

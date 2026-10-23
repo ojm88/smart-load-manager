@@ -1,5 +1,5 @@
-# Smart Load Manager beta.4 — standalone example view (built-in cards only).
-# Replace "ab12cd34" with the first eight characters of the selected HA device ID.
+# Smart Load Manager beta.7 — standalone example view (built-in cards only).
+# Example entity IDs only: use the entity picker after setup to select the controls created for this Smart Load Manager device.
 # After setup, use the entity picker to confirm/replace each ID; entity IDs can
 # be renamed in HA. Replace the EnergyTariff IDs if you selected other entities.
 type: sections
@@ -16,9 +16,9 @@ sections:
         entities:
           - entity: switch.smart_load_manager_ab12cd34_automatisk_laststyring
             name: Automatisk laststyring (av som standard)
-          - entity: switch.easee_smartlading
-            name: Tidsvindu aktivt (Easee Smartlading)
-          - entity: input_datetime.smartlading_starter_kl
+          - entity: switch.smart_load_manager_ab12cd34_tidsstyring
+            name: Tidsstyring (på/av)
+          - entity: time.smart_load_manager_ab12cd34_starttid_lading
             name: Starttid for 12-timersvindu
           - entity: number.smart_load_manager_ab12cd34_manuell_ladestr_mgrense
             name: Manuell ladestrømgrense (0 A = pause)

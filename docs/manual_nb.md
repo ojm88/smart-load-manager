@@ -1,8 +1,8 @@
-# Brukermanual — Smart Load Manager beta.6
+# Brukermanual — Smart Load Manager beta.7
 
 ## Hva betaen gjør
 
-Beta.6 retter en importfeil i oppsettsflyten som hindret beta.5 i å laste i Home Assistant. Den leser målinger fra Easee, HAN-måleren og EnergyTariff, viser hvordan Easee-fasene tolkes, beregner en anbefalt ladestrøm og kan sende en dynamisk strømgrense til Easee. Den har kontroll av HAN-målingens alder og valgfri tidsstyring. Automatisk styring er avslått ved første oppstart og etter omstart av Home Assistant. Denne versjonen styrer ikke varmtvannstank eller varmekabler.
+Beta.7 inkluderer egne HA-kontroller for tidsstyring, slik at brukeren ikke trenger å opprette helpers. Beta.6 rettet importfeilen som hindret beta.5 i å laste oppsettsflyten. Den leser målinger fra Easee, HAN-måleren og EnergyTariff, viser hvordan Easee-fasene tolkes, beregner en anbefalt ladestrøm og kan sende en dynamisk strømgrense til Easee. Den har kontroll av HAN-målingens alder og valgfri tidsstyring. Automatisk styring er avslått ved første oppstart og etter omstart av Home Assistant. Denne versjonen styrer ikke varmtvannstank eller varmekabler.
 
 Dette er fortsatt en beta. Den er ikke validert mot en fysisk Home Assistant-instans eller lader. Kontroller sensorene og anbefalingen før du aktiverer automatisk styring.
 
@@ -20,23 +20,7 @@ Kopier mappen `custom_components/smart_load_manager` til Home Assistants `custom
 
 I oppsettskjemaet velger du Easee-lader, HAN-effekt, EnergyTariff-sensor for brukt energi, EnergyTariff-estimat, timegrense, øvre strømgrense og sikkerhetsmargin. Sett øvre strømgrense konservativt; integrasjonen tar også hensyn til positive kurs-/ladergrenser den finner i Easee-attributtene.
 
-Tidsstyring er valgfri. For samme oppsett som den tidligere automasjonen velger du `switch.easee_smartlading` som tidsstyringsbryter og `input_datetime.smartlading_starter_kl` som starttid. Entity-ID-ene kan hete noe annet i din installasjon; velg dem fra listene i oppsettskjemaet.
-
-Har du allerede installert en tidligere beta, åpner du integrasjonens **Konfigurer**-valg og velger tidsstyringsbryter og klokkeslett der. Du trenger ikke slette integrasjonen.
-
-Hvis du ikke har en starttid-hjelper ennå: gå til **Innstillinger → Enheter og tjenester → Hjelpere → Opprett hjelper → Dato og/eller tid**. Velg kun klokkeslett, uten dato, og gi den for eksempel navnet **Smartlading starter kl**. Velg denne `input_datetime`-entiteten i Smart Load Manager-oppsettet.
-
-Alternativt kan du opprette den i en YAML-pakke:
-
-```yaml
-input_datetime:
-  smartlading_starter_kl:
-    name: Smartlading starter kl
-    has_date: false
-    has_time: true
-```
-
-Dette er en klokkeslett-hjelper, ikke en målesensor. Velg den opprettede `input_datetime.smartlading_starter_kl` i oppsettet.
+Tidsstyring er valgfri og leveres av integrasjonen. Etter oppsett finner du entitetene **Tidsstyring** (bryter) og **Starttid lading** (klokkeslett, standard 23:00) på Smart Load Manager-enheten. Du trenger ikke lage `input_datetime` eller andre helpers. Når tidsstyring er på, tillates lading i et daglig 12-timersvindu fra starttidspunktet. Når den er av, brukes ikke klokkevindu. Valget og starttidspunktet beholdes etter omstart. Automatisk laststyring starter fortsatt avslått etter omstart.
 
 ## Easee-data og fasetolkning
 
@@ -64,7 +48,7 @@ Beregningen trekker målt ladeeffekt fra HAN-effekten for å anslå huslasten, e
 
 ### Tidsstyring
 
-For å bruke tidsplanen må både `Automatisk laststyring` og den valgte Easee Smartlading-bryteren være på. Førstnevnte aktiverer strømstyringen; Easee-bryteren slår klokkevinduet av eller på. Når Easee-bryteren er **av**, følger ladingen timebudsjettet uten et klokkeslettvindu. Når den er **på**, tillates lading fra starttiden i `input_datetime` og de neste 12 timene. Etter tidsvinduet sender aktiv automatisk styring 0 A. Vinduet fungerer over midnatt og gjentas daglig. Tidsstyringssensorene viser om vinduet er aktivt og hvorfor.
+Slå på Smart Load Manager-entiteten **Tidsstyring** for å bruke klokkevinduet. Still **Starttid lading** til ønsket klokkeslett. Når tidsstyring er på, tillates lading i 12 timer fra starttidspunktet; tidsvinduet krysser midnatt og gjentas daglig. Når den er av, følger ladingen timebudsjettet uten klokkevindu. Tidsinnstillingene lagres av integrasjonen. For at integrasjonen skal sende strømgrenser, må **Automatisk laststyring** også være på.
 
 HAN-måleren må vise positiv effekt, og selve sensorverdien må ha endret seg i løpet av de siste 60 sekundene. Hvis verdien ikke endres, blir utilgjengelig eller er 0, sender aktiv automatisk styring 0 A. Dette følger samme `last_changed`-vakt som automasjonen din. Når måleren igjen oppdateres med gyldig verdi, beregnes ladestrømmen på nytt.
 
@@ -85,7 +69,7 @@ Deaktiver den gamle automasjonen **Dynamisk styring av Easee-lader Opptimalisert
 
 ## Feilsøking og begrensninger
 
-- Hvis Home Assistant viser «Config flow could not be loaded» eller «Invalid handler specified», kontroller at beta.6 eller nyere er lastet ned og at Home Assistant er startet på nytt. Hvis feilen fortsetter, hent loggen for `custom_components.smart_load_manager.config_flow` fra **Innstillinger → System → Logger**.
+- Hvis Home Assistant viser «Config flow could not be loaded» eller «Invalid handler specified», kontroller at beta.7 eller nyere er lastet ned og at Home Assistant er startet på nytt. Hvis feilen fortsetter, hent loggen for `custom_components.smart_load_manager.config_flow` fra **Innstillinger → System → Logger**.
 - Oppsettet feiler hvis de valgte kildeentitetene ikke er tilgjengelige/numeriske eller hvis HAN-sensoren ikke er W/kW.
 - Hvis Easees strøm-/spenningssensorer er deaktivert, aktiver dem og last integrasjonen på nytt.
 - «Ukjent» fase eller spenning betyr at pakken ikke har nok pålitelige data; automatisk styring sender da 0 A.
