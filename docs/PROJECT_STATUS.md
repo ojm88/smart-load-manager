@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.7** in this repository.
+The current implementation baseline is **0.1.0-beta.8** in this repository.
 It includes Easee device selection, HAN power input in W or kW, EnergyTariff
 hourly energy inputs, integration-owned clock scheduling, diagnostic entities, and
 opt-in dynamic current control. The Norwegian and English manuals and a
@@ -50,20 +50,23 @@ standard Lovelace example are included.
 
 ## Validation
 
-Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports pass locally and in GitHub Actions. The “Invalid handler specified” report was consistent with beta.5 importing
+Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports passed in GitHub Actions. The beta.8 changes are being validated now. The “Invalid handler specified” report was consistent with beta.5 importing
 selectors from the nonexistent `homeassistant.components.selector` module;
 beta.6 corrected it. Beta.7 also removes manually configured schedule helpers.
-The flow has not yet been retried in the user's HA, and no physical charger
-service call has been validated.
+The beta.8 config flow has not yet been retried in the user's HA. No physical
+charger service call has been validated. Beta.8 removes the manual maximum
+current field and uses the lowest valid live current limit exposed by Easee;
+when no such limit is available, automatic control holds 0 A and positive
+manual commands are rejected.
 
 ## Next work
 
-1. Install beta.7, restart Home Assistant, and confirm the setup form loads. Keep automatic control off; verify entity discovery and displayed status, phase, voltage, current, and recommendation values.
-3. Validate schedule behavior and dynamic-limit service calls without the old automation active.
-4. Decide how to learn the lowest stable current for an unknown connected vehicle without identifying it; relearn on phase-count changes, not normal voltage variation.
-5. Review Easee model/firmware differences and consider other controllable loads after Easee validation.
+1. Install beta.8, restart Home Assistant, and confirm the setup form loads without a manually entered maximum-current field. Keep automatic control off; verify Easee current-limit discovery and displayed status, phase, voltage, current, and recommendation values.
+2. Validate schedule behavior and dynamic-limit service calls without the old automation active.
+3. Decide how to learn the lowest stable current for an unknown connected vehicle without identifying it; relearn on phase-count changes, not normal voltage variation.
+4. Review Easee model/firmware differences and consider other controllable loads after Easee validation.
 
 ## Release state
 
-Beta.7 is a public development beta, not a production release and not yet a
-published HACS release. It bundles schedule controls and removes manual helper setup. Automated local checks and GitHub Actions pass; the beta.7 config flow has not yet been retried in the user's HA.
+Beta.8 is a public development beta, not a production release and not yet a
+published HACS release. It bundles schedule controls and removes manual helper setup. Automated local checks and GitHub Actions must pass before testing in the user's HA.

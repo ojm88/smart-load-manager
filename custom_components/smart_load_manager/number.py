@@ -38,7 +38,10 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
             model="Easee charging control",
             name=entry.title,
         )
-        self._attr_native_max_value = float(entry.data.get("max_current_a", 32))
+        # UI needs a finite fallback while Easee metadata may be temporarily
+        # unavailable; positive writes are still blocked unless a live circuit
+        # limit has been detected.
+        self._attr_native_max_value = 32.0
 
     @property
     def native_value(self) -> float | None:
@@ -52,7 +55,7 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
     @property
     def native_max_value(self) -> float:
         data = self.coordinator.data or {}
-        return float(data.get("max_current_a", self._attr_native_max_value))
+        return float(data.get("max_current_a", 0) or self._attr_native_max_value)
 
     async def async_set_native_value(self, value: float) -> None:
         data = self.coordinator.data or {}
@@ -62,6 +65,11 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
         if requested < 0 or requested > self.native_max_value:
             raise HomeAssistantError("Strømgrensen er utenfor konfigurert område.")
         if requested > 0:
+            detected_maximum = float(data.get("max_current_a", 0) or 0)
+            if detected_maximum <= 0:
+                raise HomeAssistantError("Easee har ikke rapportert en gyldig maksimal kursstrøm ennå.")
+            if requested > detected_maximum:
+                raise HomeAssistantError(f"Strømgrensen kan ikke overstige Easees kursgrense på {detected_maximum:g} A.")
             if not data.get("han_fresh", False):
                 raise HomeAssistantError("HAN-målingen er ugyldig eller eldre enn 60 sekunder.")
             if not data.get("schedule_allowed", True):

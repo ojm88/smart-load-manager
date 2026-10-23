@@ -12,7 +12,6 @@ from .const import (
     CONF_CHARGER_DEVICE,
     CONF_HAN_POWER_ENTITY,
     CONF_HOURLY_LIMIT_KWH,
-    CONF_MAX_CURRENT_A,
     CONF_SAFETY_MARGIN_KWH,
     CONF_TARIFF_ESTIMATE_ENTITY,
     CONF_TARIFF_USED_ENTITY,
@@ -98,9 +97,6 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Required(CONF_TARIFF_ESTIMATE_ENTITY, default=TARIFF_ESTIMATE_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_MAX_CURRENT_A, default=16): selector.NumberSelector(
-                    selector.NumberSelectorConfig(min=6, max=32, step=1, unit_of_measurement="A", mode="box")
                 ),
                 vol.Required(CONF_SAFETY_MARGIN_KWH, default=0.3): selector.NumberSelector(
                     selector.NumberSelectorConfig(min=0, max=3, step=0.1, unit_of_measurement="kWh", mode="box")

@@ -75,3 +75,11 @@ chat history. Add a dated entry when a decision changes.
 - Persist the schedule state and start time with the config entry.
 - Do not make setup depend on user-created helpers or installation-specific
   schedule entity IDs.
+
+## 2026-10-23 — Easee maximum current
+
+- Do not ask users to enter a charger maximum in Smart Load Manager setup.
+- Derive the allowed upper current from the lowest valid circuit/charger limit
+  reported by the selected Easee device.
+- If Easee reports no usable limit, keep automatic control at 0 A and reject
+  positive manual current commands until a limit is available.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.8
+
+- Remove the manually entered maximum-current value from setup. The controller now caps charging at the lowest valid circuit/charger current limit reported by the selected Easee device.
+- Fail safely when Easee does not expose a valid maximum current: automatic control holds 0 A and positive manual current commands are rejected until the limit becomes available.
+- Keep the manual current control bounded by the live Easee limit and update setup guidance in both languages.
+
 ## 0.1.0-beta.7
 
 - Make clock scheduling self-contained: add an integration-owned schedule switch and native start-time entity; no user-created helpers or Easee Smartlading helper are required.

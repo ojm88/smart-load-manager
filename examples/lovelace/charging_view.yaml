@@ -1,4 +1,4 @@
-# Smart Load Manager beta.7 — standalone example view (built-in cards only).
+# Smart Load Manager beta.8 — standalone example view (built-in cards only).
 # Example entity IDs only: use the entity picker after setup to select the controls created for this Smart Load Manager device.
 # After setup, use the entity picker to confirm/replace each ID; entity IDs can
 # be renamed in HA. Replace the EnergyTariff IDs if you selected other entities.

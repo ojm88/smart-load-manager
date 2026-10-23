@@ -3,14 +3,13 @@
     "step": {
       "user": {
         "title": "Sett opp Smart laststyring",
-        "description": "Beta 7: Velg Easee-lader, HAN-effekt og EnergyTariff-sensorer. HAN må være W eller kW. Aktiver Easees diagnostiske strøm- og spenningssensorer. Tidsstyring leveres som egne kontroller etter oppsett; du trenger ikke opprette helpers. Automatisk laststyring er av som standard. {validation_error}",
+        "description": "Beta 8: Velg Easee-lader, HAN-effekt og EnergyTariff-sensorer. HAN må være W eller kW. Maksimal ladestrøm hentes automatisk fra Easees rapporterte kurs-/ladergrense; du skal ikke angi den manuelt. Aktiver Easees diagnostiske strøm- og spenningssensorer. Tidsstyring leveres som egne kontroller etter oppsett; du trenger ikke opprette helpers. Automatisk laststyring er av som standard. {validation_error}",
         "data": {
           "charger_device": "Easee-lader",
           "han_power_entity": "HAN-effektsensor (W eller kW)",
           "hourly_limit_kwh": "Forbruksgrense per time (kWh)",
           "tariff_used_entity": "EnergyTariff: brukt denne timen",
           "tariff_estimate_entity": "EnergyTariff: estimat denne timen",
-          "max_current_a": "Øvre ladestrømgrense (A)",
           "safety_margin_kwh": "Sikkerhetsmargin (kWh)"
         }
       }

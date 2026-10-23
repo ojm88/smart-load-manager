@@ -23,7 +23,6 @@ from .calculations import (
 from .const import (
     CONF_HAN_POWER_ENTITY,
     CONF_HOURLY_LIMIT_KWH,
-    CONF_MAX_CURRENT_A,
     CONF_SAFETY_MARGIN_KWH,
     CONF_SCHEDULE_START_TIME,
     CONF_SCHEDULE_ENABLED,
@@ -173,7 +172,6 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             hourly_limit = float(self.entry.data[CONF_HOURLY_LIMIT_KWH])
             safety_margin = float(self.entry.data.get(CONF_SAFETY_MARGIN_KWH, 0.3))
             circuit_limit = float(status_state.attributes.get("circuit_ratedCurrent", 0) or 0)
-            configured_max = float(self.entry.data.get(CONF_MAX_CURRENT_A, 32))
             observed_limits = [circuit_limit] if circuit_limit > 0 else []
             for entity_id in self.easee.current_limits:
                 limit_state = self.hass.states.get(entity_id)
@@ -194,7 +192,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                         continue
                     if 0 < limit <= 80:
                         observed_limits.append(limit)
-            max_current = min([configured_max, *observed_limits])
+            # The Easee circuit/charger limit is the electrical upper bound.
+            # Never invent a positive limit if the integration exposes none.
+            max_current = min(observed_limits) if observed_limits else 0.0
             current_minimum = electrical.minimum_current_a
             current_kw_per_amp = kw_per_ampere(electrical)
             if current_minimum is not None and current_kw_per_amp is not None:
@@ -280,6 +280,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 control_reason = f"Pause: {invalid_input_reason}"
             elif not schedule_allowed:
                 control_reason = schedule_reason
+            elif max_current <= 0:
+                control_reason = "Maksimal kursstrøm er ikke tilgjengelig fra Easee; avventer gyldig grense"
             elif recommended is None:
                 control_reason = "Venter på pålitelige fase-, spennings- og strømdata"
             elif recommended == 0 and electrical.minimum_current_a is None and self.last_commanded_current == 0:

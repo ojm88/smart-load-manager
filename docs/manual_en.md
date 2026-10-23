@@ -1,8 +1,8 @@
-# User manual — Smart Load Manager beta.7
+# User manual — Smart Load Manager beta.8
 
 ## What this beta does
 
-Beta.7 includes its own Home Assistant schedule controls, so users do not need to create helpers. Beta.6 fixed the configuration-flow import error that prevented beta.5 from loading. It reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
+Beta.8 removes manual maximum-current entry. The maximum is read from the circuit/charger limit attributes reported by Easee. Beta.7 added built-in Home Assistant schedule controls, so users do not create helpers. It reads Easee, HAN meter, and EnergyTariff values, calculates charging current, and can send a dynamic limit. Automatic control is off on first setup and after Home Assistant restarts. Water heaters and floor heating are not supported yet.
 
 This is still a beta. It has not been validated in a live Home Assistant installation or with a physical charger. Verify the sensors and recommendation before enabling automatic control.
 
@@ -18,7 +18,7 @@ This is still a beta. It has not been validated in a live Home Assistant install
 
 Copy `custom_components/smart_load_manager` into Home Assistant's `custom_components` folder, or install through HACS if you have published this project as a HACS-compatible GitHub repository. Restart Home Assistant. Go to **Settings → Devices & services → Add integration** and select **Smart Load Manager**.
 
-Select the Easee charger, HAN power sensor, EnergyTariff used and estimate sensors, hourly energy limit, maximum current cap, and safety margin. Choose a conservative current cap; the integration also considers positive circuit/charger current limits exposed by Easee.
+Select the Easee charger, HAN power sensor, EnergyTariff used and estimate sensors, hourly energy limit, and safety margin. Maximum charging current is read automatically from the circuit/charger limit reported by Easee; you do not enter it manually. If Easee does not report a valid limit, charging control remains at 0 A and positive manual current commands are rejected.
 
 Clock scheduling is optional and is provided by the integration. After setup, the Smart Load Manager device includes a **Tidsstyring** switch and a **Starttid lading** time control (default 23:00). You do not need to create `input_datetime` or other helpers. When scheduling is enabled, charging is allowed during the daily 12-hour window beginning at the selected time. When disabled, no clock window is applied. The schedule setting and start time persist across restarts. Automatic current control still starts off after restart.
 
@@ -60,7 +60,7 @@ Import or copy `examples/lovelace/charging_view.yaml` into a new Lovelace view. 
 
 1. Leave automatic control off. Check that status, configured phase mode, actual output phase, active phases, voltage, current limit, and recommendation match the Easee app and measurements.
 2. Verify the HAN unit is W or kW, that it measures total consumption, and that EnergyTariff values correspond to the current hour.
-3. You may test manual 0 A while observing that charging pauses. Resume with a value at or above the detected minimum and below the current cap.
+3. You may test manual 0 A while observing that charging pauses. Resume with a value at or above the detected minimum and no higher than the circuit limit reported by Easee.
 4. Check that the HAN age is below 60 seconds and the validity sensor says Yes. If using clock scheduling, first test with the schedule switch off, then verify the start time and time window before enabling it.
 5. Only then enable automatic control while monitoring its recommendation, HAN power, Easee current, and EnergyTariff values.
 6. Disable automatic control if data becomes unavailable or disagrees with measurements. When disabled, no new dynamic limits are sent; Easee keeps the last dynamic limit until another limit replaces it. Set a desired manual value or enable automatic control again.
@@ -69,7 +69,7 @@ Disable the old **Dynamisk styring av Easee-lader Opptimalisert V3.0** automatio
 
 ## Troubleshooting and limitations
 
-- If Home Assistant reports “Config flow could not be loaded” or “Invalid handler specified,” make sure beta.7 or newer has downloaded and restart Home Assistant. If it continues, retrieve the `custom_components.smart_load_manager.config_flow` log entry from **Settings → System → Logs**.
+- If Home Assistant reports “Config flow could not be loaded” or “Invalid handler specified,” make sure beta.8 or newer has downloaded and restart Home Assistant. If it continues, retrieve the `custom_components.smart_load_manager.config_flow` log entry from **Settings → System → Logs**.
 - Setup fails if selected input entities are unavailable/non-numeric or the HAN power unit is not W/kW.
 - If Easee Current/Voltage diagnostic sensors are disabled, enable them and reload the integration.
 - Unknown phase or voltage means the integration does not have enough reliable data; automatic control sends 0 A.
