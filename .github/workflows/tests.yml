@@ -18,6 +18,6 @@ jobs:
         run: python -m compileall -q custom_components
       - name: Validate JSON metadata
         run: |
-          python -m json.tool custom_components/smart_easee_charging/manifest.json >/dev/null
-          python -m json.tool custom_components/smart_easee_charging/strings.json >/dev/null
+          python -m json.tool custom_components/smart_load_manager/manifest.json >/dev/null
+          python -m json.tool custom_components/smart_load_manager/strings.json >/dev/null
           python -m json.tool hacs.json >/dev/null
