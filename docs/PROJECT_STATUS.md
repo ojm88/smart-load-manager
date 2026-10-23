@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.12** in this repository.
+The current implementation baseline is **0.1.0-beta.13** in this repository.
 Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migrates existing registry IDs while preserving unique IDs. It adds measured charger current and a manual-control status sensor, disables manual current while automatic control is on, and restores the descriptive Markdown status and graph dashboard. The agreed Forbruksgrense ID is unchanged. As before, one configured load entry per HA installation is allowed until a shared allocator exists.
 
 ## Electrical interpretation
@@ -93,7 +93,7 @@ manuals, Lovelace example, changelog, decisions, and project status synchronized
 Before the next beta, carry the new site-wide budget and naming decisions
 through the implementation, tests, both manuals, README, and dashboard example:
 
-1. Install beta.12 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
+1. Install beta.13 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
 2. Verify that the phase selector changes Easee's configured mode and that reported mode and active phase measurements remain separate.
 3. Exercise manual current only with automatic control off; confirm 0 A pause and live Easee bounds. Restore the old automation before removing the integration's automatic control.
 4. Do not mark phase-mode changes, dynamic current service calls, or charging behavior as validated until observed in the user's live HA/Easee setup.
