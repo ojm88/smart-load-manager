@@ -2,7 +2,7 @@
 
 ## Hva beta 12 gjør
 
-Beta 12 gir sensorene korte, faste entity-ID-er som begynner med `sensor.slm_`. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
+Beta 13 gir sensorene korte, faste entity-ID-er som begynner med `sensor.slm_`. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
 
 Når **Automatisk laststyring** er på, eier automatikken strømgrensen. **Manuell ladestrøm** blir da utilgjengelig, og sensoren **Manuell styring** viser at skyveren er låst og at automatisk styring må slås av først. Forsøk på å skrive strømgrensen mens den er låst avvises også av integrasjonen. Når automatikken slås av, blir skyveren tilgjengelig igjen; Easee beholder siste dynamiske grense helt til en ny manuell grense sendes.
 
@@ -106,7 +106,7 @@ Hvis noe ikke stemmer: slå av automatisk styring, reaktiver den gamle automasjo
 
 ## Dashboard
 
-`examples/lovelace/charging_view.yaml` er et komplett eksempel med standard Home Assistant-kort. Det har forklarende Markdown-status, styringer, lader- og måleverdier og grafer. Sensor-ID-ene bruker `sensor.slm_*`, og det er ikke nødvendig å erstatte installasjonsspesifikke plassholdere.
+`examples/lovelace/charging_view.yaml` er en komplett dashboard-visning med `type: sections`. Lim den inn i rå YAML-konfigurasjon for en visning, ikke i YAML-editoren for ett kort. For korteditoren bruker du `examples/lovelace/charging_card.yaml`, som er ett gyldig `vertical-stack`-kort. Begge eksemplene inneholder status, styringer, måleverdier og grafer. Sensor-ID-ene bruker `sensor.slm_*`.
 
 ## Verifisering og begrensninger
 
