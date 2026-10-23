@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-beta.17
+
+- Add a persistent **Ladepause** control that sends 0 A to the configured Easee charger. Resume recalculates automatically or restores the previous manual limit only when safety checks still pass; manual current is locked during pause.
+- Use the HAN sensor's last update time for freshness, so a steady power value does not become stale merely because its number has not changed.
+- Remove repeated raw Easee/HAN diagnostic blocks from every sensor; retain a short explanation per sensor and show power rounded to whole watts.
+- Rebuild the dashboard card with plain-language status, pause control, and the requested 12-hour graph names. Read EnergyTariff's used, estimate, and three-hour average sensors directly.
+- Explain waiting, pause, and budget-limit states in simpler Norwegian on the dashboard.
+- Simplify the README and English/Norwegian manuals, explaining peak-tariff savings as possible and dependent on the household and tariff.
+- Keep one load entry per installation until a shared allocator exists; document per-charger identity as the path for future expansion.
+
 ## 0.1.0-beta.16
 
 - Add Smart Load Manager OJM integration branding (square icon and light/dark logos, including high-resolution files) under the custom integration so Home Assistant 2026.3+ can show it without relying on a separate brands repository.

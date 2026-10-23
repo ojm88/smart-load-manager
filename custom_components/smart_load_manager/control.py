@@ -23,8 +23,11 @@ def target_current_for_control(
     connected: bool,
     schedule_allowed: bool,
     sources_valid: bool,
+    paused: bool = False,
 ) -> int | None:
     """Return a command, 0 A pause, or None when the controller is disabled."""
+    if paused:
+        return 0
     if not enabled:
         return None
     if not connected or not schedule_allowed or not sources_valid or recommendation is None:

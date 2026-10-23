@@ -78,6 +78,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             hass, str(entry.data["charger_device"])
         )
         self.auto_control = False
+        self.charging_paused = bool(entry.options.get("charging_paused", False))
         self.schedule_enabled = bool(
             entry.options.get(CONF_SCHEDULE_ENABLED, False)
         )
@@ -127,7 +128,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             han_state = self.hass.states.get(han_entity)
             local_now = dt_util.now()
             han_age = (
-                (local_now - dt_util.as_local(han_state.last_changed)).total_seconds()
+                # last_changed only advances when the numeric value changes;
+                # meters may publish fresh attributes while power is steady.
+                (local_now - dt_util.as_local(han_state.last_updated)).total_seconds()
                 if han_state is not None else None
             )
             han_w = None
@@ -269,6 +272,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 connected=not charger_disconnected,
                 schedule_allowed=schedule_allowed,
                 sources_valid=not bool(invalid_input_reason),
+                paused=self.charging_paused,
             )
             if target_current is not None:
                 now_ts = local_now.timestamp()
@@ -284,24 +288,23 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 # unavailable; never resume on a guess.
                 recommended = 0
             if charger_disconnected:
-                control_reason = "Bilen er ikke tilkoblet; dynamisk grense settes til 0 A"
+                control_reason = "Bilen er ikke koblet til laderen ennå"
+            elif self.charging_paused:
+                control_reason = "Pause er på. Laderen får 0 A til du fortsetter ladingen"
             elif invalid_input_reason:
-                control_reason = f"Pause: {invalid_input_reason}"
+                control_reason = "Jeg venter på oppdaterte målinger før jeg styrer ladingen"
             elif not schedule_allowed:
-                control_reason = schedule_reason
+                control_reason = "Tidsstyringen venter til ladetiden starter"
             elif max_current <= 0:
-                control_reason = "Maksimal kursstrøm er ikke tilgjengelig fra Easee; avventer gyldig grense"
+                control_reason = "Jeg venter på at Easee skal melde hvor mye strøm laderen kan bruke"
             elif recommended is None:
-                control_reason = "Venter på pålitelige fase-, spennings- og strømdata"
+                control_reason = "Jeg venter på sikre målinger fra laderen og strømmåleren"
             elif recommended == 0 and electrical.minimum_current_a is None and self.last_commanded_current == 0:
-                control_reason = "Holder Easee-grensen på 0 A mens fase-/spenningsdata mangler; gjenopptar ikke på gjetning"
+                control_reason = "Målingene er usikre. Ladingen venter til de er i orden"
             elif recommended == 0 and electrical.minimum_current_a is not None:
-                control_reason = (
-                    f"Tilgjengelig timebudsjett er lavere enn minstegrensen "
-                    f"{electrical.minimum_current_a} A; anbefaler pause (0 A)"
-                )
+                control_reason = "Huset har brukt opp grensen for denne timen. Ladingen venter"
             else:
-                control_reason = "Anbefalingen følger timegrense, målt huslast og sikkerhetsmargin"
+                control_reason = "Jeg justerer ladingen for å holde husets forbruk innenfor grensen"
 
             return {
                 "status": status_state.state,
@@ -324,6 +327,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "safety_margin_kwh": safety_margin,
                 "minutes_left": minutes_left,
                 "auto_control": self.auto_control,
+                "charging_paused": self.charging_paused,
                 "schedule_enabled": schedule_enabled,
                 "schedule_allowed": schedule_allowed,
                 "schedule_start_time": schedule_start_time,
@@ -340,7 +344,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 },
             }
         except (TypeError, ValueError) as err:
-            if self.auto_control:
+            if self.auto_control or self.charging_paused:
                 try:
                     await self.async_set_current(0)
                 except Exception:  # Keep coordinator's original failure visible.
@@ -362,3 +366,37 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         options[CONF_SCHEDULE_ENABLED] = self.schedule_enabled
         self.hass.config_entries.async_update_entry(self.entry, options=options)
         await self.async_request_refresh()
+
+    async def async_set_charging_paused(self, paused: bool) -> None:
+        """Pause/resume charging with a persistent Easee dynamic limit."""
+        was_paused = self.charging_paused
+        if paused and not was_paused:
+            resume_current = self.last_commanded_current
+        else:
+            resume_current = self.entry.options.get("resume_current")
+        self.charging_paused = bool(paused)
+        options = dict(self.entry.options)
+        options["charging_paused"] = self.charging_paused
+        if paused and resume_current is not None:
+            options["resume_current"] = int(resume_current)
+        self.hass.config_entries.async_update_entry(self.entry, options=options)
+        if self.charging_paused:
+            await self.async_set_current(0)
+        await self.async_request_refresh()
+        if not self.charging_paused and not self.auto_control:
+            # In manual mode, restore the previous limit only while all current
+            # safety checks still pass. Otherwise the charger stays paused.
+            current = int(resume_current or 0)
+            data = self.data or {}
+            minimum = data.get("control_minimum_current_a")
+            maximum = float(data.get("max_current_a", 0) or 0)
+            if (
+                current > 0
+                and data.get("han_fresh")
+                and data.get("schedule_allowed", True)
+                and minimum is not None
+                and current >= int(minimum)
+                and current <= maximum
+            ):
+                await self.async_set_current(current)
+                await self.async_request_refresh()

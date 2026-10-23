@@ -65,7 +65,7 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
         """Disable manual input while automatic control owns the current limit."""
         return super().available and manual_control_is_available(
             self.coordinator.auto_control
-        )
+        ) and not self.coordinator.charging_paused
 
     @property
     def native_max_value(self) -> float:
@@ -81,6 +81,14 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
                     self.hass,
                     "Slå av automatisk laststyring før du endrer manuell ladestrøm.",
                     "Turn off automatic load control before changing manual charging current.",
+                )
+            )
+        if self.coordinator.charging_paused:
+            raise HomeAssistantError(
+                _message(
+                    self.hass,
+                    "Slå av ladepause før du endrer ladestrømmen.",
+                    "Turn off charging pause before changing the current limit.",
                 )
             )
         if requested < 0 or requested > self.native_max_value:

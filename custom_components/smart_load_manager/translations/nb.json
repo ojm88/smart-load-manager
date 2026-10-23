@@ -108,6 +108,9 @@
       }
     },
     "switch": {
+      "charging_pause": {
+        "name": "Ladepause"
+      },
       "automatic_control": {
         "name": "Automatisk laststyring"
       },

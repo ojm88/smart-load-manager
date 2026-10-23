@@ -40,6 +40,9 @@ class ControlDecisionTests(unittest.TestCase):
     def test_disabled_control_does_not_send_a_command(self):
         self.assertIsNone(self.target(enabled=False))
 
+    def test_explicit_pause_sends_zero_even_when_automatic_control_is_off(self):
+        self.assertEqual(self.target(enabled=False, paused=True), 0)
+
 
 class EaseeServicePayloadTests(unittest.TestCase):
     def test_current_and_zero_are_sent_with_indefinite_ttl(self):

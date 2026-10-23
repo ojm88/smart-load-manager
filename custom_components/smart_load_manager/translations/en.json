@@ -108,6 +108,9 @@
       }
     },
     "switch": {
+      "charging_pause": {
+        "name": "Charging pause"
+      },
       "automatic_control": {
         "name": "Automatic load control"
       },

@@ -1,119 +1,88 @@
-# Smart Load Manager OJM beta.15 — full example for the Bil dashboard.
-# Full dashboard view YAML only: paste into the raw configuration editor for a view.
-# For an existing section's manual card editor, use charging_card.yaml.
-# Built-in Home Assistant cards only. Forbruksgrense intentionally keeps the
-# installation-wide entity ID agreed for beta.10.
+# Full dashboard view example. For an existing section, paste charging_card.yaml as a Manual card.
 type: sections
-title: Bil
-path: bil
-max_columns: 2
+title: Elbillading
+path: elbillading
+max_columns: 1
 sections:
   - type: grid
     cards:
-      - type: markdown
-        title: 🔍 Status for elbillading
-        content: >-
-          {% set raw_status = states('sensor.slm_charger_status') %}
-          {% set status = raw_status | lower | trim | replace(' ', '_') %}
-          {% set auto = is_state('switch.slm_auto_control', 'on') %}
-          {% set schedule = is_state('switch.slm_schedule', 'on') %}
-          {% set power_kw = (states('sensor.slm_charger_power') | float(0) / 1000) | round(1) %}
-          {% set current = states('sensor.slm_charger_current') | float(0) | round(1) %}
-          {% set used = states('sensor.slm_energy_used_hour') | float(0) | round(2) %}
-          {% set estimate = states('sensor.slm_energy_estimate_hour') | float(0) | round(2) %}
-          {% set recommended = states('sensor.slm_recommended_current') | float(0) | round(0) %}
-          {% set start = states('time.slm_charge_start') %}
-          {% set min_current = states('sensor.slm_min_current') | float(0) | round(0) %}
-          {% set phases = states('sensor.slm_active_phases') | int(0) %}
-          {% if status == 'disconnected' %}
-          🔌 **Bilen er ikke tilkoblet**
-          {% elif status == 'charging' %}
-          ⚡ **Lading pågår** · {{ power_kw }} kW · {{ current }} A
-          {% elif status == 'completed' %}
-          ✅ **Lading fullført**
-          {% elif status in ['awaiting_start', 'ready_to_charge'] %}
-          🔗 **Bilen er tilkoblet – venter på lading**
-          {% else %}
-          ❔ **Laderstatus:** {{ raw_status }}
-          {% endif %}
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            title: Lading hjemme – hva skjer nå?
+            content: >-
+              {% set status = states('sensor.slm_charger_status') | lower | replace(' ', '_')
+              %} {% set paused = is_state('switch.slm_charging_pause', 'on') %} {% set automatic
+              = is_state('switch.slm_auto_control', 'on') %} {% set current = states('sensor.slm_charger_current')
+              | float(0) | round(1) %} {% set recommended = states('sensor.slm_recommended_current')
+              | float(0) | round(0) %} {% set reason = states('sensor.slm_control_reason')
+              %} {% if paused %} ⏸️ **Ladingen er satt på pause.** Trykk «Ladepause» av for
+              å fortsette. {% elif status == 'disconnected' %} 🔌 **Bilen er ikke koblet til
+              laderen ennå.** {% elif status == 'charging' %} ⚡ **Bilen lader nå med {{ current
+              }} A.** {% elif status in ['awaiting_start', 'ready_to_charge', 'connected',
+              'waiting'] %} 🚗 **Bilen er koblet til og venter på å lade.** {% elif status
+              in ['completed', 'charged'] %} ✅ **Ladingen er ferdig.** {% else %} ℹ️ **Laderen
+              sier:** {{ states('sensor.slm_charger_status') }}. {% endif %}
 
-          **Automatisk laststyring:** {{ 'På' if auto else 'Av' }} · **Tidsstyring:** {{ 'På' if schedule else 'Av' }}{% if schedule %} · start {{ start }}{% endif %}  
-          **Faser i bruk:** {{ phases }} · **Spenning mellom faser:** {{ states('sensor.slm_line_voltage') }} V · **Ladestrøm:** {{ current }} A  
-          **Forbruksgrense:** {{ states('select.smart_load_manager_ojm_easee_forbruksgrense') }} kWh · **Brukt denne timen:** {{ used }} kWh · **Forventet denne timen:** {{ estimate }} kWh  
-          **Anbefalt strøm:** {{ recommended }} A · **Minste strøm for denne ladeformen:** {{ min_current }} A  
-          **Hvorfor:** {{ states('sensor.slm_control_reason') }}{% if schedule %} · {{ states('sensor.slm_schedule_status') }}{% endif %}
-  - type: grid
-    cards:
-      - type: entities
-        title: Styring
-        show_header_toggle: false
-        state_color: true
-        entities:
-          - entity: switch.slm_auto_control
-            name: Automatisk laststyring
-          - entity: select.smart_load_manager_ojm_easee_forbruksgrense
-            name: Forbruksgrense for hele installasjonen
-          - entity: select.slm_phase_mode
-            name: Fasevalg på laderen
-          - entity: number.slm_manual_current
-            name: Manuell ladestrøm (kun når automatisk styring er av)
-          - entity: sensor.slm_manual_control_status
-            name: Manuell strømstyring
-          - entity: switch.slm_schedule
-            name: Tidsstyring (12 timer fra starttid)
-          - entity: time.slm_charge_start
-            name: Starttid for lading
-      - type: entities
-        title: Lader og målinger
-        show_header_toggle: false
-        entities:
-          - entity: sensor.slm_charger_status
-            name: Ladestatus
-          - entity: sensor.slm_charger_current
-            name: Strøm til bilen
-          - entity: sensor.slm_charger_power
-            name: Ladeeffekt
-          - entity: sensor.slm_min_current
-            name: Minste ladestrøm
-          - entity: sensor.slm_recommended_current
-            name: Anbefalt ladestrøm
-          - entity: sensor.slm_max_current
-            name: Maksimal strøm fra Easee
-          - entity: sensor.slm_active_phases
-            name: Faser i bruk
-          - entity: sensor.slm_voltage_system
-            name: Spenningssystem
-          - entity: sensor.slm_line_voltage
-            name: Spenning mellom faser
-          - entity: sensor.slm_phase_neutral_voltage
-            name: Spenning fase til nøytral
-          - entity: sensor.slm_meter_age
-            name: Alder på strømmålingen
-          - entity: sensor.slm_meter_valid
-            name: Strømmåling gyldig
-          - entity: sensor.slm_charger_pause_reason
-            name: Hvorfor ladingen er begrenset eller pauset
-  - type: grid
-    cards:
-      - type: history-graph
-        title: Lading og timebudsjett — siste time
-        hours_to_show: 1
-        entities:
-          - entity: sensor.slm_recommended_current
-            name: Anbefalt ladestrøm
-          - entity: sensor.slm_charger_current
-            name: Målt ladestrøm
-          - entity: sensor.slm_energy_used_hour
-            name: Brukt denne timen
-          - entity: sensor.slm_energy_estimate_hour
-            name: Timeestimat
-      - type: history-graph
-        title: Effekt og styring — siste 12 timer
-        hours_to_show: 12
-        entities:
-          - entity: sensor.slm_home_power
-            name: Effekt fra strømmåleren
-          - entity: sensor.slm_charger_power
-            name: Ladeeffekt
-          - entity: sensor.slm_recommended_current
-            name: Anbefalt ladestrøm
+              {% if automatic %} Smart Load Manager passer på at huset holder seg innenfor
+              **{{ states('select.smart_load_manager_ojm_easee_forbruksgrense') }} kWh denne
+              timen**. Nå anbefales {{ recommended }} A. Hvis det blir trangt om strømmen,
+              laderen setter ned farten eller venter. {% else %} Automatisk laststyring er
+              av. Laderen følger strømgrensen som er satt manuelt i Easee eller nedenfor.
+              {% endif %}
+
+              **Grunnen akkurat nå:** {{ reason }}
+          - type: entities
+            title: Styr ladingen
+            show_header_toggle: false
+            entities:
+              - entity: switch.slm_auto_control
+                name: Automatisk laststyring
+              - entity: switch.slm_charging_pause
+                name: Ladepause – trykk for å stoppe eller fortsette
+              - entity: select.smart_load_manager_ojm_easee_forbruksgrense
+                name: Forbruksgrense for hele huset
+              - entity: select.slm_phase_mode
+                name: Fasevalg
+              - entity: number.slm_manual_current
+                name: Manuell ladestrøm (brukes når automatisk styring er av)
+              - entity: switch.slm_schedule
+                name: Tidsstyring
+              - entity: time.slm_charge_start
+                name: Starttid
+          - type: entities
+            title: Laderen og målingene
+            show_header_toggle: false
+            entities:
+              - entity: sensor.slm_charger_status
+                name: Ladestatus
+              - entity: sensor.slm_charger_current
+                name: Strøm til bilen
+              - entity: sensor.slm_charger_power
+                name: Ladeeffekt
+              - entity: sensor.slm_recommended_current
+                name: Anbefalt ladestrøm
+              - entity: sensor.slm_min_current
+                name: Laveste ladestrøm for valgt oppsett
+              - entity: sensor.slm_max_current
+                name: Høyeste ladestrøm Easee tillater
+              - entity: sensor.slm_active_phases
+                name: Faser i bruk
+              - entity: sensor.slm_line_voltage
+                name: Spenning mellom fasene
+              - entity: sensor.slm_control_reason
+                name: Hvorfor ladingen styres slik
+          - type: history-graph
+            title: Lading og strømforbruk – siste 12 timer
+            hours_to_show: 12
+            entities:
+              - entity: sensor.slm_recommended_current
+                name: Anbefalt strøm
+              - entity: sensor.energy_used_this_hour
+                name: Brukt
+              - entity: sensor.slm_charger_current
+                name: Målt ladestrøm
+              - entity: sensor.energy_estimate_this_hour
+                name: Timeestimat
+              - entity: sensor.average_peak_hour_energy
+                name: Snitt 3-timer

@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.16** in this repository. Beta 16 adds local Home Assistant branding (light/dark icon and logo variants, including high-resolution files). Beta 15 made diagnostic sensor state reads tolerant of missing coordinator fields, exposed a Norwegian/English explanation attribute for every diagnostic sensor, and clarified/test-checked the single-card versus full-view YAML examples and README project image.
+The current implementation baseline is **0.1.0-beta.17** in this repository. Beta 17 adds an Easee pause/resume switch, uses HAN last-update time for freshness, removes repeated raw attributes from each sensor, rounds displayed watt values to whole W, and updates the card/manuals to use EnergyTariff's original sensors and plain language. Beta 16 adds local Home Assistant branding; beta 15 added tolerant sensor reads and single-card YAML validation.
 Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migrates existing registry IDs while preserving unique IDs. It adds measured charger current and a manual-control status sensor, disables manual current while automatic control is on, and restores the descriptive Markdown status and graph dashboard. The agreed Forbruksgrense ID is unchanged. As before, one configured load entry per HA installation is allowed until a shared allocator exists.
 
 ## Electrical interpretation
@@ -47,7 +47,7 @@ Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migra
 
 ## Validation
 
-Beta.15 passed 38 unit tests, compilation, JSON/YAML validation, and both GitHub Actions jobs, including Home Assistant-runtime regressions and config-flow import. Beta.16 adds bundled PNG branding assets; local checks verify file formats, dimensions, and transparency. GitHub Actions for beta.16 is pending. The integration has not yet been retested in the user's live HA/Easee setup; config-entry migration, dynamic-limit service calls, and physical charging behavior still need live validation.
+Beta.17 currently passes 40 pure unit tests, Python compilation, JSON validation, and YAML parse checks for both dashboard examples, including the five requested graph entities and 12-hour range. Home Assistant is not installed in the local environment, so the sensor-runtime and import checks are delegated to the GitHub Actions job after push. The integration has not yet been tested in the user's live HA/Easee setup; pause/resume commands and charging behavior still need live validation.
 
 The beta.11 setup no longer asks for an hourly target. A per-entry `select`
 entity named **Forbruksgrense** provides 4.5–20 kWh in 0.5 kWh steps and is the
@@ -87,11 +87,11 @@ manuals, Lovelace example, changelog, decisions, and project status synchronized
 
 ## Next work
 
-Test beta.16 in the live HA setup before making control claims:
+Test beta.17 in the live HA setup before making hardware-control claims:
 
-1. Install beta.16 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
+1. Install beta.17 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
 2. Verify that the phase selector changes Easee's configured mode and that reported mode and active phase measurements remain separate.
-3. Exercise manual current only with automatic control off; confirm 0 A pause and live Easee bounds. Restore the old automation before removing the integration's automatic control.
+3. Test the new **Ladepause** switch while present. Confirm it sends 0 A and resumes safely; separately check manual current when automatic control is off.
 4. Do not mark phase-mode changes, dynamic current service calls, or charging behavior as validated until observed in the user's live HA/Easee setup.
 5. Keep one config entry per HA instance until a genuinely shared budget/allocator exists. Add other loads only after the owner selects allocation policy.
 

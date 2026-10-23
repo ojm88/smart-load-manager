@@ -38,6 +38,7 @@ ENTITY_OBJECT_IDS = {
     "number": {"manual_current_limit": "slm_manual_current"},
     "switch": {
         "automatic_control": "slm_auto_control",
+        "charging_pause": "slm_charging_pause",
         "schedule_control": "slm_schedule",
     },
     "time": {"schedule_start_time": "slm_charge_start"},

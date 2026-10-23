@@ -15,7 +15,7 @@ class TranslationCoverageTests(unittest.TestCase):
         sensor_keys = set(re.findall(r'^\s+"([a-z_]+)": \(', sensor_source, re.MULTILINE))
         expected = {
             "sensor": sensor_keys,
-            "switch": {"automatic_control", "schedule_control"},
+            "switch": {"automatic_control", "schedule_control", "charging_pause"},
             "number": {"manual_current_limit"},
             "select": {"consumption_limit", "phase_mode_control"},
             "time": {"schedule_start_time"},

@@ -1,3 +1,13 @@
+## 2026-10-23 — Beta 17 pause, dashboard, and compact sensor data
+
+- Add an integration-owned pause toggle. Turning pause on must send 0 A to the configured Easee device and keep it at 0 A while paused. Resume recalculates in automatic mode; in manual mode restore the previous limit only if the current meter, schedule, minimum, and Easee maximum checks still pass. Lock manual-current writes during pause.
+- Determine HAN freshness from `last_updated`, since an unchanged numeric power value can still be freshly reported. Keep a 60-second validity limit.
+- Do not repeat terminal readings, enum codes, entity maps, and HAN source on every sensor. Keep each sensor's short localized explanation, and retain raw calculation inputs in the coordinator rather than exposing duplicate attributes on every entity.
+- Display power in whole watts while preserving calculation precision internally.
+- Dashboard graph uses `sensor.slm_recommended_current`, `sensor.energy_used_this_hour`, `sensor.slm_charger_current`, `sensor.energy_estimate_this_hour`, and `sensor.average_peak_hour_energy`, named Anbefalt strøm, Brukt, Målt ladestrøm, Timeestimat, and Snitt 3-timer. EnergyTariff entities remain external; do not create SLM copies just for chart display.
+- Describe demand-tier savings as a possible outcome that depends on the household and tariff, not a guarantee. Keep Norwegian and English guides short and plain-language.
+- Preserve the single-load-entry limit until shared allocation exists. Future entities must be keyed by stable charger identity (configured charger/device label), never arbitrary `_2` suffixes; retain the existing IDs for the current installation during migration. Master/slave and sequential/simultaneous charging policies remain future owner decisions.
+
 ## 2026-10-23 — Beta 16 integration branding
 
 - Bundle Smart Load Manager OJM icon and light/dark logo files in `custom_components/smart_load_manager/brand/`, including Home Assistant's standard high-resolution variants.

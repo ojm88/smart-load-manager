@@ -193,18 +193,10 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
 
     @property
     def extra_state_attributes(self):
-        """Expose raw Easee measurements and selected source in More Info."""
-        data = self.coordinator.data or {}
+        """Give the user one short explanation, without repeating raw data."""
         norwegian = str(self.hass.config.language or "").startswith("nb")
         explanation_nb, explanation_en = SENSOR_EXPLANATIONS[self._key]
-        return {
-            "explanation": explanation_nb if norwegian else explanation_en,
-            "terminal_currents_a": data.get("terminal_currents_a", {}),
-            "terminal_voltages_v": data.get("terminal_voltages_v", {}),
-            "easee_enum_codes": data.get("easee_enum_codes", {}),
-            "easee_entities": data.get("charger_entities", {}),
-            "han_power_entity": data.get("han_entity"),
-        }
+        return {"explanation": explanation_nb if norwegian else explanation_en}
 
     @property
     def native_value(self):
@@ -224,8 +216,8 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             "recommended_current": data.get("recommended_current_a"),
             "max_current": data.get("max_current_a"),
             "charger_current": data.get("charger_current_a"),
-            "charger_power": data.get("charger_power_w"),
-            "han_power": data.get("han_power_w"),
+            "charger_power": round(data["charger_power_w"]) if data.get("charger_power_w") is not None else None,
+            "han_power": round(data["han_power_w"]) if data.get("han_power_w") is not None else None,
             "energy_used": data.get("energy_used_kwh"),
             "energy_estimate": data.get("energy_estimate_kwh"),
             "confidence": electrical.get("confidence", "unknown"),

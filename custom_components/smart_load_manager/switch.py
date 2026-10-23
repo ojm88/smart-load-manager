@@ -17,6 +17,7 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities: AddE
     coordinator: ChargingCoordinator = entry.runtime_data
     async_add_entities([
         AutomaticLoadControl(coordinator, entry),
+        ChargingPauseControl(coordinator, entry),
         ChargingScheduleControl(coordinator, entry),
     ])
 
@@ -84,4 +85,35 @@ class ChargingScheduleControl(CoordinatorEntity[ChargingCoordinator], SwitchEnti
 
     async def async_turn_off(self, **kwargs) -> None:
         await self.coordinator.async_set_schedule_enabled(False)
+        self.async_write_ha_state()
+
+
+class ChargingPauseControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity):
+    """Pause/resume charging through the configured Easee charger."""
+
+    _attr_icon = "mdi:ev-station"
+
+    def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_charging_pause"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = "charging_pause"
+        self.entity_id = f"switch.{suggested_entity_id('switch', 'charging_pause')}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            manufacturer="Smart Load Manager",
+            model="Easee charging control",
+            name=entry.title,
+        )
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.charging_paused
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self.coordinator.async_set_charging_paused(True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self.coordinator.async_set_charging_paused(False)
         self.async_write_ha_state()

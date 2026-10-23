@@ -1,67 +1,41 @@
-# Smart Load Manager OJM — beta.16
+# Smart Load Manager OJM — beta.17
 
-Home Assistant custom integration for monitoring and opt-in control of electrical loads. Easee charging is the first supported load type; hot-water tanks and floor heating are future expansion targets.
+Smart Load Manager OJM helps keep your home’s electricity use within the hourly limit you choose. It uses your HAN meter and EnergyTariff to adjust Easee charging, leaving room for the rest of the home’s consumption.
+
+That can help avoid expensive electricity-demand tiers. Depending on your tariff and household use, avoiding peaks may save thousands of kroner over a year; savings are not guaranteed.
 
 ![Smart Load Manager OJM — EV charging and household load management](docs/images/smart-load-manager-ojm.jpg)
 
-![Smart Load Manager OJM integration logo](custom_components/smart_load_manager/brand/logo.png)
+## In short
 
-## Beta status
+- Choose **Forbruksgrense** once for the home. The integration uses it as the hourly energy target.
+- Smart Load Manager checks the HAN power meter and energy already used this hour, then adjusts the Easee charging limit.
+- **Automatic load control** starts off. When it is off, you can set a manual charging current instead.
+- Choose one phase, three phases, or automatic phase selection.
+- **Ladepause** sends 0 A to Easee. Turning the pause off resumes automatic control, or restores the previous manual limit when it is still safe to do so.
+- Charging times are optional. No user-created Home Assistant helpers or YAML automations are required.
 
-Beta.16 adds the Smart Load Manager OJM icon and light/dark logos inside the custom integration, so Home Assistant 2026.3 and newer can display the integration branding from the installed package. The assets ship through HACS with the integration.
+## Before setup
 
-Beta.15 hardens diagnostic sensors against missing coordinator data, adds a plain-language explanation to each sensor, and tests sensor availability plus the single-card Lovelace format. Beta 14 established the short `slm_*` object IDs and recovery for the missing measured-current field. The beta.12 feature set gives all diagnostic sensors concise, localized names and stable `sensor.slm_*` entity IDs. Existing entity IDs are migrated on upgrade without changing their unique IDs; the installation-wide Forbruksgrense entity keeps its agreed ID. It also exposes measured charging current and makes the manual current slider unavailable while automatic control is on. A status sensor explains when it is locked. The Lovelace example restores the descriptive Markdown charging summary and graphs alongside the controls.
+Install and configure the Home Assistant Easee integration and EnergyTariff. In Smart Load Manager setup, select your Easee charger, the same instantaneous HAN power sensor used by EnergyTariff (unit W or kW), EnergyTariff’s **used this hour** sensor, and a safety margin.
 
-The beta.11 behavior remains: **Fasevalg** offers Automatic, Single phase, and Three phases through Easee's supported `set_charger_phase_mode` service. The minimum current is fixed at 11 A for measured 230 V three-phase charging with all three phase currents, otherwise 6 A; there is no vehicle learning. **Forbruksgrense** is the installation's hourly target (4.5–20 kWh in 0.5 kWh steps), not a per-load budget. This beta intentionally allows one configured load entry per HA installation so there is only one selector; multi-load support requires the future shared allocator. Manual current is available only when automatic control is off; 0 A pauses charging. Automatic control remains off by default and after Home Assistant restarts. Invalid/stale HAN or tariff-used input, missing electrical data/limit, or a closed schedule sends 0 A while automatic control is active. `time_to_live: 0` leaves the last Easee dynamic limit in place until replaced.
+After setup, select **Forbruksgrense** (4.5–20 kWh, in 0.5 kWh steps). This is the Smart Load Manager target. EnergyTariff supplies the energy used and estimate; its own target is not copied into this integration. Automatic control is off until you turn it on.
 
-This beta has automated unit tests and Home Assistant-runtime checks, but beta.16 has not yet been verified in the user’s live Home Assistant setup or against a physical charger. Do not enable automatic control until the sensors and calculated values have been checked in the installation.
+## Dashboard
 
-## Setup
+- [Norwegian guide](docs/manual_nb.md)
+- [English guide](docs/manual_en.md)
+- [One card for an existing dashboard section](examples/lovelace/charging_card.yaml) — add a Manual card and paste the complete file.
+- [Complete dashboard view](examples/lovelace/charging_view.yaml) — paste into a view’s raw YAML editor.
 
-Requires the Easee Home Assistant integration and EnergyTariff to be installed and working first. Select the Easee device, the instantaneous HAN power sensor used by EnergyTariff (W or kW), EnergyTariff's used-this-hour sensor, and a safety margin. After setup, set **Forbruksgrense** (4.5–20 kWh in 0.5 kWh steps). It is the installation-wide hourly target and replaces the old `input_select.forbruksgrense`; EnergyTariff's `target_energy` is not a competing target. The estimate is a diagnostic sensor, not a setup input. Easee maximum current is read-only. Do not select a kWh counter as HAN power. Enable Easee diagnostic Current and Voltage entities if disabled.
+The card uses standard Home Assistant cards and EnergyTariff’s own `sensor.energy_used_this_hour`, `sensor.energy_estimate_this_hour`, and `sensor.average_peak_hour_energy` entities.
 
-Forbruksgrense is the Smart Load Manager control target. EnergyTariff supplies measured energy used so far this hour; its `target_energy` is configured separately and does not override Forbruksgrense. Use the same HAN power meter in both integrations so the measurements agree.
+## Safety and scope
 
-Clock scheduling is optional and is provided by the integration. It creates a `Tidsstyring` switch and a `Starttid lading` time control (default 23:00). When enabled, charging is allowed during the 12-hour daily window beginning at that time, including across midnight. The setting and time persist; automatic current control remains off after restart.
+Automatic control is opt-in and starts off after a Home Assistant restart. When it is active, invalid meter or tariff data, missing electrical information, a closed schedule, or an unavailable Easee current limit makes the integration send 0 A. The selected Easee dynamic limit remains in place until the integration changes it, matching the previous automation’s behavior.
 
-## Easee interpretation
+The agreed minimum current is 11 A for measured 230 V three-phase charging, and 6 A otherwise. There is no vehicle learning. The current beta supports one configured load entry per Home Assistant installation; a shared allocator is needed before multiple chargers or household loads can safely share the same budget.
 
-The integration resolves sibling Easee entities by device association, not by hard-coded entity names. It reads `config_phaseMode`, `state_outputPhase`, `config_detectedPowerGridType`, `state_reasonForNoCurrent`, terminal currents, terminal voltages, and relevant current-limit attributes when present. It keeps the raw enum field separate from its meaning because identical integer codes in different enums have different meanings.
+## Checks
 
-The configured phase mode (1/2/3 = one phase/automatic/three phases) is shown separately from the actual output phase. During charging, phase conductors carrying current determine the active phase count. At 230 V with three active phase currents, the agreed minimum is 11 A; otherwise it is 6 A. If phase or voltage data is missing/contradictory, automatic control sends 0 A until the measurements are reliable. Voltage is measured continuously; normal variation of a few volts does not trigger a new configuration or learning cycle.
-
-## Controls and behaviour
-
-- **Automatisk laststyring**: opt-in switch, initially off; when on, the integration computes a recommended current every 30 seconds and sends a new Easee dynamic current limit when it changes, with a five-minute refresh. It does not change Easee's persistent maximum current, wiring configuration, or phase mode.
-- **Fasevalg**: Automatic, Single phase, or Three phases. This sets Easee's configured mode; it is not the same as the live active-phase measurement. Verify the reported mode and measured phases after changing. Make phase changes while present and follow the charger.
-- **Manuell ladestrøm**: slider routed to `easee.set_charger_dynamic_limit`; use only while Automatic load control is off. `0 A` pauses charging. Positive settings below the detected minimum or above Easee's live maximum are rejected.
-- The selected HAN sensor must be positive and its value must have changed within 60 seconds. If it stops changing, becomes unavailable, or is zero while automatic control is active, the controller sends and holds 0 A until valid data returns. Its age and validity are shown in diagnostic sensors.
-- Easee documents `time_to_live: 0` as indefinite. This matches the existing automation. Turning automatic control off stops further updates but leaves the last Easee limit in place; set a manual limit or resume automatic control to replace it.
-- Disable the old Easee dynamic-current automation before enabling Smart Load Manager automatic control. Both write the same dynamic limit and could otherwise overwrite one another.
-- The controller estimates the rest-of-hour house energy from instantaneous HAN power minus charger power, subtracts EnergyTariff's used energy and the configured safety margin, and converts remaining kWh to amps using measured voltage and detected active phases. It caps the result at the lowest positive circuit/charger current limit exposed by Easee. If no valid limit is exposed, control remains at 0 A and manual positive commands are rejected.
-- The EnergyTariff estimate is displayed as a diagnostic sensor; this first controller calculation uses measured house load rather than blindly treating an estimate that may include EV energy as house-only usage.
-
-## Included files
-
-- [Norwegian manual](docs/manual_nb.md)
-- [English manual](docs/manual_en.md)
-- [Complete dashboard view YAML](examples/lovelace/charging_view.yaml)
-- [Single card YAML for the card editor](examples/lovelace/charging_card.yaml)
-- [Project status and next steps](docs/PROJECT_STATUS.md)
-- [Recorded product and technical decisions](docs/DECISIONS.md)
-- Regression tests under `tests/`
-
-Codex project instructions are in [`AGENTS.md`](AGENTS.md). Read it together
-with the project status and decisions before continuing development.
-
-For the manual card inside an existing dashboard section: add a card, choose Manual, open the YAML editor, and paste the complete contents of `examples/lovelace/charging_card.yaml`. This file starts with `type: vertical-stack` and is one card. Do not paste `charging_view.yaml` there. The complete dashboard view uses `type: sections`; paste it only into the raw configuration editor for a dashboard view. Both use standard Home Assistant cards and include a status summary, controls, measurements, and history graphs. Each diagnostic sensor also provides a localized `explanation` attribute in More Info. Sensor entity IDs use the stable `sensor.slm_*` pattern; the Forbruksgrense ID remains `select.smart_load_manager_ojm_easee_forbruksgrense`. It does not require Mushroom or navbar-card.
-
-## Test
-
-From the `smart_load_manager` project directory:
-
-```sh
-python -m unittest discover -s tests -v
-```
-
-These tests cover electrical calculations, control decisions, and the exact Easee service payload for positive and zero-current commands. GitHub Actions also checks module imports and metadata. They do not replace a test in a running Home Assistant instance or supervised live-charger test.
+Run the automated tests with `python -m unittest discover -s tests -v`. GitHub Actions also checks Home Assistant imports and runtime behavior. These checks do not replace testing in your own Home Assistant setup and with your charger. Keep the existing automation disabled while testing the integration’s automatic control.

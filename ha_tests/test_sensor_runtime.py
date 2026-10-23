@@ -38,6 +38,25 @@ class SensorRuntimeTests(unittest.TestCase):
         )
         self.assertIn("Strømmen Easee måler", ChargingDiagnosticSensor.extra_state_attributes.fget(fake)["explanation"])
 
+    def test_sensor_does_not_repeat_raw_charger_attributes(self):
+        fake = SimpleNamespace(
+            _key="charger_current",
+            coordinator=SimpleNamespace(data={}),
+            hass=SimpleNamespace(config=SimpleNamespace(language="nb")),
+        )
+        self.assertEqual(
+            set(ChargingDiagnosticSensor.extra_state_attributes.fget(fake)),
+            {"explanation"},
+        )
+
+    def test_power_sensor_displays_whole_watts(self):
+        fake = SimpleNamespace(
+            _key="charger_power",
+            coordinator=SimpleNamespace(data={"charger_power_w": 3490.4}),
+            hass=SimpleNamespace(config=SimpleNamespace(language="nb")),
+        )
+        self.assertEqual(ChargingDiagnosticSensor.native_value.fget(fake), 3490)
+
     def test_single_card_yaml_is_not_a_full_sections_view(self):
         from pathlib import Path
         root = Path(__file__).resolve().parents[1]
