@@ -83,7 +83,7 @@
         "name": "Fase- og spenningsgrunnlag"
       },
       "control_reason": {
-        "name": "Hvorfor skjer dette?"
+        "name": "Ladeforklaring"
       },
       "manual_control_status": {
         "name": "Manuell styring"

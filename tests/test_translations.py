@@ -36,6 +36,18 @@ class TranslationCoverageTests(unittest.TestCase):
                 flow = json.loads((INTEGRATION / "translations" / f"{language}.json").read_text())["config"]["step"]["user"]
                 self.assertEqual(set(flow["data"]), set(flow["data_description"]))
 
+    def test_control_reason_has_plain_language_name(self):
+        expected_names = {"nb": "Ladeforklaring", "en": "Charging explanation"}
+        for language, expected_name in expected_names.items():
+            with self.subTest(language=language):
+                translation = json.loads((INTEGRATION / "translations" / f"{language}.json").read_text())
+                self.assertEqual(
+                    translation["entity"]["sensor"]["control_reason"]["name"],
+                    expected_name,
+                )
+        sensor_source = (INTEGRATION / "sensor.py").read_text()
+        self.assertIn("hvorfor bilen lader, venter eller får mindre strøm", sensor_source)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -31,6 +31,8 @@ The agreed fixed rule is **11 A** for measured 230 V three-phase charging, and *
 
 If the HAN reading, EnergyTariff data, or Easee limits are missing or invalid, automatic control holds the charger at 0 A. The dashboard card explains why charging is waiting or limited.
 
+The **Charging explanation** sensor uses plain language to say why the car is charging, waiting, or receiving less current.
+
 ## Dashboard card
 
 Inside an existing dashboard section, choose **Add card → Manual**, open the YAML editor, and paste the complete `examples/lovelace/charging_card.yaml` file. It is one card. Do not paste `charging_view.yaml` into the card editor.

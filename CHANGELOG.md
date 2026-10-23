@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1-beta.1
+
+- Rename the control reason sensor to **Ladeforklaring** and explain in plain language why charging is running, waiting, or reduced. Keep its entity ID stable so existing dashboards and automations continue to work.
+
 ## 0.1.0
 
 First stable release, based on the tested beta.17 build. Includes automatic Easee charging adjustment using the home's Forbruksgrense, manual charging when automatic control is off, phase selection, optional schedule, charging pause/resume, clear status sensors, and the ready-to-paste dashboard card with EnergyTariff graphs. The first release supports one configured load entry per Home Assistant installation.

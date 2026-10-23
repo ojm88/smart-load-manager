@@ -1,3 +1,10 @@
+## 2026-10-24 — Make the control explanation clear
+
+- Name the control-reason sensor **Ladeforklaring** in Norwegian and **Charging explanation** in English.
+- Explain that it tells the user why charging is running, waiting, or reduced.
+- Keep the existing `sensor.slm_control_reason` entity ID and all charging decisions unchanged.
+- Include the change in beta 0.1.1-beta.1.
+
 ## 2026-10-23 — First stable release 0.1.0
 
 - Release the tested beta.17 build as stable version 0.1.0 after the owner confirms it works in the live HA/Easee setup.

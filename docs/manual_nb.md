@@ -31,6 +31,8 @@ Minste ladestrøm følger den avtalte faste regelen: **11 A** ved målt 230 V tr
 
 Hvis HAN-målingen, EnergyTariff-dataene eller Easee-grensene mangler eller ikke er gyldige, holder automatisk styring laderen på 0 A. Kortet viser hvorfor den venter eller begrenser ladingen.
 
+Sensorn **Ladeforklaring** bruker vanlige ord for å fortelle hvorfor bilen lader, venter eller får mindre strøm.
+
 ## Kort på dashboardet
 
 For en eksisterende dashboard-seksjon: velg **Legg til kort → Manuelt**, åpne YAML-editoren og lim inn hele `examples/lovelace/charging_card.yaml`. Dette er ett kort. Ikke lim inn `charging_view.yaml` i korteditoren.

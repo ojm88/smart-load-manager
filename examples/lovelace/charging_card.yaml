@@ -71,7 +71,7 @@ cards:
       - entity: sensor.slm_line_voltage
         name: Spenning mellom fasene
       - entity: sensor.slm_control_reason
-        name: Hvorfor ladingen styres slik
+        name: Ladeforklaring
   - type: history-graph
     title: Lading og strømforbruk – siste 12 timer
     hours_to_show: 12

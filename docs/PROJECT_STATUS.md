@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0** in this repository, released from the tested beta.17 build. It includes an Easee pause/resume switch, HAN last-update freshness, concise sensor attributes, whole-watt display, and the plain-language dashboard card using EnergyTariff's own sensors. Beta 16 added local Home Assistant branding; beta 15 added tolerant sensor reads and single-card YAML validation.
+The latest stable release is **0.1.0**, based on the tested beta.17 build. The next beta draft is **0.1.1-beta.1** and changes the control-reason sensor's displayed name to **Ladeforklaring**, with a plain-language description. Its entity ID and charging logic stay unchanged. The stable release includes an Easee pause/resume switch, HAN last-update freshness, concise sensor attributes, whole-watt display, and the dashboard card using EnergyTariff's own sensors. Beta 16 added local Home Assistant branding; beta 15 added tolerant sensor reads and single-card YAML validation.
 Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migrates existing registry IDs while preserving unique IDs. It adds measured charger current and a manual-control status sensor, disables manual current while automatic control is on, and restores the descriptive Markdown status and graph dashboard. The agreed Forbruksgrense ID is unchanged. As before, one configured load entry per HA installation is allowed until a shared allocator exists.
 
 ## Electrical interpretation
@@ -47,7 +47,7 @@ Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migra
 
 ## Validation
 
-Beta.17 passed 40 pure unit tests, Python compilation, JSON validation, YAML parse checks for both dashboard examples, and the Home Assistant runtime/import checks in GitHub Actions. The owner has confirmed the integration is working in the live HA/Easee setup. Version 0.1.0 changes versioning and release documentation only; family and friends can now check compatibility in their own installations.
+The stable beta.17 code passed 40 pure unit tests, Python compilation, JSON validation, YAML parse checks for both dashboard examples, and the Home Assistant runtime/import checks in GitHub Actions. The owner has confirmed it works in the live HA/Easee setup. The 0.1.1-beta.1 draft passes 41 unit tests, compilation, JSON validation, and dashboard YAML parsing locally; Home Assistant runtime/import checks remain pending a GitHub Actions run after publication.
 
 The beta.11 setup no longer asks for an hourly target. A per-entry `select`
 entity named **Forbruksgrense** provides 4.5–20 kWh in 0.5 kWh steps and is the
@@ -106,4 +106,4 @@ only after the owner selects allocation policy.
 
 ## Release state
 
-Version 0.1.0 is the first stable GitHub release, based on beta.17. Beta.17's GitHub Actions checks pass, and the owner has confirmed it works in the live HA/Easee setup. Future updates will use beta pre-releases for additional testing before stable releases. This implementation supports one configured load entry per Home Assistant installation; multi-charger allocation is future work.
+Version 0.1.0 is the first stable GitHub release, based on beta.17. The next beta draft updates only the user-facing name and explanation of the control-reason sensor; it preserves the `sensor.slm_control_reason` entity ID and charging logic. It has not been published yet. Future updates will use beta pre-releases for additional testing before stable releases. This implementation supports one configured load entry per Home Assistant installation; multi-charger allocation is future work.

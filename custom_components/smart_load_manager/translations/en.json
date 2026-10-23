@@ -83,7 +83,7 @@
         "name": "Phase and voltage basis"
       },
       "control_reason": {
-        "name": "Why is this happening?"
+        "name": "Charging explanation"
       },
       "manual_control_status": {
         "name": "Manual control"
