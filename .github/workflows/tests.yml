@@ -34,7 +34,7 @@ jobs:
       - name: Install Home Assistant runtime
         run: python -m pip install homeassistant
       - name: Test diagnostic sensor payload compatibility
-        run: PYTHONPATH=custom_components python -m unittest discover -s tests -p 'test_sensor_runtime.py' -v
+        run: PYTHONPATH=custom_components python -m unittest discover -s ha_tests -p 'test_sensor_runtime.py' -v
       - name: Import config flow in Home Assistant runtime
         run: >-
           PYTHONPATH=custom_components python -c 'from smart_load_manager import config_flow, entity_ids, number, select, sensor, switch; from smart_load_manager import time as time_platform; from homeassistant.helpers import selector; from homeassistant.components.time import TimeEntity; from homeassistant.components.select import SelectEntity; from homeassistant.components.number import NumberEntity; from homeassistant.components.sensor import SensorEntity; assert config_flow.selector is selector; assert issubclass(select.ConsumptionLimitSelect, SelectEntity); assert issubclass(number.ChargingCurrentLimit, NumberEntity); assert issubclass(sensor.ChargingDiagnosticSensor, SensorEntity); assert issubclass(time_platform.ChargingScheduleStartTime, TimeEntity); assert hasattr(switch, "ChargingScheduleControl"); assert entity_ids.suggested_entity_id("sensor", "status") == "slm_charger_status"'
