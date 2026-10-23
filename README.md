@@ -4,7 +4,7 @@ Home Assistant custom integration for monitoring and opt-in control of electrica
 
 ## Beta status
 
-Beta.12 gives all diagnostic sensors concise, localized names and stable `sensor.slm_*` entity IDs. Existing entity IDs are migrated on upgrade without changing their unique IDs; the installation-wide Forbruksgrense entity keeps its agreed ID. It also exposes measured charging current and makes the manual current slider unavailable while automatic control is on. A status sensor explains when it is locked. The Lovelace example restores the descriptive Markdown charging summary and graphs alongside the controls.
+Beta.13 fixes the sensor setup failure caused by the missing measured-current field in the coordinator payload. A regression test now covers this case. The beta.12 feature set gives all diagnostic sensors concise, localized names and stable `sensor.slm_*` entity IDs. Existing entity IDs are migrated on upgrade without changing their unique IDs; the installation-wide Forbruksgrense entity keeps its agreed ID. It also exposes measured charging current and makes the manual current slider unavailable while automatic control is on. A status sensor explains when it is locked. The Lovelace example restores the descriptive Markdown charging summary and graphs alongside the controls.
 
 The beta.11 behavior remains: **Fasevalg** offers Automatic, Single phase, and Three phases through Easee's supported `set_charger_phase_mode` service. The minimum current is fixed at 11 A for measured 230 V three-phase charging with all three phase currents, otherwise 6 A; there is no vehicle learning. **Forbruksgrense** is the installation's hourly target (4.5–20 kWh in 0.5 kWh steps), not a per-load budget. This beta intentionally allows one configured load entry per HA installation so there is only one selector; multi-load support requires the future shared allocator. Manual current is available only when automatic control is off; 0 A pauses charging. Automatic control remains off by default and after Home Assistant restarts. Invalid/stale HAN or tariff-used input, missing electrical data/limit, or a closed schedule sends 0 A while automatic control is active. `time_to_live: 0` leaves the last Easee dynamic limit in place until replaced.
 
@@ -39,7 +39,8 @@ The configured phase mode (1/2/3 = one phase/automatic/three phases) is shown se
 
 - [Norwegian manual](docs/manual_nb.md)
 - [English manual](docs/manual_en.md)
-- [Lovelace dashboard YAML](examples/lovelace/charging_view.yaml)
+- [Complete dashboard view YAML](examples/lovelace/charging_view.yaml)
+- [Single card YAML for the card editor](examples/lovelace/charging_card.yaml)
 - [Project status and next steps](docs/PROJECT_STATUS.md)
 - [Recorded product and technical decisions](docs/DECISIONS.md)
 - Regression tests under `tests/`
@@ -47,7 +48,7 @@ The configured phase mode (1/2/3 = one phase/automatic/three phases) is shown se
 Codex project instructions are in [`AGENTS.md`](AGENTS.md). Read it together
 with the project status and decisions before continuing development.
 
-The dashboard YAML is built with standard Home Assistant cards and includes the status summary, controls, measurements, and history graphs. Sensor entity IDs use the stable `sensor.slm_*` pattern; the Forbruksgrense ID remains `select.smart_load_manager_ojm_easee_forbruksgrense`. It does not require Mushroom or navbar-card.
+The complete dashboard view uses `type: sections` and belongs in a dashboard view's raw configuration editor. Do not paste it into the single-card YAML editor. For that editor, use `examples/lovelace/charging_card.yaml`, which is one valid `vertical-stack` card. Both use standard Home Assistant cards and include a status summary, controls, measurements, and history graphs. Sensor entity IDs use the stable `sensor.slm_*` pattern; the Forbruksgrense ID remains `select.smart_load_manager_ojm_easee_forbruksgrense`. It does not require Mushroom or navbar-card.
 
 ## Test
 
