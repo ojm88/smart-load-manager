@@ -1,8 +1,8 @@
 # Product and technical decisions
 
-## 2026-10-23 — Beta 13 sensor setup and entity IDs
+## 2026-10-23 — Beta 14 sensor recovery and entity IDs
 
-- The beta.12 coordinator omitted `charger_current_a` while the sensor platform read it eagerly to build every diagnostic sensor value. One KeyError therefore prevented the entire sensor platform from adding entities. Return the measured current from the coordinator and use a safe `.get()` for this optional diagnostic field; keep a Home Assistant-runtime regression test.
+- The earlier coordinator payload omitted `charger_current_a` while the sensor platform read it eagerly to build every diagnostic sensor value. One KeyError therefore prevented the entire sensor platform from adding entities. Return the measured current from the coordinator and use a safe `.get()` for this optional diagnostic field; keep a Home Assistant-runtime regression test.
 - Beta.12 used `_attr_suggested_object_id`, which Home Assistant does not use as a supported integration attribute. Beta.13 sets the entity's proposed `entity_id` explicitly for stable `slm_*` IDs and tests the sensor ID. Home Assistant currently accepts this with a deprecation/usage warning that is scheduled to become an error in a future core release; recheck the supported entity-ID API before that transition.
 - Dashboard examples have two distinct formats: a full `type: sections` view for raw dashboard-view YAML and a `vertical-stack` card for a single-card YAML editor.
 
