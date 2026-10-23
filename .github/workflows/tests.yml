@@ -32,4 +32,5 @@ jobs:
       - name: Install Home Assistant runtime
         run: python -m pip install homeassistant
       - name: Import config flow in Home Assistant runtime
-        run: PYTHONPATH=custom_components python -c "from smart_load_manager import config_flow, switch; from smart_load_manager import time as time_platform; from homeassistant.helpers import selector; from homeassistant.components.time import TimeEntity; assert config_flow.selector is selector; assert issubclass(time_platform.ChargingScheduleStartTime, TimeEntity); assert hasattr(switch, "ChargingScheduleControl")"
+        run: >-
+          PYTHONPATH=custom_components python -c 'from smart_load_manager import config_flow, switch; from smart_load_manager import time as time_platform; from homeassistant.helpers import selector; from homeassistant.components.time import TimeEntity; assert config_flow.selector is selector; assert issubclass(time_platform.ChargingScheduleStartTime, TimeEntity); assert hasattr(switch, "ChargingScheduleControl")' 
