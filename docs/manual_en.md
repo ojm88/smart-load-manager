@@ -1,8 +1,8 @@
-# User manual — Smart Load Manager beta.4
+# User manual — Smart Load Manager beta.5
 
 ## What this beta does
 
-Beta.4 reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
+Beta.5 fixes configuration-flow loading when Easee or EnergyTariff has not completed setup. It reads Easee, HAN meter, and EnergyTariff values, decodes phase/voltage information, calculates a recommended charging current, and can send a dynamic current limit to Easee. It checks HAN measurement freshness and supports optional clock scheduling. Automatic control is off on first setup and after Home Assistant restarts. This release does not control water heaters or floor heating.
 
 This is still a beta. It has not been validated in a live Home Assistant installation or with a physical charger. Verify the sensors and recommendation before enabling automatic control.
 
