@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-beta.5
+
+- Fix configuration-flow loading: Easee and EnergyTariff are ordered as `after_dependencies`, so a setup failure in either integration does not prevent Smart Load Manager's form from opening. Selected devices and sensors are still validated before creating an entry.
+- Fix GitHub Actions metadata-validation paths after the integration domain was renamed to `smart_load_manager`.
+
 ## 0.1.0-beta.4
 
 - Add a 60-second HAN freshness and positive-power guard; active automatic control pauses with 0 A on stale or invalid meter/tariff input or missing electrical data.
