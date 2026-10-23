@@ -57,6 +57,13 @@ chat history. Add a dated entry when a decision changes.
 
 ## 2026-10-23 — Repository visibility
 
-- Store development in the owner's private `ojm88/smart-load-manager`
-  repository. Do not add collaborators or publish releases unless the owner
-  later asks for that.
+- The owner chose to make `ojm88/smart-load-manager` public so others can see
+  the project. Do not add collaborators or publish releases unless the owner
+  asks for that. No open-source license is currently included.
+
+## 2026-10-23 — Integration loading
+
+- Easee and EnergyTariff are ordered as `after_dependencies`, not hard
+  `dependencies`. Their entities are required and validated during setup, but
+  failure to set up either external integration must not prevent the Smart
+  Load Manager configuration flow itself from loading.
