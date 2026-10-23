@@ -1,5 +1,12 @@
 # Product and technical decisions
 
+## 2026-10-23 — Beta 15 sensor explanations and Lovelace paste targets
+
+- Every diagnostic sensor exposes a localized `explanation` attribute in More Info; keep the visible names concise and the entity IDs stable.
+- Sensor values must tolerate absent optional coordinator fields. One missing measurement must not prevent the platform from registering unrelated entities; keep an HA-runtime regression for the missing-current case.
+- Keep `charging_card.yaml` as a single `vertical-stack` card for the manual card editor inside an existing section. Keep `charging_view.yaml` as a complete `type: sections` view for the raw view editor. Name the exact paste target in both manuals, README, and YAML comments; test the formats.
+- Include a project image in the README and repository.
+
 ## 2026-10-23 — Beta 14 sensor recovery and entity IDs
 
 - The earlier coordinator payload omitted `charger_current_a` while the sensor platform read it eagerly to build every diagnostic sensor value. One KeyError therefore prevented the entire sensor platform from adding entities. Return the measured current from the coordinator and use a safe `.get()` for this optional diagnostic field; keep a Home Assistant-runtime regression test.

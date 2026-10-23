@@ -1,8 +1,8 @@
-# Brukermanual — Smart Load Manager OJM beta.14
+# Brukermanual — Smart Load Manager OJM beta.15
 
-## Hva beta 14 retter
+## Hva beta 15 retter
 
-Beta 14 retter både en manglende verdi som hindret sensorplattformen i å starte, og registreringen av korte ID-er. `sensor.slm_*` brukes nå som faktisk entity-ID i Home Assistant. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
+Beta 15 gjør alle diagnostikksensorene robuste når laderen eller en målekilde mangler data. En manglende verdi skal ikke lenger hindre resten av sensorene i å lastes. Hver diagnostikksensor har også en kort forklaring på norsk eller engelsk under attributtene. Beta 14 etablerte de korte `sensor.slm_*`-ID-ene, som beholdes ved oppgradering. Ved oppgradering flyttes eksisterende sensor-ID-er over til de nye navnene. Home Assistant-entitetenes unike ID-er beholdes. **Forbruksgrense** beholder den avtalte ID-en `select.smart_load_manager_ojm_easee_forbruksgrense`. Hvis du har skrevet gamle entity-ID-er direkte i egne YAML-kort eller automasjoner, oppdater dem til ID-ene i tabellen nedenfor.
 
 Når **Automatisk laststyring** er på, eier automatikken strømgrensen. **Manuell ladestrøm** blir da utilgjengelig, og sensoren **Manuell styring** viser at skyveren er låst og at automatisk styring må slås av først. Forsøk på å skrive strømgrensen mens den er låst avvises også av integrasjonen. Når automatikken slås av, blir skyveren tilgjengelig igjen; Easee beholder siste dynamiske grense helt til en ny manuell grense sendes.
 
@@ -10,7 +10,7 @@ Smart Load Manager leser Easee-laderens status, strøm, spenning, faseinformasjo
 
 **Forbruksgrense** er én felles timegrense for installasjonen, ikke en separat grense per last. Den har samme valg som den tidligere `input_select.forbruksgrense`: 4,5–20 kWh i trinn på 0,5 kWh. Dette er en valg-entitet, ikke en målesensor. EnergyTariff leverer målt energi brukt hittil i timen; dens `target_energy` overstyrer ikke Forbruksgrense. Timeestimatet vises som diagnostikksensor. Easees maksimale strøm vises skrivebeskyttet.
 
-Fasevalg tilbyr **Automatisk**, **Én fase** eller **Tre faser**. Valget sendes til Easee-integrasjonen. Det er adskilt fra sensoren for faktisk fasebruk. Sensorvisningsnavnene er korte og oversatt til norsk og engelsk.
+Fasevalg tilbyr **Automatisk**, **Én fase** eller **Tre faser**. Valget sendes til Easee-integrasjonen. Det er adskilt fra sensoren for faktisk fasebruk. Sensorvisningsnavnene er korte og oversatt til norsk og engelsk. Hver diagnostikksensor har også attributtet `explanation` med en kort, vanlig språkforklaring; åpne sensoren i Home Assistant og se under «Attributter» for å lese den.
 
 Minimumsstrømmen følger den avtalte regelen, uten læring eller bilidentifikasjon:
 
@@ -95,18 +95,20 @@ Testen lar din eksisterende løsning være urørt, bortsett fra at automasjonen 
 
 1. Ta en Home Assistant-sikkerhetskopi. Noter hvordan du reaktiverer den eksisterende automasjonen **Dynamisk styring av Easee-lader Opptimalisert V3.0**.
 2. Deaktiver denne automasjonen før du sender strømgrenser med den nye integrasjonen. Ikke slett den, og ikke endre YAML-en.
-3. Installer beta 14 og start Home Assistant på nytt. La **Automatisk laststyring** være av.
+3. Installer beta 15 og start Home Assistant på nytt. La **Automatisk laststyring** være av.
 4. Kontroller oppsettskjemaet: det skal ikke be om EnergyTariff-estimat eller maksimal strøm. Etter oppsett bekrefter du at EnergyTariff-estimatet og Easees maksimale strøm vises som sensorer.
 5. Mens automatisk styring fortsatt er av, sammenlign målt spenning, aktive faser, minste strøm, Easees maksimale strøm, HAN-effekt, EnergyTariff brukt energi og anbefalt strøm med Easee-appen og eksisterende målinger. Ingen dynamisk grense sendes i denne observasjonsfasen.
 6. Når sensorene stemmer, aktiver automatisk styring mens du er til stede og følger med på laderen. Den gamle automasjonen skal fortsatt være deaktivert. Kontroller at anbefalingen og den rapporterte Easee-grensen følger hverandre, og at ladingen reagerer som forventet.
 7. Ikke fremprovoser ugyldig måler eller lukket klokkevindu mens lading må fortsette. Disse tilfellene dekkes av automatiserte tester; en faktisk 0 A-pause kan testes separat når det er greit å avbryte ladingen.
 8. For å gå tilbake: slå av **Automatisk laststyring** og reaktiver den gamle automasjonen. Den vil sende sin beregnede grense ved neste trigger. Ikke la begge styringene være aktive samtidig.
 
-Hvis noe ikke stemmer: slå av automatisk styring, reaktiver den gamle automasjonen og send sensorverdier/logg før videre feilsøking. Beta 14 skal ikke aktivere automatisk laststyring etter omstart.
+Hvis noe ikke stemmer: slå av automatisk styring, reaktiver den gamle automasjonen og send sensorverdier/logg før videre feilsøking. Beta 15 skal ikke aktivere automatisk laststyring etter omstart.
 
 ## Dashboard
 
-`examples/lovelace/charging_view.yaml` er en komplett dashboard-visning med `type: sections`. Lim den inn i rå YAML-konfigurasjon for en visning, ikke i YAML-editoren for ett kort. For korteditoren bruker du `examples/lovelace/charging_card.yaml`, som er ett gyldig `vertical-stack`-kort. Begge eksemplene inneholder status, styringer, måleverdier og grafer. Sensor-ID-ene bruker `sensor.slm_*`.
+For å legge kortet inn i en eksisterende seksjon: åpne seksjonen i dashboard-redigering, velg **Legg til kort → Manuelt**, åpne YAML-editoren, og lim inn hele `examples/lovelace/charging_card.yaml`. Dette er ett kort med `type: vertical-stack`. Ikke lim inn visningsfila her.
+
+`examples/lovelace/charging_view.yaml` er en hel dashboard-visning med `type: sections`; bruk den bare i rå YAML-konfigurasjon for en visning. Begge variantene har statusoversikt, styringer, måleverdier og grafer. Sensor-ID-ene bruker `sensor.slm_*`.
 
 ## Verifisering og begrensninger
 

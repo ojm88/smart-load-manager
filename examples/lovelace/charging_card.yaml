@@ -1,5 +1,6 @@
 # Single Lovelace card for a card editor (not a complete dashboard view).
-# Paste the entire YAML into a Manual card's YAML editor.
+# In an existing dashboard section: add a Manual card, open its YAML editor,
+# and paste this complete file. Do not paste charging_view.yaml here.
 type: vertical-stack
 cards:
   - type: markdown

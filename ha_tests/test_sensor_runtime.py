@@ -16,6 +16,39 @@ class SensorRuntimeTests(unittest.TestCase):
 
         self.assertEqual(entity.entity_id, "sensor.slm_charger_status")
 
+    def test_all_sensors_remain_readable_with_an_empty_coordinator_payload(self):
+        fake_hass = SimpleNamespace(config=SimpleNamespace(language="nb"))
+        coordinator = SimpleNamespace(data={}, last_update_success=True)
+        for key in SENSORS:
+            with self.subTest(sensor=key):
+                entity = SimpleNamespace(
+                    _key=key, coordinator=coordinator, hass=fake_hass
+                )
+                ChargingDiagnosticSensor.native_value.fget(entity)
+                self.assertIn(
+                    "explanation",
+                    ChargingDiagnosticSensor.extra_state_attributes.fget(entity),
+                )
+
+    def test_sensor_exposes_a_localized_explanation(self):
+        fake = SimpleNamespace(
+            _key="charger_current",
+            coordinator=SimpleNamespace(data={}),
+            hass=SimpleNamespace(config=SimpleNamespace(language="nb")),
+        )
+        self.assertIn("Strømmen Easee måler", ChargingDiagnosticSensor.extra_state_attributes.fget(fake)["explanation"])
+
+    def test_single_card_yaml_is_not_a_full_sections_view(self):
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        card = (root / "examples/lovelace/charging_card.yaml").read_text()
+        view = (root / "examples/lovelace/charging_view.yaml").read_text()
+        self.assertTrue(card.lstrip().startswith("#"))
+        self.assertIn("type: vertical-stack", card)
+        self.assertNotIn("type: sections", card)
+        self.assertTrue(view.lstrip().startswith("#"))
+        self.assertIn("type: sections", view)
+
     def test_other_diagnostics_still_load_if_current_field_is_missing(self):
         data = {
             "electrical": {

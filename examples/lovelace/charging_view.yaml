@@ -1,4 +1,6 @@
-# Smart Load Manager OJM beta.13 — full example for the Bil dashboard.
+# Smart Load Manager OJM beta.15 — full example for the Bil dashboard.
+# Full dashboard view YAML only: paste into the raw configuration editor for a view.
+# For an existing section's manual card editor, use charging_card.yaml.
 # Built-in Home Assistant cards only. Forbruksgrense intentionally keeps the
 # installation-wide entity ID agreed for beta.10.
 type: sections

@@ -11,7 +11,7 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.14** in this repository.
+The current implementation baseline is **0.1.0-beta.15** in this repository. Beta 15 makes diagnostic sensor state reads tolerant of missing coordinator fields, exposes a Norwegian/English explanation attribute for every diagnostic sensor, and clarifies/test-checks the single-card versus full-view YAML examples. It also adds a README project image.
 Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migrates existing registry IDs while preserving unique IDs. It adds measured charger current and a manual-control status sensor, disables manual current while automatic control is on, and restores the descriptive Markdown status and graph dashboard. The agreed Forbruksgrense ID is unchanged. As before, one configured load entry per HA installation is allowed until a shared allocator exists.
 
 ## Electrical interpretation
@@ -47,7 +47,7 @@ Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migra
 
 ## Validation
 
-Beta.14 validation passes the pure unit suite, Python compilation, JSON validation, and Home Assistant-runtime regression for missing current data and stable ID registration. The user-provided HA log exposed the missing-current symptom in the previously installed build; live HA/Easee behavior still needs to be verified after updating. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed the integration and shared HA logs showing a sensor-platform startup failure caused by a missing coordinator key. The config-entry
+Local Beta.15 validation passes 38 unit tests, compilation, JSON checks, and diff checks. Home Assistant-runtime regressions cover missing current data, localized explanations, stable ID registration, and distinct card/view YAML formats; they still need to run in GitHub Actions because Home Assistant is not installed in the local environment. The user-provided HA log exposed the missing-current symptom in the previously installed build; live HA/Easee behavior still needs to be verified after updating. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed the integration and shared HA logs showing a sensor-platform startup failure caused by a missing coordinator key. The config-entry
 migration, actual Easee dynamic-limit service calls, and charging behavior have not
 been confirmed in the live setup. No physical charging command has been confirmed.
 
@@ -89,10 +89,9 @@ manuals, Lovelace example, changelog, decisions, and project status synchronized
 
 ## Next work
 
-Before the next beta, carry the new site-wide budget and naming decisions
-through the implementation, tests, both manuals, README, and dashboard example:
+Test beta.15 in the live HA setup before making control claims:
 
-1. Install beta.14 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
+1. Install beta.15 with the existing YAML automation disabled, while keeping Smart Load Manager automatic control off initially. Verify the `sensor.slm_*` IDs have migrated and Forbruksgrense retained its agreed ID.
 2. Verify that the phase selector changes Easee's configured mode and that reported mode and active phase measurements remain separate.
 3. Exercise manual current only with automatic control off; confirm 0 A pause and live Easee bounds. Restore the old automation before removing the integration's automatic control.
 4. Do not mark phase-mode changes, dynamic current service calls, or charging behavior as validated until observed in the user's live HA/Easee setup.
@@ -111,4 +110,4 @@ through the implementation, tests, both manuals, README, and dashboard example:
 
 ## Release state
 
-Beta.14 is a public development beta, not a production release. It ensures the coordinator supplies `charger_current_a`, safely handles an absent optional value, and registers the short `slm_*` IDs. Home Assistant-runtime regressions cover the missing-field case and ID registration; pure unit tests and HA-runtime CI pass. It also includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. The beta.14 Home Assistant-runtime regression and GitHub Actions workflow pass. The log from the previously installed build showed sensors unavailable because of the missing key; beta.14 has not yet been retested in the live HA/Easee instance.
+Beta.15 is a public development beta, not a production release. Diagnostic entity values now tolerate missing coordinator fields; each sensor includes a localized plain-language explanation. It retains the Beta 14 coordinator current fallback and stable `slm_*` IDs. Home Assistant-runtime regressions cover the missing-field case and ID registration; pure unit tests and HA-runtime CI pass. It also includes the installation-wide Forbruksgrense select, built-in schedule controls, localized setup explanations, manual-current control, Easee phase-mode selection, and beta.9 value migration. The beta.15 local tests pass; Home Assistant-runtime validation runs in GitHub Actions after publication. The log from the previously installed build showed sensors unavailable because of the missing key; beta.15 has not yet been retested in the live HA/Easee instance.

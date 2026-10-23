@@ -44,6 +44,114 @@ SENSORS = {
 }
 
 
+SENSOR_EXPLANATIONS = {
+    "status": (
+        "Viser om bilen er frakoblet, lader eller venter.",
+        "Shows whether the car is disconnected, charging, or waiting.",
+    ),
+    "phase_mode": (
+        "Faseinnstillingen laderen er satt til.",
+        "The phase setting selected on the charger.",
+    ),
+    "output_phase": (
+        "Viser hvilken fase Easee har koblet til ladeuttaket.",
+        "Shows which phase Easee has assigned to the charging output.",
+    ),
+    "active_phases": (
+        "Antall faser som faktisk trekker strøm under lading.",
+        "Number of phases actually drawing current while charging.",
+    ),
+    "grid_type": (
+        "Strømnettypen Easee rapporterer.",
+        "The grid type reported by Easee.",
+    ),
+    "voltage_type": (
+        "Beregnet spenningssystem ut fra målt spenning.",
+        "Voltage system inferred from measured voltage.",
+    ),
+    "line_voltage": (
+        "Målt eller beregnet spenning mellom fasene.",
+        "Measured or inferred voltage between phases.",
+    ),
+    "ln_voltage": (
+        "Målt spenning mellom fase og nøytral.",
+        "Measured voltage between a phase and neutral.",
+    ),
+    "minimum_current": (
+        "Laveste strøm som denne målte ladeformen tillater.",
+        "Minimum current allowed for the detected charging setup.",
+    ),
+    "recommended_current": (
+        "Strømgrensen laststyringen anbefaler akkurat nå.",
+        "Current limit recommended by load control right now.",
+    ),
+    "max_current": (
+        "Høyeste strømgrense Easee rapporterer for laderen eller kursen.",
+        "Highest current limit Easee reports for the charger or circuit.",
+    ),
+    "charger_current": (
+        "Strømmen Easee måler til bilen nå.",
+        "Current Easee measures going to the car.",
+    ),
+    "charger_power": (
+        "Effekten laderen leverer til bilen nå.",
+        "Power the charger is delivering to the car now.",
+    ),
+    "han_power": (
+        "Øyeblikkelig effekt fra den valgte HAN-måleren.",
+        "Instantaneous power from the selected HAN meter.",
+    ),
+    "energy_used": (
+        "Energi brukt hittil i denne timen, levert av EnergyTariff.",
+        "Energy used so far this hour, supplied by EnergyTariff.",
+    ),
+    "energy_estimate": (
+        "EnergyTariffs anslag for totalt forbruk denne timen. Vises kun til informasjon.",
+        "EnergyTariff's estimate of total use this hour. Informational only.",
+    ),
+    "confidence": (
+        "Hvor sikkert fase- og spenningsgrunnlaget kan bestemmes.",
+        "Confidence in the detected phase and voltage information.",
+    ),
+    "reason": (
+        "Kort forklaring på hvordan fase og spenning ble tolket.",
+        "Brief explanation of how phase and voltage were interpreted.",
+    ),
+    "control_reason": (
+        "Forklarer hvorfor laststyringen anbefaler eller sender denne strømmen.",
+        "Explains why load control recommends or sends this current.",
+    ),
+    "manual_control_status": (
+        "Viser om manuell ladestrøm kan endres. Den er låst når automatisk laststyring er på.",
+        "Shows whether manual current can be changed. It is locked while automatic control is on.",
+    ),
+    "no_current_reason": (
+        "Easees rapporterte årsak dersom laderen ikke trekker strøm.",
+        "Reason reported by Easee when the charger is not drawing current.",
+    ),
+    "auto_control": (
+        "Viser om automatisk laststyring er slått på.",
+        "Shows whether automatic load control is enabled.",
+    ),
+    "han_age": (
+        "Sekunder siden HAN-måleren sist oppdaterte verdien.",
+        "Seconds since the HAN meter last updated its value.",
+    ),
+    "han_fresh": (
+        "Viser om HAN-målingen er oppdatert og gyldig for styring.",
+        "Shows whether the HAN reading is fresh and valid for control.",
+    ),
+    "schedule_enabled": (
+        "Viser om tidsstyring begrenser når lading kan starte.",
+        "Shows whether the charging time schedule is enabled.",
+    ),
+    "schedule_reason": (
+        "Forklarer om tidsvinduet tillater lading akkurat nå.",
+        "Explains whether the schedule currently allows charging.",
+    ),
+}
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
@@ -87,7 +195,10 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
     def extra_state_attributes(self):
         """Expose raw Easee measurements and selected source in More Info."""
         data = self.coordinator.data or {}
+        norwegian = str(self.hass.config.language or "").startswith("nb")
+        explanation_nb, explanation_en = SENSOR_EXPLANATIONS[self._key]
         return {
+            "explanation": explanation_nb if norwegian else explanation_en,
             "terminal_currents_a": data.get("terminal_currents_a", {}),
             "terminal_voltages_v": data.get("terminal_voltages_v", {}),
             "easee_enum_codes": data.get("easee_enum_codes", {}),
@@ -97,47 +208,47 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
 
     @property
     def native_value(self):
-        data = self.coordinator.data
-        electrical = data["electrical"]
+        data = self.coordinator.data or {}
+        electrical = data.get("electrical", {})
         norwegian = str(self.hass.config.language or "").startswith("nb")
         values = {
-            "status": data["status"],
-            "phase_mode": electrical["phase_mode_name"],
-            "output_phase": electrical["output_phase_name"],
-            "active_phases": electrical["active_phases"],
-            "grid_type": electrical["grid_type_name"],
-            "voltage_type": electrical["voltage_type"],
-            "line_voltage": electrical["line_voltage_v"],
-            "ln_voltage": electrical["phase_neutral_voltage_v"],
-            "minimum_current": data["minimum_current_a"],
-            "recommended_current": data["recommended_current_a"],
-            "max_current": data["max_current_a"],
+            "status": data.get("status", "unknown"),
+            "phase_mode": electrical.get("phase_mode_name", "unknown"),
+            "output_phase": electrical.get("output_phase_name", "unknown"),
+            "active_phases": electrical.get("active_phases"),
+            "grid_type": electrical.get("grid_type_name", "unknown"),
+            "voltage_type": electrical.get("voltage_type", "unknown"),
+            "line_voltage": electrical.get("line_voltage_v"),
+            "ln_voltage": electrical.get("phase_neutral_voltage_v"),
+            "minimum_current": data.get("minimum_current_a"),
+            "recommended_current": data.get("recommended_current_a"),
+            "max_current": data.get("max_current_a"),
             "charger_current": data.get("charger_current_a"),
-            "charger_power": data["charger_power_w"],
-            "han_power": data["han_power_w"],
-            "energy_used": data["energy_used_kwh"],
-            "energy_estimate": data["energy_estimate_kwh"],
-            "confidence": electrical["confidence"],
-            "reason": electrical["reason"],
-            "control_reason": data["control_reason"],
+            "charger_power": data.get("charger_power_w"),
+            "han_power": data.get("han_power_w"),
+            "energy_used": data.get("energy_used_kwh"),
+            "energy_estimate": data.get("energy_estimate_kwh"),
+            "confidence": electrical.get("confidence", "unknown"),
+            "reason": electrical.get("reason", "unknown"),
+            "control_reason": data.get("control_reason", "unknown"),
             "manual_control_status": (
                 (
                     "Låst – slå av automatisk laststyring for å endre"
                     if norwegian
                     else "Locked – turn off automatic control to change"
                 )
-                if data["auto_control"]
+                if data.get("auto_control", False)
                 else (
                     "Klar – automatisk laststyring er av"
                     if norwegian
                     else "Ready – automatic control is off"
                 )
             ),
-            "no_current_reason": electrical["no_current_reason"],
-            "auto_control": "on" if data["auto_control"] else "off",
-            "han_age": data["han_age_seconds"],
-            "han_fresh": "on" if data["han_fresh"] else "off",
-            "schedule_enabled": "on" if data["schedule_enabled"] else "off",
-            "schedule_reason": data["schedule_reason"],
+            "no_current_reason": electrical.get("no_current_reason", "unknown"),
+            "auto_control": "on" if data.get("auto_control", False) else "off",
+            "han_age": data.get("han_age_seconds"),
+            "han_fresh": "on" if data.get("han_fresh", False) else "off",
+            "schedule_enabled": "on" if data.get("schedule_enabled", False) else "off",
+            "schedule_reason": data.get("schedule_reason", "unknown"),
         }
         return values[self._key]

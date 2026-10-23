@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.15
+
+- Make diagnostic sensor values tolerant of missing coordinator keys so a partial/unavailable reading cannot prevent the sensor platform from loading.
+- Add a concise Norwegian or English `explanation` attribute to every diagnostic sensor while retaining raw Easee/HAN diagnostic attributes.
+- Clarify that `charging_card.yaml` is a single `vertical-stack` card for an existing section, while `charging_view.yaml` is a full `sections` view for raw view configuration. Add a regression test for the distinction.
+- Refresh README, both manuals, project status, and decisions together; add a project image.
+
+
 ## 0.1.0-beta.14
 
 - Ensure the coordinator always publishes measured charger current and make sensor rendering tolerant of a missing optional current value, preventing one missing field from blocking all diagnostic sensors.
