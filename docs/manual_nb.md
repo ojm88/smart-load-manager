@@ -1,8 +1,8 @@
-# Brukermanual — Smart Load Manager beta.4
+# Brukermanual — Smart Load Manager beta.5
 
 ## Hva betaen gjør
 
-Beta.4 leser målinger fra Easee, HAN-måleren og EnergyTariff, viser hvordan Easee-fasene tolkes, beregner en anbefalt ladestrøm og kan sende en dynamisk strømgrense til Easee. Den har kontroll av HAN-målingens alder og valgfri tidsstyring. Automatisk styring er avslått ved første oppstart og etter omstart av Home Assistant. Denne versjonen styrer ikke varmtvannstank eller varmekabler.
+Beta.5 retter lasting av oppsettsflyten når Easee eller EnergyTariff ikke er ferdig satt opp. Den leser målinger fra Easee, HAN-måleren og EnergyTariff, viser hvordan Easee-fasene tolkes, beregner en anbefalt ladestrøm og kan sende en dynamisk strømgrense til Easee. Den har kontroll av HAN-målingens alder og valgfri tidsstyring. Automatisk styring er avslått ved første oppstart og etter omstart av Home Assistant. Denne versjonen styrer ikke varmtvannstank eller varmekabler.
 
 Dette er fortsatt en beta. Den er ikke validert mot en fysisk Home Assistant-instans eller lader. Kontroller sensorene og anbefalingen før du aktiverer automatisk styring.
 
