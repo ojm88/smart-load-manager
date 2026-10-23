@@ -99,6 +99,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
     def native_value(self):
         data = self.coordinator.data
         electrical = data["electrical"]
+        norwegian = str(self.hass.config.language or "").startswith("nb")
         values = {
             "status": data["status"],
             "phase_mode": electrical["phase_mode_name"],
@@ -122,13 +123,13 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             "manual_control_status": (
                 (
                     "Låst – slå av automatisk laststyring for å endre"
-                    if self.hass.config.language.startswith("nb")
+                    if norwegian
                     else "Locked – turn off automatic control to change"
                 )
                 if data["auto_control"]
                 else (
                     "Klar – automatisk laststyring er av"
-                    if self.hass.config.language.startswith("nb")
+                    if norwegian
                     else "Ready – automatic control is off"
                 )
             ),
