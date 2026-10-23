@@ -1,7 +1,7 @@
-# Smart Load Manager beta.8 — standalone example view (built-in cards only).
+# Smart Load Manager beta.9 — standalone example view (built-in cards only).
 # Example entity IDs only: use the entity picker after setup to select the controls created for this Smart Load Manager device.
 # After setup, use the entity picker to confirm/replace each ID; entity IDs can
-# be renamed in HA. Replace the EnergyTariff IDs if you selected other entities.
+# be renamed in HA. The EnergyTariff estimate is a Smart Load Manager sensor; use the entity picker to select it. The charger maximum is read-only.
 type: sections
 title: Bil — Smart laststyring
 path: smart-lading
@@ -26,6 +26,8 @@ sections:
             name: Anbefalt ladestrøm
           - entity: sensor.smart_load_manager_ab12cd34_nedre_ladestr_mgrense
             name: Nedre grense for aktiv ladeform
+          - entity: sensor.smart_load_manager_ab12cd34_maksimal_str_mgrense_fra_easee
+            name: Maksimal strøm fra Easee
           - entity: sensor.smart_load_manager_ab12cd34_styringens_forklaring
             name: Hvorfor denne anbefalingen?
           - entity: sensor.smart_load_manager_ab12cd34_han_m_ling_alder
@@ -78,5 +80,5 @@ sections:
             name: Lader W
           - entity: sensor.energy_used_this_hour
             name: EnergyTariff brukt
-          - entity: sensor.energy_estimate_this_hour
-            name: EnergyTariff estimat
+          - entity: sensor.smart_load_manager_ab12cd34_energytariff_estimat_denne_timen
+            name: EnergyTariff estimat (Smart Load Manager-sensor)

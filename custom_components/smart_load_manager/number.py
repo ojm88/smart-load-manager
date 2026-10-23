@@ -26,22 +26,22 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
     _attr_native_step = 1
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
     _attr_mode = NumberMode.SLIDER
+    _attr_icon = "mdi:current-ac"
 
     def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_manual_current_limit"
         self._attr_has_entity_name = True
-        self._attr_name = "Manuell ladestrømgrense"
+        self._attr_translation_key = "manual_current_limit"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
             model="Easee charging control",
             name=entry.title,
         )
-        # UI needs a finite fallback while Easee metadata may be temporarily
-        # unavailable; positive writes are still blocked unless a live circuit
-        # limit has been detected.
-        self._attr_native_max_value = 32.0
+        # When Easee has no usable limit, expose a zero-range control rather
+        # than implying that an arbitrary positive current is available.
+        self._attr_native_max_value = 0.0
 
     @property
     def native_value(self) -> float | None:
@@ -55,7 +55,7 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
     @property
     def native_max_value(self) -> float:
         data = self.coordinator.data or {}
-        return float(data.get("max_current_a", 0) or self._attr_native_max_value)
+        return float(data.get("max_current_a", 0) or 0.0)
 
     async def async_set_native_value(self, value: float) -> None:
         data = self.coordinator.data or {}

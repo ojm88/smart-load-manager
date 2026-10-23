@@ -1,0 +1,127 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Konfigurer Smart Load Manager",
+        "description": "Velg Easee-laderen og HAN-effektsensoren som måler hele boligens øyeblikkelige effekt. EnergyTariff må være installert og konfigurert først. Timesestimatet opprettes som en sensor av integrasjonen og skal ikke velges her. Maksimal strøm leses fra Easee. Automatisk styring er avslått til du selv aktiverer den. {validation_error}",
+        "data": {
+          "charger_device": "Easee-lader",
+          "han_power_entity": "HAN-effektmåler",
+          "hourly_limit_kwh": "Energigrense per time (kWh)",
+          "tariff_used_entity": "EnergyTariff – brukt energi denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin (kWh)"
+        },
+        "data_description": {
+          "charger_device": "Velg Easee-enheten. Integrasjonen finner status, målt strøm, spenning, faseinformasjon og strømgrenser fra enhetens sensorer.",
+          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
+          "hourly_limit_kwh": "Maksimal samlet energi i gjeldende klokketime. Bruk samme grense som EnergyTariff sin target_energy.",
+          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
+          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+        },
+        "error": {
+          "invalid_setup": "Kontroller kildeverdiene. HAN-sensoren må være tilgjengelig i W eller kW, EnergyTariff brukt energi må være tilgjengelig i kWh, og Easee må ha nødvendige sensorer."
+        },
+        "abort": {
+          "already_configured": "Denne Easee-laderen er allerede konfigurert."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Laderstatus"
+      },
+      "phase_mode": {
+        "name": "Valgt fasemodus"
+      },
+      "output_phase": {
+        "name": "Easee utgangsfase"
+      },
+      "active_phases": {
+        "name": "Aktive faser"
+      },
+      "grid_type": {
+        "name": "Easee detektert nettype"
+      },
+      "voltage_type": {
+        "name": "Detektert spenningssystem"
+      },
+      "line_voltage": {
+        "name": "Beregnet linjespenning"
+      },
+      "ln_voltage": {
+        "name": "Målt fase–nøytral spenning"
+      },
+      "minimum_current": {
+        "name": "Nedre ladestrømgrense"
+      },
+      "recommended_current": {
+        "name": "Anbefalt ladestrøm"
+      },
+      "max_current": {
+        "name": "Maksimal strømgrense fra Easee"
+      },
+      "charger_power": {
+        "name": "Ladeeffekt"
+      },
+      "han_power": {
+        "name": "HAN-effekt"
+      },
+      "energy_used": {
+        "name": "EnergyTariff brukt denne timen"
+      },
+      "energy_estimate": {
+        "name": "EnergyTariff estimat denne timen"
+      },
+      "hourly_limit": {
+        "name": "Energigrense per time"
+      },
+      "confidence": {
+        "name": "Deteksjonssikkerhet"
+      },
+      "reason": {
+        "name": "Elektrisk deteksjonsgrunnlag"
+      },
+      "control_reason": {
+        "name": "Styringens forklaring"
+      },
+      "no_current_reason": {
+        "name": "Easee årsak til begrensning"
+      },
+      "auto_control": {
+        "name": "Automatisk laststyring"
+      },
+      "han_age": {
+        "name": "Alder på HAN-måling"
+      },
+      "han_fresh": {
+        "name": "HAN-måling gyldig"
+      },
+      "schedule_enabled": {
+        "name": "Tidsstyring aktiv"
+      },
+      "schedule_reason": {
+        "name": "Tidsstyring status"
+      }
+    },
+    "switch": {
+      "automatic_control": {
+        "name": "Automatisk laststyring"
+      },
+      "schedule_control": {
+        "name": "Tidsstyring"
+      }
+    },
+    "number": {
+      "manual_current_limit": {
+        "name": "Manuell ladestrømgrense"
+      }
+    },
+    "time": {
+      "schedule_start_time": {
+        "name": "Starttid for lading"
+      }
+    }
+  }
+}

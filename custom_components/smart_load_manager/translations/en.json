@@ -1,0 +1,127 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Smart Load Manager",
+        "description": "Select the Easee charger and the HAN power sensor measuring the home’s instantaneous power. EnergyTariff must be installed and configured first. The hourly estimate is created as an integration sensor and is not selected here. The maximum current is read from Easee. Automatic control stays off until you enable it. {validation_error}",
+        "data": {
+          "charger_device": "Easee charger",
+          "han_power_entity": "HAN power meter",
+          "hourly_limit_kwh": "Hourly energy limit (kWh)",
+          "tariff_used_entity": "EnergyTariff – energy used this hour",
+          "safety_margin_kwh": "Safety margin (kWh)"
+        },
+        "data_description": {
+          "charger_device": "Select the Easee device. The integration discovers status, measured current, voltage, phase information, and current limits from its entities.",
+          "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
+          "hourly_limit_kwh": "Maximum total energy for the current clock hour. Use the same limit as EnergyTariff’s target_energy.",
+          "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
+          "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
+        },
+        "error": {
+          "invalid_setup": "Check the selected sources. The HAN sensor must be available in W or kW, EnergyTariff used energy must be available in kWh, and Easee must expose the required sensors."
+        },
+        "abort": {
+          "already_configured": "This Easee charger is already configured."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Charger status"
+      },
+      "phase_mode": {
+        "name": "Configured phase mode"
+      },
+      "output_phase": {
+        "name": "Easee output phase"
+      },
+      "active_phases": {
+        "name": "Active phases"
+      },
+      "grid_type": {
+        "name": "Easee detected grid type"
+      },
+      "voltage_type": {
+        "name": "Detected voltage system"
+      },
+      "line_voltage": {
+        "name": "Calculated line voltage"
+      },
+      "ln_voltage": {
+        "name": "Measured phase-to-neutral voltage"
+      },
+      "minimum_current": {
+        "name": "Minimum charging current"
+      },
+      "recommended_current": {
+        "name": "Recommended charging current"
+      },
+      "max_current": {
+        "name": "Maximum current limit from Easee"
+      },
+      "charger_power": {
+        "name": "Charging power"
+      },
+      "han_power": {
+        "name": "HAN power"
+      },
+      "energy_used": {
+        "name": "EnergyTariff used this hour"
+      },
+      "energy_estimate": {
+        "name": "EnergyTariff estimate this hour"
+      },
+      "hourly_limit": {
+        "name": "Hourly energy limit"
+      },
+      "confidence": {
+        "name": "Detection confidence"
+      },
+      "reason": {
+        "name": "Electrical detection basis"
+      },
+      "control_reason": {
+        "name": "Control explanation"
+      },
+      "no_current_reason": {
+        "name": "Easee reason for no current"
+      },
+      "auto_control": {
+        "name": "Automatic load control"
+      },
+      "han_age": {
+        "name": "HAN reading age"
+      },
+      "han_fresh": {
+        "name": "HAN reading valid"
+      },
+      "schedule_enabled": {
+        "name": "Schedule enabled"
+      },
+      "schedule_reason": {
+        "name": "Schedule status"
+      }
+    },
+    "switch": {
+      "automatic_control": {
+        "name": "Automatic load control"
+      },
+      "schedule_control": {
+        "name": "Charging schedule"
+      }
+    },
+    "number": {
+      "manual_current_limit": {
+        "name": "Manual charging current limit"
+      }
+    },
+    "time": {
+      "schedule_start_time": {
+        "name": "Charging start time"
+      }
+    }
+  }
+}

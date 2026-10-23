@@ -29,7 +29,7 @@ class AutomaticLoadControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_automatic_control"
         self._attr_has_entity_name = True
-        self._attr_name = "Automatisk laststyring"
+        self._attr_translation_key = "automatic_control"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -60,7 +60,7 @@ class ChargingScheduleControl(CoordinatorEntity[ChargingCoordinator], SwitchEnti
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_schedule_control"
         self._attr_has_entity_name = True
-        self._attr_name = "Tidsstyring"
+        self._attr_translation_key = "schedule_control"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",

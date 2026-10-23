@@ -29,16 +29,13 @@ from .const import (
     DEFAULT_SCHEDULE_START_TIME,
     HAN_MAX_AGE_SECONDS,
     SCHEDULE_WINDOW_HOURS,
-    CONF_TARIFF_ESTIMATE_ENTITY,
     CONF_TARIFF_USED_ENTITY,
-    DYNAMIC_LIMIT_TTL_MINUTES,
-    EASEE_DOMAIN,
-    EASEE_DYNAMIC_LIMIT_SERVICE,
     TARIFF_ESTIMATE_ENTITY,
     TARIFF_USED_ENTITY,
     UPDATE_INTERVAL,
 )
 from .entity_resolution import resolve_easee_entities
+from .control import async_send_dynamic_limit, target_current_for_control
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -150,15 +147,19 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             if not han_fresh and not han_error:
                 han_error = f"HAN-målingen er eldre enn {HAN_MAX_AGE_SECONDS} sekunder eller ugyldig"
             used_entity = self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY)
-            estimate_entity = self.entry.data.get(CONF_TARIFF_ESTIMATE_ENTITY, TARIFF_ESTIMATE_ENTITY)
             energy_used = None
             energy_estimate = None
             tariff_error = ""
             try:
                 energy_used = _number(self.hass.states.get(used_entity))
-                energy_estimate = _number(self.hass.states.get(estimate_entity))
             except (TypeError, ValueError) as err:
                 tariff_error = str(err)
+            # The EnergyTariff estimate is exposed for display and comparison,
+            # but it is deliberately not a setup requirement or control input.
+            try:
+                energy_estimate = _number(self.hass.states.get(TARIFF_ESTIMATE_ENTITY))
+            except (TypeError, ValueError):
+                energy_estimate = None
             charger_power_w = 0.0
             if self.easee.power:
                 power_state = self.hass.states.get(self.easee.power)
@@ -260,8 +261,14 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             if charger_disconnected:
                 recommended = 0
 
-            if self.auto_control:
-                target_current = recommended if recommended is not None else 0
+            target_current = target_current_for_control(
+                enabled=self.auto_control,
+                recommendation=recommended,
+                connected=not charger_disconnected,
+                schedule_allowed=schedule_allowed,
+                sources_valid=not bool(invalid_input_reason),
+            )
+            if target_current is not None:
                 now_ts = local_now.timestamp()
                 command_age = now_ts - self._last_command_at
                 if (
@@ -338,15 +345,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
     async def async_set_current(self, current: int) -> None:
         """Send a persistent-until-replaced dynamic limit through Easee."""
-        await self.hass.services.async_call(
-            EASEE_DOMAIN,
-            EASEE_DYNAMIC_LIMIT_SERVICE,
-            {
-                "device_id": str(self.entry.data["charger_device"]),
-                "current": int(current),
-                "time_to_live": DYNAMIC_LIMIT_TTL_MINUTES,
-            },
-            blocking=True,
+        await async_send_dynamic_limit(
+            self.hass, str(self.entry.data["charger_device"]), int(current)
         )
         self.last_commanded_current = int(current)
         self._last_command_at = dt_util.now().timestamp()

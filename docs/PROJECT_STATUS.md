@@ -11,11 +11,12 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.8** in this repository.
-It includes Easee device selection, HAN power input in W or kW, EnergyTariff
-hourly energy inputs, integration-owned clock scheduling, diagnostic entities, and
-opt-in dynamic current control. The Norwegian and English manuals and a
-standard Lovelace example are included.
+The current implementation baseline is **0.1.0-beta.9** in this repository.
+Beta 9 adds localized setup labels/descriptions, removes the EnergyTariff
+estimate picker and safety dependency, exposes the estimate and Easee maximum
+current as sensors, and adds control/service-payload regression tests. It keeps
+Easee selection, W/kW HAN input, used-energy input, integration-owned clock
+scheduling, diagnostic entities, and opt-in current control.
 
 ## Electrical interpretation
 
@@ -28,12 +29,12 @@ standard Lovelace example are included.
 - The observed Garasje example (about 230 V phase-to-neutral readings and
   current on three phase conductors) should be interpreted as roughly 400 V,
   three-phase charging.
-- The current minimum rule is 11 A for measured 230 V three-phase
-  charging and 6 A otherwise. This reflects the user's Tesla/Charge Up tests;
-  broader model and vehicle combinations still need validation.
-- Normal voltage movement by a few volts updates the calculation and should not
-  by itself restart any future learning process. A detected phase-count change
-  should invalidate any phase-specific learned minimum.
+- The fixed minimum rule is 11 A for measured 230 V three-phase charging with
+  all three phase currents, and 6 A otherwise, based on the user's Tesla and
+  Charge Up/Home tests. No vehicle learning or active probing is implemented
+  or planned under the agreed premises.
+- Normal voltage movement updates the calculation directly; no learning cycle
+  exists to restart.
 
 ## Safety and control status
 
@@ -50,23 +51,20 @@ standard Lovelace example are included.
 
 ## Validation
 
-Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports passed in GitHub Actions. The beta.8 changes are being validated now. The “Invalid handler specified” report was consistent with beta.5 importing
-selectors from the nonexistent `homeassistant.components.selector` module;
-beta.6 corrected it. Beta.7 also removes manually configured schedule helpers.
-The beta.8 config flow has not yet been retried in the user's HA. No physical
-charger service call has been validated. Beta.8 removes the manual maximum
-current field and uses the lowest valid live current limit exposed by Easee;
+Beta.7 unit tests, static compilation, metadata checks, and Home Assistant runtime imports passed in GitHub Actions. The “Invalid handler specified” report was consistent with beta.5 importing selectors from the nonexistent `homeassistant.components.selector` module; beta.6 corrected it. Beta.7 also removed manually configured schedule helpers.
+Beta 9 has automated regression checks; it has not yet been installed and validated in the user's HA. No physical
+charger service call has been validated. Beta 9 removes the estimate input from setup and displays the Easee maximum current as a read-only sensor. It uses the lowest valid live current limit exposed by Easee;
 when no such limit is available, automatic control holds 0 A and positive
 manual commands are rejected.
 
 ## Next work
 
-1. Install beta.8, restart Home Assistant, and confirm the setup form loads without a manually entered maximum-current field. Keep automatic control off; verify Easee current-limit discovery and displayed status, phase, voltage, current, and recommendation values.
-2. Validate schedule behavior and dynamic-limit service calls without the old automation active.
-3. Decide how to learn the lowest stable current for an unknown connected vehicle without identifying it; relearn on phase-count changes, not normal voltage variation.
-4. Review Easee model/firmware differences and consider other controllable loads after Easee validation.
+1. Run the beta.9 Home Assistant test with the old YAML automation disabled and automatic control initially off.
+2. Compare sensor and recommendation values, then enable the integration controller under supervision.
+3. Record actual Easee service behavior and any differences across charger models/firmware.
+4. Consider other controllable loads only after Easee behavior is validated.
 
 ## Release state
 
-Beta.8 is a public development beta, not a production release and not yet a
-published HACS release. It bundles schedule controls and removes manual helper setup. Automated local checks and GitHub Actions must pass before testing in the user's HA.
+Beta.9 is a public development beta, not a production release and not yet a
+published HACS release. It bundles schedule controls, removes manual helper setup, and adds localized setup explanations. Automated local checks and GitHub Actions must pass before testing in the user's HA.

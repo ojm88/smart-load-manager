@@ -6,17 +6,15 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import selector
+from homeassistant.helpers import device_registry as dr, selector
 
 from .const import (
     CONF_CHARGER_DEVICE,
     CONF_HAN_POWER_ENTITY,
     CONF_HOURLY_LIMIT_KWH,
     CONF_SAFETY_MARGIN_KWH,
-    CONF_TARIFF_ESTIMATE_ENTITY,
     CONF_TARIFF_USED_ENTITY,
     DOMAIN,
-    TARIFF_ESTIMATE_ENTITY,
     TARIFF_USED_ENTITY,
 )
 from .entity_resolution import resolve_easee_entities
@@ -41,19 +39,17 @@ def _validate_sources(
         raise ValueError(str(err)) from err
 
     used_entity = str(user_input.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY))
-    estimate_entity = str(user_input.get(CONF_TARIFF_ESTIMATE_ENTITY, TARIFF_ESTIMATE_ENTITY))
-    for entity_id in (used_entity, estimate_entity):
-        state = hass.states.get(entity_id)
-        if state is None or state.state in {"unknown", "unavailable"}:
-            raise ValueError(
-                "EnergyTariff må være konfigurert først; mangler " + entity_id
-            )
-        try:
-            float(state.state)
-        except ValueError as err:
-            raise ValueError("EnergyTariff-sensoren er ikke numerisk: " + entity_id) from err
-        if str(state.attributes.get("unit_of_measurement", "")).lower() != "kwh":
-            raise ValueError("EnergyTariff-sensoren må være i kWh: " + entity_id)
+    state = hass.states.get(used_entity)
+    if state is None or state.state in {"unknown", "unavailable"}:
+        raise ValueError(
+            "EnergyTariff må være konfigurert først; mangler " + used_entity
+        )
+    try:
+        float(state.state)
+    except (TypeError, ValueError) as err:
+        raise ValueError("EnergyTariff-sensoren er ikke numerisk: " + used_entity) from err
+    if str(state.attributes.get("unit_of_measurement", "")).lower() != "kwh":
+        raise ValueError("EnergyTariff-sensoren må være i kWh: " + used_entity)
 
     return device_id, han_entity
 
@@ -74,7 +70,9 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(device_id)
                 self._abort_if_unique_id_configured()
-                title = f"Smart Load Manager {device_id[:8]}"
+                charger = dr.async_get(self.hass).devices.get(device_id)
+                charger_name = (charger.name_by_user or charger.name) if charger else device_id[:8]
+                title = f"Smart Load Manager – {charger_name}"
                 return self.async_create_entry(title=title, data=user_input)
 
         schema = vol.Schema(
@@ -83,9 +81,7 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     selector.DeviceSelectorConfig(integration="easee")
                 ),
                 vol.Required(CONF_HAN_POWER_ENTITY): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor", device_class="power"
-                    )
+                    selector.EntitySelectorConfig(domain="sensor")
                 ),
                 vol.Required(CONF_HOURLY_LIMIT_KWH, default=15.0): selector.NumberSelector(
                     selector.NumberSelectorConfig(
@@ -93,9 +89,6 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 ),
                 vol.Required(CONF_TARIFF_USED_ENTITY, default=TARIFF_USED_ENTITY): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_TARIFF_ESTIMATE_ENTITY, default=TARIFF_ESTIMATE_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
                 vol.Required(CONF_SAFETY_MARGIN_KWH, default=0.3): selector.NumberSelector(

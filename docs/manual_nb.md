@@ -1,78 +1,74 @@
-# Brukermanual — Smart Load Manager beta.8
+# Brukermanual — Smart Load Manager beta.9
 
-## Hva betaen gjør
+## Hva beta 9 gjør
 
-Beta.8 fjerner feltet for manuell maksstrøm fra oppsettet. Maksimal strømgrense leses fra Easee-enhetens kurs-/laderattributter. Beta.7 inkluderer egne HA-kontroller for tidsstyring, slik at brukeren ikke trenger å opprette helpers. Integrasjonen leser Easee, HAN og EnergyTariff, beregner strøm og kan sende dynamisk strømgrense. Automatisk styring er avslått ved første oppstart og etter omstart. Varmtvannstank og varmekabler støttes ikke ennå.
+Smart Load Manager leser Easee-laderens status, strøm, spenning, faseinformasjon og strømgrenser. Den bruker HAN-effektmåleren og EnergyTariff sitt registrerte forbruk denne timen til å beregne en anbefalt dynamisk strømgrense. Integrasjonen kan sende grensen til Easee når du slår på **Automatisk laststyring**.
 
-Dette er fortsatt en beta. Den er ikke validert mot en fysisk Home Assistant-instans eller lader. Kontroller sensorene og anbefalingen før du aktiverer automatisk styring.
+Beta 9 har norske og engelske tekster i oppsettet, forklaringer ved feltene, en sensor for EnergyTariff-estimatet og en egen sensor for Easees maksimale strømgrense. Maksimal strøm er informasjon som leses fra Easee; den skal ikke tastes inn eller endres i denne integrasjonen.
 
-## Før installasjon
+Minimumsstrømmen følger den avtalte regelen, uten læring eller bilidentifikasjon:
 
-1. Installer og konfigurer Easee-integrasjonen.
-2. Installer og konfigurer EnergyTariff. Kontroller at `energy_used_this_hour` og `energy_estimate_this_hour` viser tilgjengelige, numeriske verdier.
-3. Sørg for at HAN-effektsensoren er den samme effektsensoren EnergyTariff bruker. Enheten må være W eller kW, ikke kWh.
-4. Aktiver Easees diagnostiske strøm- og spenningssensorer fra Easee-enhetens integrasjonsinnstillinger.
-5. Sammenlign EnergyTariff sin `target_energy` med timegrensen du legger inn i Smart Load Manager.
+- 11 A når Easee måler strøm på alle tre fasene under lading på 230 V IT/TT.
+- 6 A ellers.
 
-## Installasjon
+Fasebruk og spenning detekteres fra Easees målinger. Den målte spenningen brukes i beregningen, så noen volts variasjon endrer effektberegningen uten å starte noen ny innlæring.
 
-Kopier mappen `custom_components/smart_load_manager` til Home Assistants `custom_components`-mappe, eller installer gjennom HACS dersom du selv har lagt prosjektet i et HACS-kompatibelt GitHub-repository. Start Home Assistant på nytt. Gå til **Innstillinger → Enheter og tjenester → Legg til integrasjon** og velg **Smart Load Manager**.
+Dette er beta-programvare. Den er ikke fysisk testet på din lader før du gjennomfører testen nedenfor. Integrasjonen er ikke en erstatning for vern, kurssikring eller Easees innebygde sikkerhetsfunksjoner.
 
-I oppsettskjemaet velger du Easee-lader, HAN-effekt, EnergyTariff-sensor for brukt energi, EnergyTariff-estimat, timegrense og sikkerhetsmargin. Maksimal ladestrøm hentes automatisk fra Easees kurs-/ladergrense, så du skal ikke angi den manuelt. Hvis Easee ikke rapporterer en gyldig grense, holdes styringen på 0 A og positive manuelle kommandoer avvises.
+## Forutsetninger
 
-Tidsstyring er valgfri og leveres av integrasjonen. Etter oppsett finner du entitetene **Tidsstyring** (bryter) og **Starttid lading** (klokkeslett, standard 23:00) på Smart Load Manager-enheten. Du trenger ikke lage `input_datetime` eller andre helpers. Når tidsstyring er på, tillates lading i et daglig 12-timersvindu fra starttidspunktet. Når den er av, brukes ikke klokkevindu. Valget og starttidspunktet beholdes etter omstart. Automatisk laststyring starter fortsatt avslått etter omstart.
+1. Easee-integrasjonen må være installert og laderen må være lagt til i Home Assistant.
+2. EnergyTariff må være installert og konfigurert. Sensoren for **brukt energi denne timen** må være tilgjengelig i kWh.
+3. Bruk samme HAN-effektsensor som EnergyTariff er satt opp med. Den må måle øyeblikkelig effekt i W eller kW, ikke energi i kWh.
+4. Aktiver Easees diagnostiske strøm- og spenningssensorer hvis de er deaktivert.
+5. Sett timegrensen i integrasjonen lik EnergyTariff sin `target_energy`.
 
-## Easee-data og fasetolkning
+## Oppsett
 
-Pakken finner Easee-sensorer som tilhører den valgte enheten; du skal ikke skrive inn `sensor.easee_*`-navn manuelt. Sensorattributter leses etter feltnavn, og Easee-enum-kodene tolkes innenfor hvert sitt kodefelt.
+Installer via HACS med prosjektets egendefinerte repository, eller kopier `custom_components/smart_load_manager` til Home Assistants `custom_components`-mappe. Start Home Assistant på nytt. Velg **Innstillinger → Enheter og tjenester → Legg til integrasjon → Smart Load Manager**.
 
-- `config_phaseMode`: 1 = låst én fase, 2 = automatisk, 3 = låst tre faser.
-- `state_outputPhase`: faktisk Easee-utgangskonfigurasjon. Koder 10–15 er énfase, 20–22 er tofase og 30 er trefase TN. Den dekodede teksten vises separat fra fasemodusen.
-- `config_detectedPowerGridType`: når tilgjengelig, viser Easees nettypekode (blant annet TN 1/2/3-fase og IT 1/3-fase).
-- Terminalstrømmer og terminalspenninger brukes til å beregne faktisk aktiv fasebruk og spenningsklasse. Integrasjonen baserer seg ikke bare på gjennomsnittssensoren «Spenning».
-- `state_reasonForNoCurrent` vises som separat forklaring. Samme numeriske verdi i et annet enum-felt har ikke nødvendigvis samme betydning.
+Velg Easee-enheten, HAN-effektsensoren, EnergyTariff-sensoren for brukt energi, timegrense og sikkerhetsmargin. Oppsettet spør ikke etter timesestimat eller maksimal ladestrøm:
 
-Avtalt nedre strømgrense: 230 V med tre aktive faselederstrømmer gir 11 A; ellers 6 A. Klassifiseringen følger målt spenningsklasse og faktisk fasebruk, ikke et manuelt IT/TT-valg. Hvis sensorer mangler, er ukjente eller gir motstridende data, sender automatisk styring 0 A.
+- Timesestimatet vises etter oppsett som sensor fra Smart Load Manager. Det er kun til sammenligning og er ikke et styringskrav.
+- Easees maksimale strømgrense vises som en skrivebeskyttet sensor og brukes som øvre beregningsgrense.
+- Hvis Easee ikke rapporterer en gyldig strømgrense, er anbefalingen 0 A og manuell positiv strømgrense sperres.
+- Hvis en kilde mangler eller ikke har riktig enhet, viser oppsettet en forklaring og lar deg rette valget.
 
-## Styring
+Timegrensen og sikkerhetsmarginen lagres i integrasjonen. Du skal ikke lage egne `input_number`, `input_datetime` eller andre hjelpere.
 
-### Automatisk laststyring
+## Sensorer og styring
 
-Slå på `Automatisk laststyring` først når diagnostikksensorene er kontrollert. Den er av som standard og blir av igjen etter omstart. Når den er aktiv, beregnes strømgrensen hvert 30. sekund. Easee mottar bare en ny kommando når anbefalingen endres, og kommandoen fornyes minst hvert femte minutt. Kommandoen bruker `time_to_live: 0`, som i Easee-integrasjonen betyr at grensen gjelder inntil en ny dynamisk grense sendes.
+Integrasjonen oppretter et Smart Load Manager-apparat med sensorer for laderstatus, valgt fasemodus, faktisk utgangsfase, aktive faser, målt fase-/linjespenning, nettype, minstegrense, anbefalt strøm, Easees maksimale strøm, ladeeffekt, HAN-effekt, EnergyTariff brukt/estimert energi, måleferskhet og forklaring på styringen.
 
-Beregningen trekker målt ladeeffekt fra HAN-effekten for å anslå huslasten, estimerer resterende husenergi i timen, trekker fra forbrukt EnergyTariff-energi og sikkerhetsmargin, og regner tilgjengelig energi om til ampere med gjeldende målte spenning/fasekonfigurasjon. Dersom tilgjengelig strøm blir lavere enn tillatt minimum, anbefales 0 A i stedet for en ugyldig strøm under grensen.
+**Automatisk laststyring** er avslått ved oppsett og etter Home Assistant-omstart. Når du slår den på, beregner integrasjonen på nytt hvert 30. sekund. Den sender anbefalt strøm når lading er tillatt, og sender 0 A når bilen er frakoblet, tidsvinduet er lukket, nødvendige kildedata er ugyldige/utdaterte eller det ikke finnes et pålitelig elektrisk grunnlag. Easee-grensen oppdateres når den endres og fornyes hvert femte minutt. `time_to_live: 0` gjør at siste kommando blir stående til den erstattes.
 
-### Manuell ladestrømgrense
+Beregningen bruker HAN-effekt minus laderens målte effekt for å anslå huslast. Den trekker EnergyTariff sitt forbruk hittil denne timen, forventet husenergi resten av timen og sikkerhetsmargin fra timegrensen. Gjenværende energi omregnes til ampere med målt spenning og detektert fasebruk, og begrenses av Easees rapporterte maksimale strøm.
 
-`Manuell ladestrømgrense` sender en grense via Easee-integrasjonens `easee.set_charger_dynamic_limit`. 0 A betyr pause. En positiv verdi under den detekterte minimumsgrensen avvises. Slå av automatisk styring før manuelle endringer. Easee beholder grensen til den erstattes av en ny dynamisk grense; dette endrer ikke laderens installerte maksstrøm.
+Når **Automatisk laststyring** slås av, stopper integrasjonen å sende nye kommandoer; Easee beholder siste dynamiske grense. Dette er grunnen til at den gamle automasjonen må slås på igjen ved tilbakeføring. Den manuelle strømgrensen sender en egen Easee-kommando; 0 A betyr pause. Positive manuelle verdier kan ikke overstige Easees rapporterte grense eller være lavere enn den detekterte minimumsstrømmen.
 
 ### Tidsstyring
 
-Slå på Smart Load Manager-entiteten **Tidsstyring** for å bruke klokkevinduet. Still **Starttid lading** til ønsket klokkeslett. Når tidsstyring er på, tillates lading i 12 timer fra starttidspunktet; tidsvinduet krysser midnatt og gjentas daglig. Når den er av, følger ladingen timebudsjettet uten klokkevindu. Tidsinnstillingene lagres av integrasjonen. For at integrasjonen skal sende strømgrenser, må **Automatisk laststyring** også være på.
+Integrasjonen har en egen bryter **Tidsstyring** og tidsentiteten **Starttid for lading** (standard 23:00). Når tidsstyring er på, tillates lading i et daglig 12-timersvindu fra starttidspunktet. Vinduet går over midnatt. Når tidsstyring er av, brukes timebudsjettet uten klokkeslettsperre. Tidsinnstillingene beholdes ved omstart; automatisk laststyring starter likevel avslått.
 
-HAN-måleren må vise positiv effekt, og selve sensorverdien må ha endret seg i løpet av de siste 60 sekundene. Hvis verdien ikke endres, blir utilgjengelig eller er 0, sender aktiv automatisk styring 0 A. Dette følger samme `last_changed`-vakt som automasjonen din. Når måleren igjen oppdateres med gyldig verdi, beregnes ladestrømmen på nytt.
+## Sikker test i en Home Assistant-instans som allerede styrer laderen
+
+Testen lar din eksisterende løsning være urørt, bortsett fra at automasjonen midlertidig deaktiveres så den ikke konkurrerer med integrasjonen.
+
+1. Ta en Home Assistant-sikkerhetskopi. Noter hvordan du reaktiverer den eksisterende automasjonen **Dynamisk styring av Easee-lader Opptimalisert V3.0**.
+2. Deaktiver denne automasjonen før du sender strømgrenser med den nye integrasjonen. Ikke slett den, og ikke endre YAML-en.
+3. Installer beta 9 og start Home Assistant på nytt. La **Automatisk laststyring** være av.
+4. Kontroller oppsettskjemaet: det skal ikke be om EnergyTariff-estimat eller maksimal strøm. Etter oppsett bekrefter du at EnergyTariff-estimatet og Easees maksimale strøm vises som sensorer.
+5. Mens automatisk styring fortsatt er av, sammenlign målt spenning, aktive faser, minste strøm, Easees maksimale strøm, HAN-effekt, EnergyTariff brukt energi og anbefalt strøm med Easee-appen og eksisterende målinger. Ingen dynamisk grense sendes i denne observasjonsfasen.
+6. Når sensorene stemmer, aktiver automatisk styring mens du er til stede og følger med på laderen. Den gamle automasjonen skal fortsatt være deaktivert. Kontroller at anbefalingen og den rapporterte Easee-grensen følger hverandre, og at ladingen reagerer som forventet.
+7. Ikke fremprovoser ugyldig måler eller lukket klokkevindu mens lading må fortsette. Disse tilfellene dekkes av automatiserte tester; en faktisk 0 A-pause kan testes separat når det er greit å avbryte ladingen.
+8. For å gå tilbake: slå av **Automatisk laststyring** og reaktiver den gamle automasjonen. Den vil sende sin beregnede grense ved neste trigger. Ikke la begge styringene være aktive samtidig.
+
+Hvis noe ikke stemmer: slå av automatisk styring, reaktiver den gamle automasjonen og send sensorverdier/logg før videre feilsøking. Beta 9 skal ikke aktiveres automatisk ved omstart.
 
 ## Dashboard
 
-Importer eller kopier `examples/lovelace/charging_view.yaml` inn i en ny Lovelace-visning. Kortet bruker standard HA-kort. Erstatt markerte eksempel-entity_id-er med entitetene som ble opprettet for din lader og de EnergyTariff-sensorene du valgte. Ikke lim inn kortet i den eksisterende produksjonsvisningen før entitetene er kontrollert.
+`examples/lovelace/charging_view.yaml` er et eksempel med standard Home Assistant-kort. Det viser kontrollene, anbefalt strøm, minste strøm, Easees maksimale strøm, elektrisk deteksjon og EnergyTariff-sensorene. Bytt plassholdernes entity-ID-er med entity-ID-ene HA opprettet for din Smart Load Manager-enhet før du legger YAML-en inn i et dashboard.
 
-## Første test
+## Verifisering og begrensninger
 
-1. La automatisk styring være av. Kontroller at status, valgt fasemodus, faktisk utgangsfase, aktive faser, spenning, strømgrense og beregnet anbefaling stemmer med Easee-appen og målingene.
-2. Kontroller at HAN-sensorens enhet er W eller kW, at effektsensoren måler totalforbruket, og at EnergyTariff-sensorene viser riktig time.
-3. Prøv manuelt å sette 0 A mens du følger med på at ladingen pauses. Gjenoppta med minst anbefalt minimum, men aldri over Easees rapporterte kursgrense.
-4. Kontroller at HAN-målingens alder er under 60 sekunder og at gyldighetssensoren viser Ja. Hvis tidsstyring brukes, test med den av først og bekreft starttid og tidsvindu før du slår den på.
-5. Først etter dette kan du aktivere automatisk styring mens du følger anbefalingen, HAN-effekten, Easee-strømmen og EnergyTariff-verdiene.
-6. Slå av automatisk styring hvis verdier blir ukjente eller ikke samsvarer med målingene. Når den er av, slutter integrasjonen å sende nye grenser, men Easee beholder siste dynamiske grense inntil en ny grense erstatter den. Sett ønsket manuell grense eller aktiver automatisk styring igjen.
-
-Deaktiver den gamle automasjonen **Dynamisk styring av Easee-lader Opptimalisert V3.0** før du slår på automatisk styring i Smart Load Manager. Begge styringene bruker samme Easee-tjeneste og kan ellers sende ulike strømgrenser.
-
-## Feilsøking og begrensninger
-
-- Hvis Home Assistant viser «Config flow could not be loaded» eller «Invalid handler specified», kontroller at beta.8 eller nyere er lastet ned og at Home Assistant er startet på nytt. Hvis feilen fortsetter, hent loggen for `custom_components.smart_load_manager.config_flow` fra **Innstillinger → System → Logger**.
-- Oppsettet feiler hvis de valgte kildeentitetene ikke er tilgjengelige/numeriske eller hvis HAN-sensoren ikke er W/kW.
-- Hvis Easees strøm-/spenningssensorer er deaktivert, aktiver dem og last integrasjonen på nytt.
-- «Ukjent» fase eller spenning betyr at pakken ikke har nok pålitelige data; automatisk styring sender da 0 A.
-- Betaen oppdager kompatibilitet via tilgjengelige Easee-entiteter og attributter, ikke en full sertifisering av alle lademodeller.
-- EnergyTariff-estimat vises for sammenligning. Den foreløpige beregningen bruker målt HAN-effekt minus Easee-effekt for å anslå huslasten, siden estimatet kan inkludere elbillading.
-- Testene dekker beregningsfunksjoner, ikke oppstart i HA, ekte Easee-svar eller fysisk lading. Ikke bruk betaen som eneste elektriske beskyttelse eller sikringsvern.
+GitHub Actions kjører enhetstester for elektriske beregninger, valg av strømkommando og tjenestekallet som sender positiv strøm/0 A med `time_to_live: 0`. Den kompilerer integrasjonsmodulene, kontrollerer JSON og importerer oppsettmodulen i Home Assistant-runtime. Dette beviser ikke at en kommando er fysisk mottatt av laderen. Den kontrollerte HA-testen over er nødvendig for å validere samspillet med din Easee-installasjon.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.9
+
+- Add Norwegian and English setup translations, field explanations, entity names, and clearer icons.
+- Remove the EnergyTariff estimate from setup and from safety gating. Keep it as an integration diagnostic sensor; only the used-this-hour sensor is selected for the calculation.
+- Expose Easee's reported maximum current as a read-only sensor and show no positive manual range while the live limit is unavailable.
+- Add regression tests for control decisions and the exact Easee dynamic-limit service payload, including 0 A, with the existing indefinite TTL behavior.
+- Update both manuals, the dashboard example, and project decisions to reflect the agreed fixed 11 A / 6 A minimum rules without current learning.
+
 ## 0.1.0-beta.8
 
 - Remove the manually entered maximum-current value from setup. The controller now caps charging at the lowest valid circuit/charger current limit reported by the selected Easee device.

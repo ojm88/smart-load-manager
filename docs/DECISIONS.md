@@ -18,8 +18,9 @@ chat history. Add a dated entry when a decision changes.
   registries. Keep installation-specific IDs out of the shared integration.
 - Require the user to select the instantaneous HAN power sensor used by
   EnergyTariff. Accept W or kW; reject energy counters in kWh.
-- EnergyTariff is a prerequisite because its used-this-hour and estimate
-  sensors are part of the intended energy-budget setup.
+- EnergyTariff is a prerequisite. Select its used-this-hour sensor for the
+  control calculation. The estimate is displayed as an integration sensor,
+  but is not a setup requirement or safety gate.
 
 ## 2026-10-23 — Electrical detection
 
@@ -34,14 +35,12 @@ chat history. Add a dated entry when a decision changes.
 
 ## 2026-10-23 — Minimum charging current
 
-- Current beta.4 behavior uses 11 A when three phase conductors are active on
-  a 230 V system and 6 A otherwise, based on the user's tests with a Tesla and
-  Easee Charge Up / Home chargers.
-- Do not identify the connected vehicle by make or model.
-- Vehicle-specific automatic learning of the lowest stable current remains an
-  open development item; it must be associated with the electrical charging
-  configuration, invalidated on phase-count changes, and robust to normal
-  voltage variation before it is presented as implemented.
+- Use 11 A when measured current is present on all three phase conductors
+  during 230 V IT/TT charging; use 6 A otherwise. This is the fixed agreed
+  rule based on the user's tests with a Tesla and Easee Charge Up / Home.
+- Do not identify the connected vehicle by make or model. Do not perform an
+  automatic learning or active minimum-current probing process. The agreed
+  electrical premises are implemented directly.
 
 ## 2026-10-23 — Control safety and scheduling
 
@@ -83,3 +82,18 @@ chat history. Add a dated entry when a decision changes.
   reported by the selected Easee device.
 - If Easee reports no usable limit, keep automatic control at 0 A and reject
   positive manual current commands until a limit is available.
+
+## 2026-10-23 — Beta 9 setup and diagnostics
+
+- Provide Norwegian and English config-flow labels and per-field explanations,
+  and localized names/icons for integration entities.
+- Do not ask the user to select EnergyTariff's estimate sensor; expose its
+  standard sensor value as a read-only diagnostic and do not let an unavailable
+  estimate block charging control.
+- Expose the live maximum current reported by Easee as a read-only sensor. Do
+  not ask for or permit manual configuration of the persistent charger limit.
+- Preserve automatic control as opt-in and off after restart. If automatic
+  control is on, send 0 A for disconnected charging, closed schedule, invalid
+  or stale required sources, or unreliable electrical calculation.
+- The user will temporarily disable the existing YAML automation during the
+  supervised integration test; do not remove or modify that working automation.

@@ -2,23 +2,29 @@
   "config": {
     "step": {
       "user": {
-        "title": "Sett opp Smart laststyring",
-        "description": "Beta 8: Velg Easee-lader, HAN-effekt og EnergyTariff-sensorer. HAN må være W eller kW. Maksimal ladestrøm hentes automatisk fra Easees rapporterte kurs-/ladergrense; du skal ikke angi den manuelt. Aktiver Easees diagnostiske strøm- og spenningssensorer. Tidsstyring leveres som egne kontroller etter oppsett; du trenger ikke opprette helpers. Automatisk laststyring er av som standard. {validation_error}",
+        "title": "Konfigurer Smart Load Manager",
+        "description": "Velg Easee-laderen og HAN-effektsensoren som måler hele boligens øyeblikkelige effekt. EnergyTariff må være installert og konfigurert først. Timesestimatet opprettes som en sensor av integrasjonen og skal ikke velges her. Maksimal strøm leses fra Easee. Automatisk styring er avslått til du selv aktiverer den. {validation_error}",
         "data": {
           "charger_device": "Easee-lader",
-          "han_power_entity": "HAN-effektsensor (W eller kW)",
-          "hourly_limit_kwh": "Forbruksgrense per time (kWh)",
-          "tariff_used_entity": "EnergyTariff: brukt denne timen",
-          "tariff_estimate_entity": "EnergyTariff: estimat denne timen",
+          "han_power_entity": "HAN-effektmåler",
+          "hourly_limit_kwh": "Energigrense per time (kWh)",
+          "tariff_used_entity": "EnergyTariff – brukt energi denne timen",
           "safety_margin_kwh": "Sikkerhetsmargin (kWh)"
+        },
+        "data_description": {
+          "charger_device": "Velg Easee-enheten. Integrasjonen finner status, målt strøm, spenning, faseinformasjon og strømgrenser fra enhetens sensorer.",
+          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
+          "hourly_limit_kwh": "Maksimal samlet energi i gjeldende klokketime. Bruk samme grense som EnergyTariff sin target_energy.",
+          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
+          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+        },
+        "error": {
+          "invalid_setup": "Kontroller kildeverdiene. HAN-sensoren må være tilgjengelig i W eller kW, EnergyTariff brukt energi må være tilgjengelig i kWh, og Easee må ha nødvendige sensorer."
+        },
+        "abort": {
+          "already_configured": "Denne Easee-laderen er allerede konfigurert."
         }
       }
-    },
-    "error": {
-      "invalid_setup": "Oppsettet er ikke klart. Se forklaringen over, kontroller sensorene og prøv igjen."
-    },
-    "abort": {
-      "already_configured": "Denne Easee-laderen er allerede satt opp."
     }
   }
 }
