@@ -11,8 +11,8 @@ The project must remain independent of one installation's entity names.
 
 ## Current source baseline
 
-The current implementation baseline is **0.1.0-beta.11** in this repository.
-Beta 11 adds an integration-owned Easee phase-mode selector, concise localized entity display names, and clearer manual-current guidance. Forbruksgrense remains a single installation-wide setting. To enforce that scope until a shared allocator exists, this beta permits only one configured load entry per HA installation. The visible name is Smart Load Manager OJM; the internal domain and prior entity identities are preserved where possible. EnergyTariff used energy remains required and its estimate is diagnostic only.
+The current implementation baseline is **0.1.0-beta.12** in this repository.
+Beta 12 assigns short, stable `sensor.slm_*` IDs to diagnostic sensors and migrates existing registry IDs while preserving unique IDs. It adds measured charger current and a manual-control status sensor, disables manual current while automatic control is on, and restores the descriptive Markdown status and graph dashboard. The agreed Forbruksgrense ID is unchanged. As before, one configured load entry per HA installation is allowed until a shared allocator exists.
 
 ## Electrical interpretation
 
@@ -47,8 +47,7 @@ Beta 11 adds an integration-owned Easee phase-mode selector, concise localized e
 
 ## Validation
 
-Beta 11 automated local checks pass: 33 unit tests, Python compilation, and
-JSON validation. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed beta.10 and completed setup; screenshots
+Beta 12 automated local checks pass: 37 unit tests, Python compilation, JSON validation, and Lovelace YAML parsing. A Home Assistant runtime import/config-flow test could not be run in the local development environment because Home Assistant dependencies are not installed; GitHub Actions provides the HA-runtime import check. The user has installed beta.10 and completed setup; screenshots
 confirm the integration entities and disconnected-car status in HA. The config-entry
 migration, actual Easee dynamic-limit service calls, and charging behavior have not
 been confirmed in the live setup. No physical charging command has been confirmed.

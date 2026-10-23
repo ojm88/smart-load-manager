@@ -3,6 +3,13 @@
 This file records durable decisions so work can continue without relying on
 chat history. Add a dated entry when a decision changes.
 
+## 2026-10-23 — Stable entity IDs and manual control ownership (beta 12)
+
+- Give every Smart Load Manager diagnostic sensor a concise, stable `slm_` object ID. Keep the agreed installation-wide Forbruksgrense entity ID exactly as it is.
+- Migrate existing entity-registry IDs on upgrade while preserving Home Assistant unique IDs; never take over a target ID already owned by another entity.
+- Manual current is an optional alternative control. It is unavailable while automatic control is enabled, a status sensor explains why, and direct writes are rejected while it is locked.
+- Maintain the descriptive Markdown status card, clear control/measurement sections, and charging and energy history graphs in the Lovelace example. Do not hard-code installation-specific Easee IDs.
+
 ## 2026-10-23 — Project scope and naming
 
 - Use **Smart Load Manager OJM** as the visible project and integration name. Keep the internal domain `smart_load_manager` stable to preserve existing config entries. Do not name
