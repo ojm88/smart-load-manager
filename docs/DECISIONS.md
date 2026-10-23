@@ -104,3 +104,13 @@ chat history. Add a dated entry when a decision changes.
 - This is the authoritative hourly target used by the Smart Load Manager calculation. Do not ask for it during setup and do not read EnergyTariff's configured `target_energy` as a competing setpoint.
 - EnergyTariff remains required as the source of measured energy consumed this hour; its estimate remains a diagnostic sensor.
 - When upgrading beta.9 entries, migrate their existing `hourly_limit_kwh` value into the select's initial effective state and persist the user's new selection in config-entry options.
+
+## 2026-10-23 — Extensible load and multi-charger architecture
+
+- Keep **Smart Load Manager OJM** load-agnostic at the project/core level. Easee EV charging is the first load adapter; future adapters may include hot-water tanks and floor heating. Do not let the central budget/controller depend on Easee-specific entity names or APIs.
+- Model each charger/load as its own configured instance with isolated telemetry, settings, calculated recommendation, and actuator command. Do not use singleton state that would prevent adding a second or third charger.
+- Separate (1) device/load adapters and telemetry, (2) site/shared-budget allocation policy, and (3) device-specific command handling. The current beta remains a single configured Easee charger; prepare clean interfaces without prematurely implementing multi-load scheduling.
+- For future multi-charger installs, represent circuit/site membership and Easee master/slave relationships explicitly. Keep circuit-level shared limits distinct from charger-level dynamic limits; a circuit-level command must target the Easee master where required.
+- Do not assume whether multiple vehicles charge sequentially or simultaneously. Before implementing allocation, the owner must choose the policy (e.g. priority/sequential, simultaneous sharing, or configurable priorities) and specify how it behaves when a vehicle connects or disconnects.
+- Keep the current load as the first implementation; add hot-water and floor-heating devices as independent controllable loads with their own limits/constraints, then let a shared allocator coordinate them. Preserve the existing user-facing name and entity compatibility.
+- Record future features and unresolved policy choices here and in project status so they are not lost between beta iterations. Every beta must update code, tests, README, both manuals, Lovelace example, changelog, decisions, and project status as one release unit.
