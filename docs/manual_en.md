@@ -6,6 +6,16 @@ It helps keep your home within the **Forbruksgrense** you choose for each hour. 
 
 High demand peaks can mean a more expensive electricity tariff tier. Avoiding those peaks may save some households thousands of kroner over a year. The result depends on your tariff and household use; savings are not guaranteed.
 
+### Why it was made
+
+In Norway, the grid charge can rise when a home uses a lot of electricity at the same time. Smart Load Manager can move EV charging to hours when the home has more room under the limit you chose. The goal is to avoid unnecessary peaks, not to promise a specific saving. Tariffs and steps differ between grid companies. [Glitre Nett explains its prices and steps here](https://www.glitrenett.no/kunde/nettleie-og-priser/nettleiepriser-privatkunde).
+
+The project focuses on loads that can wait. Hot water and floor heating may be considered later because they can store heat. For now, the integration controls only Easee charging. It does not try to control lights, cooking, tumble dryers, or heat pumps; people need to use those when needed.
+
+The integration does not try to find the cheapest spot-price hour. Optional scheduling can still place charging at night, when many grid companies charge less for grid use. Norgespris and the electricity price are separate parts of the bill; the main goal here is staying below the chosen capacity-tariff step.
+
+Smart Load Manager builds on open-source work shared by the Home Assistant community. Home Assistant’s Easee integration provides access to the charger, and EnergyTariff by Erling Paulsen provides the hourly energy reading used in the calculation. Thank you to them and to everyone who shares their work. [Versatile Thermostat (VTherm)](https://github.com/jmcollin78/versatile_thermostat) may be useful inspiration if thermal-load control is explored later; it is not part of this integration today.
+
 ## Before setup
 
 Install and configure the **Easee** and **EnergyTariff** Home Assistant integrations first. You need an instantaneous HAN power sensor in W or kW and EnergyTariff’s sensor for energy used this hour. Select the same HAN sensor in both integrations.

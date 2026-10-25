@@ -46,7 +46,12 @@ class TranslationCoverageTests(unittest.TestCase):
                     expected_name,
                 )
         sensor_source = (INTEGRATION / "sensor.py").read_text()
-        self.assertIn("hvorfor bilen lader, venter eller får mindre strøm", sensor_source)
+        self.assertIn("hvorfor anbefalt ladestrøm justeres", sensor_source)
+
+    def test_control_reason_messages_are_neutral_and_technical(self):
+        coordinator_source = (INTEGRATION / "coordinator.py").read_text()
+        self.assertNotIn('control_reason = "Jeg ', coordinator_source)
+        self.assertIn("målt husforbruk, gjenstående timebudsjett og sikkerhetsmargin", coordinator_source)
 
 
 if __name__ == "__main__":

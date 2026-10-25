@@ -288,23 +288,23 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 # unavailable; never resume on a guess.
                 recommended = 0
             if charger_disconnected:
-                control_reason = "Bilen er ikke koblet til laderen ennå"
+                control_reason = "Bilen er ikke koblet til laderen."
             elif self.charging_paused:
-                control_reason = "Pause er på. Laderen får 0 A til du fortsetter ladingen"
+                control_reason = "Ladingen er satt på pause. Easee-grensen er satt til 0 A."
             elif invalid_input_reason:
-                control_reason = "Jeg venter på oppdaterte målinger før jeg styrer ladingen"
+                control_reason = "Laststyringen avventer gyldige og oppdaterte måledata."
             elif not schedule_allowed:
-                control_reason = "Tidsstyringen venter til ladetiden starter"
+                control_reason = "Tidsstyringen hindrer lading frem til valgt starttid."
             elif max_current <= 0:
-                control_reason = "Jeg venter på at Easee skal melde hvor mye strøm laderen kan bruke"
+                control_reason = "Avventer gyldig maksimal strømgrense fra Easee."
             elif recommended is None:
-                control_reason = "Jeg venter på sikre målinger fra laderen og strømmåleren"
+                control_reason = "Ladingen avventer gyldige fase- og spenningsmålinger."
             elif recommended == 0 and electrical.minimum_current_a is None and self.last_commanded_current == 0:
-                control_reason = "Målingene er usikre. Ladingen venter til de er i orden"
+                control_reason = "Fase- eller spenningsgrunnlaget er usikkert. Ladingen avventer gyldige målinger."
             elif recommended == 0 and electrical.minimum_current_a is not None:
-                control_reason = "Huset har brukt opp grensen for denne timen. Ladingen venter"
+                control_reason = "Tilgjengelig timebudsjett er lavere enn laderens minste strøm. Ladingen er satt på pause."
             else:
-                control_reason = "Jeg justerer ladingen for å holde husets forbruk innenfor grensen"
+                control_reason = "Strømgrensen justeres etter målt husforbruk, gjenstående timebudsjett og sikkerhetsmargin."
 
             return {
                 "status": status_state.state,

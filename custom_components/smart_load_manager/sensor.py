@@ -118,8 +118,8 @@ SENSOR_EXPLANATIONS = {
         "Brief explanation of how phase and voltage were interpreted.",
     ),
     "control_reason": (
-        "Forklarer med en enkel tekst hvorfor bilen lader, venter eller får mindre strøm.",
-        "In plain language, explains why charging is running, waiting, or reduced.",
+        "Viser hvorfor anbefalt ladestrøm justeres, eller hvorfor ladingen avventer eller er satt på pause.",
+        "Explains why the recommended charging current is adjusted, or why charging is waiting or paused.",
     ),
     "manual_control_status": (
         "Viser om manuell ladestrøm kan endres. Den er låst når automatisk laststyring er på.",

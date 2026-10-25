@@ -6,6 +6,16 @@ Den passer på at huset holder seg innenfor **Forbruksgrense** i løpet av timen
 
 Høye forbrukstopper kan gi dyrere effektledd på strømregningen. Ved å unngå slike topper kan noen husholdninger spare flere tusen kroner i året. Hvor mye det betyr, kommer an på strømavtalen og forbruket hjemme. Besparelse er ikke garantert.
 
+### Bakgrunnen
+
+I Norge kan nettleien bli høyere når boligen bruker mye strøm samtidig. Smart Load Manager prøver derfor å flytte ladingen av elbilen til timer der huset har bedre plass innenfor grensen du har valgt. Målet er å unngå unødvendige forbrukstopper – ikke å love en bestemt besparelse. Nettleie og trinn er forskjellige fra nettselskap til nettselskap. [Glitre Nett forklarer sine priser og trinn her](https://www.glitrenett.no/kunde/nettleie-og-priser/nettleiepriser-privatkunde).
+
+Vi har valgt styrbare laster som kan vente litt. Varmtvann og varmekabler kan være aktuelle å støtte senere fordi de kan lagre varme. Integrasjonen styrer foreløpig bare Easee-lading. Den prøver ikke å styre lys, matlaging, tørketrommel eller varmepumpe – slike ting må kunne brukes når familien trenger dem.
+
+Integrasjonen prøver ikke å finne den billigste spotpristimen. Tidsstyring kan likevel legge ladingen til natten, når nettleien hos mange nettselskaper er lavere. Norgespris og strømpris er egne deler av regningen; hovedmålet her er å holde forbruket under ønsket effekttrinn.
+
+Smart Load Manager bygger på åpen kildekode og fellesskapets arbeid. Home Assistants Easee-integrasjon gir tilgang til laderen, og EnergyTariff av Erling Paulsen leverer timeforbruket som brukes i beregningen. Takk til dem og alle som deler løsninger med Home Assistant-fellesskapet. Varmestyring med [Versatile Thermostat (VTherm)](https://github.com/jmcollin78/versatile_thermostat) er mulig inspirasjon for framtidig arbeid; den er ikke en del av integrasjonen nå.
+
 ## Før du begynner
 
 Home Assistant-integrasjonene for **Easee** og **EnergyTariff** må være installert og satt opp først. Du trenger en HAN-sensor for øyeblikkelig effekt i W eller kW, og EnergyTariff-sensoren som viser forbruk hittil denne timen. Bruk samme HAN-sensor som EnergyTariff.
@@ -31,7 +41,7 @@ Minste ladestrøm følger den avtalte faste regelen: **11 A** ved målt 230 V tr
 
 Hvis HAN-målingen, EnergyTariff-dataene eller Easee-grensene mangler eller ikke er gyldige, holder automatisk styring laderen på 0 A. Kortet viser hvorfor den venter eller begrenser ladingen.
 
-Sensorn **Ladeforklaring** bruker vanlige ord for å fortelle hvorfor bilen lader, venter eller får mindre strøm.
+Sensoren **Ladeforklaring** bruker vanlige ord for å fortelle hvorfor bilen lader, venter eller får mindre strøm.
 
 ## Kort på dashboardet
 

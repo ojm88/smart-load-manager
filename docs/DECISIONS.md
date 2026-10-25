@@ -46,6 +46,17 @@
 This file records durable decisions so work can continue without relying on
 chat history. Add a dated entry when a decision changes.
 
+## 2026-10-25 — Project motivation, acknowledgements, and support
+
+- Explain that the project's main goal is reducing avoidable household peaks that can affect the Norwegian grid-capacity tariff. Savings depend on the grid company, tariff, and household; never guarantee a saving.
+- The current supported controllable load is an Easee EV charger. Hot-water tanks and floor heating are possible later loads because they can store heat. Do not claim they are implemented. Do not target lights, cooking, tumble dryers, or air-to-air heat pumps as controllable loads.
+- The project does not optimize spot-price or Norgespris. Optional night scheduling can take advantage of grid-company night rates where applicable.
+- Credit Home Assistant's Easee integration and EnergyTariff by Erling Paulsen as current projects this integration uses. Thank the open-source community. Mention Versatile Thermostat (VTherm) only as a possible future reference for thermal loads, not as a dependency or implemented feature.
+- Add voluntary coffee support after the owner provides a real donation URL/account. Do not publish a placeholder or invent a destination.
+- The repository currently has no license. Keep this limitation clear and ask the owner to choose a license before describing this repository itself as open source or adding a license file.
+- Use neutral, technical wording in the charging-reason sensor. Describe the active control condition and relevant inputs; do not personify the integration or use first-person wording. This changes display text only, not charging behavior or the entity ID.
+- Include these documentation and display-text updates in beta 0.1.1-beta.2; no charging behavior or entity ID changes.
+
 ## 2026-10-23 — Stable entity IDs and manual control ownership (beta 12)
 
 - Give every Smart Load Manager diagnostic sensor a concise, stable `slm_` object ID. Keep the agreed installation-wide Forbruksgrense entity ID exactly as it is.

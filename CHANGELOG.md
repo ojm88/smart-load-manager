@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1-beta.2
+
+- Explain in plain language why the integration focuses on Norwegian grid-capacity tariffs, which loads it can schedule, and what it does not control.
+- Credit Home Assistant's Easee integration and EnergyTariff, and describe Versatile Thermostat (VTherm) as a possible future reference only.
+- Expand the README and both user guides with the project's background and scope.
+- Replace first-person charging explanations with neutral descriptions of the active control decision and its inputs.
+- Add a support section; add the actual donation destination when the project owner provides its URL.
+
 ## 0.1.1-beta.1
 
 - Rename the control reason sensor to **Ladeforklaring** and explain in plain language why charging is running, waiting, or reduced. Keep its entity ID stable so existing dashboards and automations continue to work.
