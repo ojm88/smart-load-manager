@@ -74,6 +74,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             update_interval=UPDATE_INTERVAL,
         )
         self.entry = entry
+        from .site import get_site
+        self.site = get_site(hass)
+        self.site.controllers[entry.entry_id] = self
         self.easee = resolve_easee_entities(
             hass, str(entry.data["charger_device"])
         )
@@ -92,6 +95,11 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self._last_known_electrical = None
 
     async def _async_update_data(self) -> dict[str, object]:
+        if len(self.hass.config_entries.async_entries("smart_load_manager")) > 1:
+            return await self.site.refresh(self)
+        return await self._async_sample(apply=True)
+
+    async def _async_sample(self, apply=False) -> dict[str, object]:
         try:
             status_state = self.hass.states.get(self.easee.status)
             current_state = self.hass.states.get(self.easee.current)
@@ -175,7 +183,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
             minutes_left = 60 - local_now.minute
             # Keep beta.9's saved value as a migration fallback for existing entries.
-            hourly_limit = consumption_limit_value(self.entry)
+            from .site import site_entry
+            hourly_limit = consumption_limit_value(site_entry(self.hass))
             safety_margin = float(self.entry.data.get(CONF_SAFETY_MARGIN_KWH, 0.3))
             circuit_limit = float(status_state.attributes.get("circuit_ratedCurrent", 0) or 0)
             observed_limits = [circuit_limit] if circuit_limit > 0 else []
@@ -274,7 +283,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 sources_valid=not bool(invalid_input_reason),
                 paused=self.charging_paused,
             )
-            if target_current is not None:
+            if apply and target_current is not None:
                 now_ts = local_now.timestamp()
                 command_age = now_ts - self._last_command_at
                 if (
@@ -308,6 +317,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
             return {
                 "status": status_state.state,
+                "kw_per_amp": current_kw_per_amp,
+                "inputs_valid": not bool(invalid_input_reason),
                 "phase_code": phase_code,
                 "phase_mode_code": phase_mode,
                 "electrical": asdict(electrical),
@@ -344,7 +355,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 },
             }
         except (TypeError, ValueError) as err:
-            if self.auto_control or self.charging_paused:
+            if apply and (self.auto_control or self.charging_paused):
                 try:
                     await self.async_set_current(0)
                 except Exception:  # Keep coordinator's original failure visible.
@@ -352,6 +363,19 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             raise UpdateFailed(str(err)) from err
 
     async def async_set_current(self, current: int) -> None:
+        multiple = len(self.hass.config_entries.async_entries("smart_load_manager")) > 1
+        if multiple and current > 0 and not self.auto_control:
+            async with self.site.lock:
+                self.site.manual_requests[self.entry.entry_id] = int(current)
+            await self.site.refresh(self)
+            return
+        async with self.site.lock:
+            self.site.manual_requests.pop(self.entry.entry_id, None)
+            await self._async_send_current(current)
+            if multiple:
+                self.site.pending_reductions[self.entry.entry_id] = (int(current), self._last_command_at)
+
+    async def _async_send_current(self, current: int) -> None:
         """Send a persistent-until-replaced dynamic limit through Easee."""
         await async_send_dynamic_limit(
             self.hass, str(self.entry.data["charger_device"]), int(current)

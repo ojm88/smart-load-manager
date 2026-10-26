@@ -20,6 +20,8 @@ async def async_setup_entry(hass, entry) -> bool:
         coordinator = ChargingCoordinator(hass, entry)
         await coordinator.async_config_entry_first_refresh()
     except (ValueError, ConfigEntryNotReady) as err:
+        from .site import get_site
+        get_site(hass).controllers.pop(entry.entry_id, None)
         raise ConfigEntryNotReady(str(err)) from err
 
     # Keep existing beta.9 entries visible under the new product name and
@@ -41,10 +43,16 @@ async def async_setup_entry(hass, entry) -> bool:
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    from .dashboard import async_register_dashboard_service
+    await async_register_dashboard_service(hass)
     return True
 
 
 async def async_unload_entry(hass, entry) -> bool:
     """Unload the integration cleanly."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded:
+        from .site import get_site
+        get_site(hass).controllers.pop(entry.entry_id, None)
+    return unloaded
 

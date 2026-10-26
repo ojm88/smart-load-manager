@@ -40,7 +40,7 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
         self._attr_unique_id = f"{entry.entry_id}_manual_current_limit"
         self._attr_has_entity_name = True
         self._attr_translation_key = "manual_current_limit"
-        self.entity_id = f"number.{suggested_entity_id('number', 'manual_current_limit')}"
+        self.entity_id = f"number.{suggested_entity_id('number', 'manual_current_limit', entry)}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",

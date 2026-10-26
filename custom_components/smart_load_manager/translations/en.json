@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Configure Smart Load Manager OJM",
-        "description": "Select the Easee charger and meter sources. EnergyTariff must be installed and configured first. After setup, one Forbruksgrense setting is shared by the installation and used as the calculation target. Automatic control starts off. {validation_error}",
+        "description": "Select the Easee charger and meter sources. EnergyTariff must be installed and configured first. After setup, one Forbruksgrense setting is shared by the installation and used as the calculation target. {validation_error}",
         "data": {
           "charger_device": "Charger – Easee device",
           "han_power_entity": "Home measurement – HAN power meter",
@@ -15,15 +15,15 @@
           "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
           "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
           "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
-        },
-        "error": {
-          "invalid_setup": "Check the selected sources. The HAN sensor must be available in W or kW, EnergyTariff used energy must be available in kWh, and Easee must expose the required sensors."
-        },
-        "abort": {
-          "already_configured": "This Easee charger is already configured.",
-          "single_instance": "This first release supports one Smart Load Manager entry per Home Assistant installation so the consumption limit stays shared. Multi-charger support will follow when shared load allocation is implemented."
         }
       }
+    },
+    "abort": {
+      "two_chargers": "Two chargers are already configured.",
+      "already_configured": "Charger already configured."
+    },
+    "error": {
+      "invalid_setup": "Check charger and meter sources."
     }
   },
   "entity": {
@@ -105,6 +105,9 @@
       },
       "schedule_reason": {
         "name": "Schedule status"
+      },
+      "phase_advice": {
+        "name": "Phase advice"
       }
     },
     "switch": {
@@ -139,7 +142,34 @@
           "auto_phase": "Automatic",
           "3_phase": "Three phases"
         }
+      },
+      "allocation_mode": {
+        "name": "Charging mode",
+        "state": {
+          "both": "Charge both",
+          "one_at_a_time": "One at a time"
+        }
+      },
+      "priority_charger": {
+        "name": "First priority"
       }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Add charger",
+        "description": "Choose another Easee charger. The household limit and meter sources are shared.",
+        "data": {
+          "charger_device": "Easee charger"
+        }
+      }
+    },
+    "error": {
+      "invalid_setup": "Could not add charger. Check readings and whether it is already configured."
+    },
+    "abort": {
+      "two_chargers": "Two chargers are already configured."
     }
   }
 }

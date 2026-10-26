@@ -20,7 +20,7 @@ Smart Load Manager bygger på åpen kildekode og fellesskapets arbeid. Home Assi
 
 Home Assistant-integrasjonene for **Easee** og **EnergyTariff** må være installert og satt opp først. Du trenger en HAN-sensor for øyeblikkelig effekt i W eller kW, og EnergyTariff-sensoren som viser forbruk hittil denne timen. Bruk samme HAN-sensor som EnergyTariff.
 
-I oppsettet velger du laderen, HAN-måleren, EnergyTariff-sensoren og en sikkerhetsmargin. Etterpå velger du **Forbruksgrense** på Smart Load Manager-enheten. Dette er timegrensen som Smart Load Manager styrer etter. EnergyTariff leverer målt forbruk og estimat; EnergyTariff sin egen grense kopieres ikke hit.
+I oppsettet velger du laderen, HAN-måleren, EnergyTariff-sensoren og en sikkerhetsmargin. Etterpå velger du **Forbruksgrense** på Smart Load Manager-enheten. Dette er timegrensen som Smart Load Manager styrer etter.
 
 Du trenger ikke å lage egne hjelpere eller automasjoner i YAML.
 
@@ -45,7 +45,7 @@ Sensoren **Ladeforklaring** bruker vanlige ord for å fortelle hvorfor bilen lad
 
 ## Kort på dashboardet
 
-For en eksisterende dashboard-seksjon: velg **Legg til kort → Manuelt**, åpne YAML-editoren og lim inn hele `examples/lovelace/charging_card.yaml`. Dette er ett kort. Ikke lim inn `charging_view.yaml` i korteditoren.
+For en eksisterende dashboard-seksjon: velg **Legg til kort → Manuelt**, åpne YAML-editoren og lim inn hele `examples/lovelace/charging_card.yaml`. Dette er ett kort.
 
 Grafen bruker disse verdiene:
 
@@ -55,7 +55,19 @@ Grafen bruker disse verdiene:
 - `sensor.energy_estimate_this_hour` – Timeestimat
 - `sensor.average_peak_hour_energy` – Snitt 3-timer
 
-De tre siste måler verdier direkte fra EnergyTariff. Smart Load Manager lager ikke ekstra kopier for grafen.
+Brukt, Timeestimat og Snitt 3-timer hentes direkte fra EnergyTariff. Smart Load Manager lager ikke ekstra kopier for grafen.
+
+## To ladere
+
+Legg til den andre Easee-laderen via **Innstillinger → Enheter og tjenester → Smart Load Manager → Konfigurer → Legg til lader**. Laderens navn hentes fra Easee. Målekilder, sikkerhetsmargin og Forbruksgrense er felles; hver lader får egne styringer og sensorer. Slå på automatisk laststyring for hver lader som skal delta.
+
+- **Lad begge:** Ledig effekt deles likt. Når det bare er plass til én, får laderen valgt under **Førsteprioritet** lade. Hvis kapasiteten ikke rekker til minimumslading, venter ladingen.
+- **Én om gangen:** Prioritert lader får lade til bilen avslutter. Den andre kan også lade hvis prioritert lader er frakoblet, manuelt pauset eller utenfor sin ladetid.
+- **Råd om fasevalg:** Foreslår enfase når dette kan gi plass til begge. Fasevalg endrer du selv for hver lader. Ikke alle biler støtter alle ladeformer.
+
+«Bilen har avsluttet ladingen» er laderens tilbakemelding; integrasjonen kjenner ikke batteriprosenten. En manuelt pauset lader skal forbli pauset. Manuell strøm når automatisk styring er av inngår som øvrig husforbruk, ikke i den automatiske fordelingen.
+
+Bytt det gamle kortet med **examples/lovelace/two_chargers_card.yaml**. For YAML med riktige sensor-ID-er: åpne **Utviklerverktøy → Handlinger**, kjør `smart_load_manager.get_dashboard`, kopier innholdet i `yaml`-svaret og lim inn som ett manuelt kort i en eksisterende seksjon. Alternativt erstattes `CHARGER_SUFFIX` i eksempelfilen med `card_suffix` fra den nye laderens Råd om fasevalg-sensor. Felles Markdown forklarer lademåte, prioritet og hvorfor hver lader lader eller venter. Ingen full view-mal brukes.
 
 ## Trygg test
 
@@ -67,3 +79,5 @@ De tre siste måler verdier direkte fra EnergyTariff. Smart Load Manager lager i
 6. Ved feil: slå av automatisk styring og slå på den gamle automasjonen igjen. Ikke la begge styre laderen samtidig.
 
 Automatiske tester dekker beregning og tjenestekall. De kan ikke bekrefte oppførselen i ditt elektriske anlegg; det må kontrolleres i Home Assistant og med Easee-laderen.
+
+Ved test med to ladere: kontroller begge fordelingsvalg, bytte av førsteprioritet, pause, frakobling og at den andre overtar når bilen avslutter. Nye funksjoner er automatisk testet; fysisk tolader-test må gjennomføres.

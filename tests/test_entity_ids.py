@@ -45,3 +45,14 @@ class EntityIdTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class MultiChargerIdTests(unittest.TestCase):
+    def test_second_charger_has_stable_noncolliding_ids(self):
+        from types import SimpleNamespace
+        entry = SimpleNamespace(data={'entity_suffix': 'carport_abc123'})
+        for domain, mapping in ENTITY_OBJECT_IDS.items():
+            for key in mapping:
+                first = suggested_entity_id(domain,key)
+                second = suggested_entity_id(domain,key,entry)
+                self.assertNotEqual(first,second)
+                self.assertEqual(second, first+'_carport_abc123')

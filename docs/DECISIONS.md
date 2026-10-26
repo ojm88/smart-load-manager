@@ -204,3 +204,36 @@ chat history. Add a dated entry when a decision changes.
 - Preserve the legacy automation's behavior: disabling automatic control stops further writes and leaves Easee's last dynamic limit in place (time_to_live: 0). Invalid/stale required inputs or closed schedule send 0 A only while automatic control is enabled.
 - For beta.11, allow one configured load entry per HA installation so there is exactly one installation-wide Forbruksgrense selector. Do not claim multi-charger/shared allocation support yet. Keep extension points load-specific and keep future multi-load policy choices documented; choose sequential/simultaneous/priority behavior with the owner before implementing an allocator.
 - Update entity display names, Norwegian and English manuals, dashboard YAML, changelog, status, and tests together for each beta.
+
+## 2026-10-26 — Two-charger workshop, beta.3
+
+These decisions supersede the earlier temporary single-entry/view boundary.
+
+- Support two Easee charger entries under one site budget; inherit household
+  sources/margin for later additions. Expose Add charger under Configure.
+- Use real device names, not car 1/2 labels. Preserve existing entity IDs;
+  suffix new ones with a saved charger-name/device key, not numeric collisions.
+- Every charger has the same controls/diagnostics. Keep the budget selector
+  single, on the primary entry. No manual fuse-size configuration.
+- Offer two dropdowns: Charge both / One at a time, and First priority (device
+  names). Equal distribution is in kW, with per-charger amp/minimum constraints.
+  If both minima cannot fit, give priority to the selected eligible charger.
+  If that minimum cannot fit, wait. Sequential gives all possible capacity
+  to the first eligible priority charger until it stops requesting power.
+- Manual pause, disconnect, completion or closed schedule allow the other to
+  receive capacity. Do not infer battery state or desired charge percentage.
+- Suggest single phase via Phase advice and Markdown only when calculations
+  support it. The user changes phase mode; no automatic SLM phase switching.
+- Serialize site sampling/commands; confirm reductions with measurements newer
+  than the command before reallocating power. Do not equate HTTP success to
+  actual charger current reduction. Unknown peer inputs fail closed.
+- Provide two complete vertical-stack Manual-card examples for existing
+  sections. Remove the full-view example. Both Markdown and controls change
+  for two chargers. Native graph reads EnergyTariff entities directly.
+- Add an optional response action to return ready-to-paste card YAML resolved
+  against the actual entity registry, reducing manual sensor-ID replacement.
+- Main branding is effect/capacity tariff steps inside a house, with OJM and a
+  charging connector. Future project scope includes shiftable ohmic loads and
+  adjustable EV current; current thermal control must not be claimed.
+- Remove License and Checks sections from README, without changing legal files
+  or removing tests. Simplify introductory setup wording as requested.

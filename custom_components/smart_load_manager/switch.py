@@ -32,7 +32,7 @@ class AutomaticLoadControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
         self._attr_unique_id = f"{entry.entry_id}_automatic_control"
         self._attr_has_entity_name = True
         self._attr_translation_key = "automatic_control"
-        self.entity_id = f"switch.{suggested_entity_id('switch', 'automatic_control')}"
+        self.entity_id = f"switch.{suggested_entity_id('switch', 'automatic_control', entry)}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -67,7 +67,7 @@ class ChargingScheduleControl(CoordinatorEntity[ChargingCoordinator], SwitchEnti
         self._attr_unique_id = f"{entry.entry_id}_schedule_control"
         self._attr_has_entity_name = True
         self._attr_translation_key = "schedule_control"
-        self.entity_id = f"switch.{suggested_entity_id('switch', 'schedule_control')}"
+        self.entity_id = f"switch.{suggested_entity_id('switch', 'schedule_control', entry)}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -98,7 +98,7 @@ class ChargingPauseControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
         self._attr_unique_id = f"{entry.entry_id}_charging_pause"
         self._attr_has_entity_name = True
         self._attr_translation_key = "charging_pause"
-        self.entity_id = f"switch.{suggested_entity_id('switch', 'charging_pause')}"
+        self.entity_id = f"switch.{suggested_entity_id('switch', 'charging_pause', entry)}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",

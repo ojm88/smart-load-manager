@@ -25,10 +25,14 @@ async def async_setup_entry(
     hass: HomeAssistant, entry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up the per-charger consumption budget selector."""
-    async_add_entities([
-        ConsumptionLimitSelect(entry.runtime_data, entry),
-        ChargerPhaseModeSelect(entry.runtime_data, entry),
-    ])
+    from .site import site_entry
+    entities = [ChargerPhaseModeSelect(entry.runtime_data, entry)]
+    if entry.entry_id == site_entry(hass).entry_id:
+        entities += [ConsumptionLimitSelect(entry.runtime_data, entry),
+                     SiteChoiceSelect(entry.runtime_data, entry, "allocation_mode"),
+                     SiteChoiceSelect(entry.runtime_data, entry, "priority_charger")]
+    async_add_entities(entities)
+
 
 
 class ConsumptionLimitSelect(
@@ -43,7 +47,7 @@ class ConsumptionLimitSelect(
 
     def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
         super().__init__(coordinator)
-        self.entity_id = f"select.{suggested_entity_id('select', 'consumption_limit')}"
+        self.entity_id = f"select.{suggested_entity_id('select', 'consumption_limit', entry)}"
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_consumption_limit"
         self._attr_device_info = DeviceInfo(
@@ -78,7 +82,7 @@ class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntit
 
     def __init__(self, coordinator: ChargingCoordinator, entry) -> None:
         super().__init__(coordinator)
-        self.entity_id = f"select.{suggested_entity_id('select', 'phase_mode_control')}"
+        self.entity_id = f"select.{suggested_entity_id('select', 'phase_mode_control', entry)}"
         self._attr_unique_id = f"{entry.entry_id}_phase_mode_control"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -106,4 +110,52 @@ class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntit
             str(self.coordinator.entry.data["charger_device"]),
             option,
         )
+        await self.coordinator.async_request_refresh()
+
+
+class SiteChoiceSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
+    """Persistent household allocation choices; labels come from charger names."""
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:ev-station"
+
+    def __init__(self, coordinator, entry, key):
+        super().__init__(coordinator)
+        self._entry = entry
+        self._key = key
+        self._attr_translation_key = key
+        self._attr_unique_id = f"{entry.entry_id}_{key}"
+        self.entity_id = f"select.{suggested_entity_id('select', key)}"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, entry.entry_id)})
+
+    def _names(self):
+        from homeassistant.helpers import device_registry as dr
+        entries = self.hass.config_entries.async_entries(DOMAIN)
+        devices = dr.async_get(self.hass)
+        names = {}
+        for entry in entries:
+            device = devices.devices.get(entry.data["charger_device"])
+            name = (device.name_by_user or device.name) if device else entry.title
+            names[entry.entry_id] = name or entry.title
+        # Duplicate names must still allow an unambiguous selection.
+        return {key: f"{name} ({key[:6]})" if list(names.values()).count(name) > 1 else name
+                for key, name in names.items()}
+
+    @property
+    def options(self):
+        return ["both", "one_at_a_time"] if self._key == "allocation_mode" else list(self._names().values())
+
+    @property
+    def current_option(self):
+        if self._key == "allocation_mode":
+            return self._entry.options.get(self._key, "both")
+        names = self._names()
+        return names.get(self._entry.options.get(self._key, self._entry.entry_id), names.get(self._entry.entry_id))
+
+    async def async_select_option(self, option):
+        if option not in self.options:
+            raise ValueError("Unknown charging choice")
+        value = option if self._key == "allocation_mode" else next(key for key, name in self._names().items() if name == option)
+        options = dict(self._entry.options)
+        options[self._key] = value
+        self.hass.config_entries.async_update_entry(self._entry, options=options)
         await self.coordinator.async_request_refresh()

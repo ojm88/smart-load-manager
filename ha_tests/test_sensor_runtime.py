@@ -8,7 +8,7 @@ from smart_load_manager.sensor import ChargingDiagnosticSensor, SENSORS
 
 class SensorRuntimeTests(unittest.TestCase):
     def test_new_sensor_uses_the_stable_slm_entity_id(self):
-        coordinator = SimpleNamespace(data={}, last_update_success=True)
+        coordinator = SimpleNamespace(data={}, last_update_success=True, entry=SimpleNamespace(data={}))
         entry = SimpleNamespace(entry_id="test-entry", title="Smart Load Manager OJM")
         entity = ChargingDiagnosticSensor(
             coordinator, entry, "status", *SENSORS["status"]
@@ -18,7 +18,7 @@ class SensorRuntimeTests(unittest.TestCase):
 
     def test_all_sensors_remain_readable_with_an_empty_coordinator_payload(self):
         fake_hass = SimpleNamespace(config=SimpleNamespace(language="nb"))
-        coordinator = SimpleNamespace(data={}, last_update_success=True)
+        coordinator = SimpleNamespace(data={}, last_update_success=True, entry=SimpleNamespace(data={}))
         for key in SENSORS:
             with self.subTest(sensor=key):
                 entity = SimpleNamespace(
@@ -61,12 +61,14 @@ class SensorRuntimeTests(unittest.TestCase):
         from pathlib import Path
         root = Path(__file__).resolve().parents[1]
         card = (root / "examples/lovelace/charging_card.yaml").read_text()
-        view = (root / "examples/lovelace/charging_view.yaml").read_text()
+        two = (root / "examples/lovelace/two_chargers_card.yaml").read_text()
         self.assertTrue(card.lstrip().startswith("#"))
         self.assertIn("type: vertical-stack", card)
         self.assertNotIn("type: sections", card)
-        self.assertTrue(view.lstrip().startswith("#"))
-        self.assertIn("type: sections", view)
+        self.assertTrue(two.lstrip().startswith("#"))
+        self.assertIn("type: vertical-stack", two)
+        self.assertNotIn("type: sections", two)
+        self.assertFalse((root / "examples/lovelace/charging_view.yaml").exists())
 
     def test_other_diagnostics_still_load_if_current_field_is_missing(self):
         data = {

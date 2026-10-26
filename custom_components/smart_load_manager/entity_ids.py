@@ -5,6 +5,7 @@ from __future__ import annotations
 from .const import DOMAIN
 
 SENSOR_OBJECT_IDS = {
+    "phase_advice": "slm_phase_advice",
     "status": "slm_charger_status",
     "phase_mode": "slm_charger_phase_mode",
     "output_phase": "slm_output_phase",
@@ -45,16 +46,19 @@ ENTITY_OBJECT_IDS = {
     "select": {
         "consumption_limit": "smart_load_manager_ojm_easee_forbruksgrense",
         "phase_mode_control": "slm_phase_mode",
+        "allocation_mode": "slm_charging_mode",
+        "priority_charger": "slm_priority_charger",
     },
 }
 
 
-def suggested_entity_id(domain: str, translation_key: str) -> str:
+def suggested_entity_id(domain: str, translation_key: str, entry=None) -> str:
     """Return the stable object ID for an integration entity."""
     object_id = ENTITY_OBJECT_IDS.get(domain, {}).get(translation_key)
     if object_id is None:
         raise KeyError(f"No stable entity ID for {domain}.{translation_key}")
-    return object_id
+    suffix = getattr(entry, "data", {}).get("entity_suffix", "")
+    return f"{object_id}_{suffix}" if suffix else object_id
 
 
 def migrate_entity_ids(hass, entry) -> None:
@@ -72,8 +76,13 @@ def migrate_entity_ids(hass, entry) -> None:
         object_id = ENTITY_OBJECT_IDS.get(entity.domain, {}).get(translation_key)
         if object_id is None:
             continue
-        target_entity_id = f"{entity.domain}.{object_id}"
+        suffix = entry.data.get("entity_suffix", "")
+        target_entity_id = f"{entity.domain}.{object_id}_{suffix}" if suffix else f"{entity.domain}.{object_id}"
         if entity.entity_id == target_entity_id:
+            continue
+        # Migrate only the historical generated long IDs. Preserve user
+        # renames and all current short IDs across subsequent reloads.
+        if not entity.entity_id.split(".", 1)[-1].startswith("smart_load_manager_"):
             continue
         collision = registry.entities.get(target_entity_id)
         if collision is not None and collision.unique_id != entity.unique_id:

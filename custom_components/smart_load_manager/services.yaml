@@ -1,0 +1,3 @@
+get_dashboard:
+  name: Get dashboard card
+  description: Returns a complete Manual-card YAML for the configured charger or chargers, using their registered entity IDs.

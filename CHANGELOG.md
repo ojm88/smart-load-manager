@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1-beta.3
+
+- Add a second Easee charger later through Configure; keep existing charger IDs and settings.
+- Share one household budget between two chargers with equal-power or sequential allocation and a named priority selector.
+- Confirm reductions with new telemetry before increasing the other charger; fail closed on missing required data.
+- Give each charger its own controls, measurements and phase advice. Phase changes remain manual.
+- Replace the full-view YAML with complete one-/two-charger Manual cards. Add a dashboard-YAML action using actual entity IDs.
+- Update local HA/HACS artwork with the approved OJM house, tariff steps and charging connector.
+
+- Clarify the long-term focus on shifting controllable resistive loads and adjusting EV charging to stay within the household hourly limit; display the project logo in the README.
+
+- Remove the License and Checks sections from the README.
+
+- Shorten the integration description by removing the EnergyTariff target comparison and automatic-control default wording from the introductory text. Control behavior is unchanged.
+
 ## 0.1.1-beta.2
 
 - Explain in plain language why the integration focuses on Norwegian grid-capacity tariffs, which loads it can schedule, and what it does not control.

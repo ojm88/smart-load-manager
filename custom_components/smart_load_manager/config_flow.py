@@ -5,7 +5,7 @@ from __future__ import annotations
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, selector
 
 from .const import (
@@ -58,14 +58,18 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        # The current beta exposes one installation-wide Forbruksgrense.
-        # Prevent duplicate per-charger selectors until shared multi-load
-        # allocation is implemented in a future beta.
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance")
+        existing = self._async_current_entries()
+        if len(existing) >= 2:
+            return self.async_abort(reason="two_chargers")
+        from .site import site_entry
+        owner = site_entry(self.hass) if existing else None
         errors: dict[str, str] = {}
         self._error_detail = ""
         if user_input is not None:
+            user_input = dict(user_input)
+            if owner:
+                for field in (CONF_HAN_POWER_ENTITY, CONF_TARIFF_USED_ENTITY, CONF_SAFETY_MARGIN_KWH):
+                    user_input[field] = owner.data[field]
             try:
                 device_id, _ = _validate_sources(self.hass, user_input)
             except ValueError as err:
@@ -77,6 +81,9 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 charger = dr.async_get(self.hass).devices.get(device_id)
                 charger_name = (charger.name_by_user or charger.name) if charger else device_id[:8]
                 title = f"Smart Load Manager OJM – {charger_name}"
+                if owner:
+                    from homeassistant.util import slugify
+                    user_input["entity_suffix"] = f"{slugify(charger_name) or 'charger'}_{device_id[:6]}"
                 return self.async_create_entry(title=title, data=user_input)
 
         schema = vol.Schema(
@@ -95,8 +102,38 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
+        if owner:
+            schema = vol.Schema({vol.Required(CONF_CHARGER_DEVICE): selector.DeviceSelector(
+                selector.DeviceSelectorConfig(integration="easee"))})
         return self.async_show_form(
             step_id="user", data_schema=schema, errors=errors,
             description_placeholders={"validation_error": getattr(self, "_error_detail", "")},
         )
 
+
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return ChargerOptionsFlow()
+
+
+class ChargerOptionsFlow(config_entries.OptionsFlow):
+    """Add a charger later through Configure without rebuilding the first."""
+
+    async def async_step_init(self, user_input=None):
+        entries = self.hass.config_entries.async_entries(DOMAIN)
+        if len(entries) >= 2:
+            return self.async_abort(reason="two_chargers")
+        if user_input is not None:
+            result = await self.hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": "user"}, data=user_input)
+            if result["type"] == "create_entry":
+                return self.async_create_entry(title="", data=dict(self.config_entry.options))
+            return self.async_show_form(step_id="init", data_schema=self._schema(),
+                                        errors={"base": "invalid_setup"})
+        return self.async_show_form(step_id="init", data_schema=self._schema())
+
+    def _schema(self):
+        return vol.Schema({vol.Required(CONF_CHARGER_DEVICE): selector.DeviceSelector(
+            selector.DeviceSelectorConfig(integration="easee"))})

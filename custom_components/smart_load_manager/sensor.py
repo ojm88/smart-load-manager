@@ -15,6 +15,7 @@ from .entity_ids import suggested_entity_id
 
 
 SENSORS = {
+    "phase_advice": (None, None, "mdi:lightbulb-outline"),
     "status": (None, None, "mdi:ev-station"),
     "phase_mode": (None, None, "mdi:current-ac"),
     "output_phase": (None, None, "mdi:sine-wave"),
@@ -45,6 +46,7 @@ SENSORS = {
 
 
 SENSOR_EXPLANATIONS = {
+    "phase_advice": ("Forslag om enfase når det kan gi plass til begge laderne. Fasevalg endres manuelt.", "Suggests single phase when it may make room for both chargers. Change phase mode manually."),
     "status": (
         "Viser om bilen er frakoblet, lader eller venter.",
         "Shows whether the car is disconnected, charging, or waiting.",
@@ -173,7 +175,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_translation_key = key
-        self.entity_id = f"sensor.{suggested_entity_id('sensor', key)}"
+        self.entity_id = f"sensor.{suggested_entity_id('sensor', key, entry)}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             manufacturer="Smart Load Manager",
@@ -184,7 +186,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         self._attr_device_class = device_class
         self._attr_icon = icon
         if key in {
-            "status", "phase_mode", "output_phase", "grid_type", "voltage_type",
+            "phase_advice", "status", "phase_mode", "output_phase", "grid_type", "voltage_type",
             "confidence", "reason", "control_reason", "no_current_reason",
             "manual_control_status", "auto_control", "han_fresh",
             "schedule_enabled", "schedule_reason",
@@ -196,7 +198,10 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         """Give the user one short explanation, without repeating raw data."""
         norwegian = str(self.hass.config.language or "").startswith("nb")
         explanation_nb, explanation_en = SENSOR_EXPLANATIONS[self._key]
-        return {"explanation": explanation_nb if norwegian else explanation_en}
+        attributes = {"explanation": explanation_nb if norwegian else explanation_en}
+        if self._key == "phase_advice":
+            attributes["card_suffix"] = self.coordinator.entry.data.get("entity_suffix", "")
+        return attributes
 
     @property
     def native_value(self):
@@ -204,6 +209,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         electrical = data.get("electrical", {})
         norwegian = str(self.hass.config.language or "").startswith("nb")
         values = {
+            "phase_advice": data.get("phase_advice", "Ingen anbefaling om fasebytte nå."),
             "status": data.get("status", "unknown"),
             "phase_mode": electrical.get("phase_mode_name", "unknown"),
             "output_phase": electrical.get("output_phase_name", "unknown"),

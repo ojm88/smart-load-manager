@@ -2,43 +2,174 @@
   "config": {
     "step": {
       "user": {
-        "title": "Konfigurer Smart Load Manager OJM",
-        "description": "Velg lader og målekilder. EnergyTariff må være installert først. Forbruksgrensen velges etter oppsett og brukes direkte i beregningen. Automatisk styring er avslått til du selv aktiverer den. {validation_error}",
+        "title": "Configure Smart Load Manager OJM",
+        "description": "Select the Easee charger and meter sources. EnergyTariff must be installed and configured first. After setup, one Forbruksgrense setting is shared by the installation and used as the calculation target. {validation_error}",
         "data": {
-          "charger_device": "Lader – Easee-enhet",
-          "han_power_entity": "Husmåling – HAN-effektmåler",
-          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
-          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
+          "charger_device": "Charger – Easee device",
+          "han_power_entity": "Home measurement – HAN power meter",
+          "tariff_used_entity": "Hourly energy – EnergyTariff used this hour",
+          "safety_margin_kwh": "Safety margin – kWh"
         },
         "data_description": {
-          "charger_device": "Velg Easee-enheten som skal styres. Integrasjonen finner status, strøm, spenning, faseinformasjon og strømgrenser fra enhetens sensorer.",
-          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
-          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
-          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
-        },
-        "error": {
-          "invalid_setup": "Kontroller kildeverdiene. HAN-sensoren må være tilgjengelig i W eller kW, EnergyTariff brukt energi må være tilgjengelig i kWh, og Easee må ha nødvendige sensorer."
-        },
-        "abort": {
-          "already_configured": "Denne Easee-laderen er allerede konfigurert.",
-          "single_instance": "Denne første versjonen støtter én Smart Load Manager-konfigurasjon per Home Assistant-installasjon, slik at Forbruksgrense forblir felles. Støtte for flere ladere kommer først når felles lastfordeling er implementert."
+          "charger_device": "Select the Easee device to control. Status, current, voltage, phase data, and current limits are discovered from its entities.",
+          "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
+          "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
+          "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
         }
       }
+    },
+    "abort": {
+      "two_chargers": "Two chargers are already configured.",
+      "already_configured": "Charger already configured."
+    },
+    "error": {
+      "invalid_setup": "Check charger and meter sources."
     }
   },
   "entity": {
+    "sensor": {
+      "status": {
+        "name": "Charging status"
+      },
+      "phase_mode": {
+        "name": "Charger phase setting"
+      },
+      "output_phase": {
+        "name": "Phase output"
+      },
+      "active_phases": {
+        "name": "Phases in use"
+      },
+      "grid_type": {
+        "name": "Grid type"
+      },
+      "voltage_type": {
+        "name": "Voltage type"
+      },
+      "line_voltage": {
+        "name": "Voltage between phases"
+      },
+      "ln_voltage": {
+        "name": "Phase to neutral voltage"
+      },
+      "minimum_current": {
+        "name": "Minimum charging current"
+      },
+      "recommended_current": {
+        "name": "Recommended charging current"
+      },
+      "max_current": {
+        "name": "Maximum charging current"
+      },
+      "charger_current": {
+        "name": "Current to car"
+      },
+      "charger_power": {
+        "name": "Power to car"
+      },
+      "han_power": {
+        "name": "Power from meter"
+      },
+      "energy_used": {
+        "name": "Energy used so far this hour"
+      },
+      "energy_estimate": {
+        "name": "Expected energy this hour"
+      },
+      "confidence": {
+        "name": "Measurement confidence"
+      },
+      "reason": {
+        "name": "Phase and voltage basis"
+      },
+      "control_reason": {
+        "name": "Charging explanation"
+      },
+      "manual_control_status": {
+        "name": "Manual control"
+      },
+      "no_current_reason": {
+        "name": "Reason for limit"
+      },
+      "auto_control": {
+        "name": "Automatic load control"
+      },
+      "han_age": {
+        "name": "Measurement age"
+      },
+      "han_fresh": {
+        "name": "Measurement valid"
+      },
+      "schedule_enabled": {
+        "name": "Schedule enabled"
+      },
+      "schedule_reason": {
+        "name": "Schedule status"
+      },
+      "phase_advice": {
+        "name": "Phase advice"
+      }
+    },
+    "switch": {
+      "charging_pause": {
+        "name": "Charging pause"
+      },
+      "automatic_control": {
+        "name": "Automatic load control"
+      },
+      "schedule_control": {
+        "name": "Charging schedule"
+      }
+    },
+    "number": {
+      "manual_current_limit": {
+        "name": "Manual current (auto off)"
+      }
+    },
+    "time": {
+      "schedule_start_time": {
+        "name": "Charging start time"
+      }
+    },
     "select": {
       "consumption_limit": {
-        "name": "Forbruksgrense"
+        "name": "Consumption limit"
       },
       "phase_mode_control": {
-        "name": "Fasevalg",
+        "name": "Phase selection",
         "state": {
-          "1_phase": "Én fase",
-          "auto_phase": "Automatisk",
-          "3_phase": "Tre faser"
+          "1_phase": "Single phase",
+          "auto_phase": "Automatic",
+          "3_phase": "Three phases"
+        }
+      },
+      "allocation_mode": {
+        "name": "Charging mode",
+        "state": {
+          "both": "Charge both",
+          "one_at_a_time": "One at a time"
+        }
+      },
+      "priority_charger": {
+        "name": "First priority"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Add charger",
+        "description": "Choose another Easee charger. The household limit and meter sources are shared.",
+        "data": {
+          "charger_device": "Easee charger"
         }
       }
+    },
+    "error": {
+      "invalid_setup": "Could not add charger. Check readings and whether it is already configured."
+    },
+    "abort": {
+      "two_chargers": "Two chargers are already configured."
     }
   }
 }

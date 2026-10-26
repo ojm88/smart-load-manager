@@ -26,7 +26,7 @@ cards:
       {% endif %}
 
       {% if automatic %}
-      Smart Load Manager passer på at huset holder seg innenfor **{{ states('select.smart_load_manager_ojm_easee_forbruksgrense') }} kWh denne timen**. Nå anbefales {{ recommended }} A. Hvis det blir trangt om strømmen, laderen setter ned farten eller venter.
+      Smart Load Manager passer på at huset holder seg innenfor **{{ states('select.smart_load_manager_ojm_easee_forbruksgrense') }} kWh denne timen**. Nå anbefales {{ recommended }} A. Hvis det blir lite ledig kapasitet, reduseres ladingen eller settes på vent.
       {% else %}
       Automatisk laststyring er av. Laderen følger strømgrensen som er satt manuelt i Easee eller nedenfor.
       {% endif %}
@@ -39,7 +39,7 @@ cards:
       - entity: switch.slm_auto_control
         name: Automatisk laststyring
       - entity: switch.slm_charging_pause
-        name: Ladepause – trykk for å stoppe eller fortsette
+        name: Ladepause
       - entity: select.smart_load_manager_ojm_easee_forbruksgrense
         name: Forbruksgrense for hele huset
       - entity: select.slm_phase_mode

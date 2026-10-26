@@ -20,7 +20,7 @@ Smart Load Manager builds on open-source work shared by the Home Assistant commu
 
 Install and configure the **Easee** and **EnergyTariff** Home Assistant integrations first. You need an instantaneous HAN power sensor in W or kW and EnergyTariff’s sensor for energy used this hour. Select the same HAN sensor in both integrations.
 
-In setup, choose your charger, HAN meter, EnergyTariff used-this-hour sensor, and a safety margin. After setup, choose **Forbruksgrense** on the Smart Load Manager device. This is the hourly target used by Smart Load Manager. EnergyTariff provides energy used and its estimate; its own target is not copied into this integration.
+In setup, choose your charger, HAN meter, EnergyTariff used-this-hour sensor, and a safety margin. After setup, choose **Forbruksgrense** on the Smart Load Manager device. This is the hourly target used by Smart Load Manager.
 
 You do not need to create Home Assistant helpers or YAML automations.
 
@@ -45,7 +45,7 @@ The **Charging explanation** sensor uses plain language to say why the car is ch
 
 ## Dashboard card
 
-Inside an existing dashboard section, choose **Add card → Manual**, open the YAML editor, and paste the complete `examples/lovelace/charging_card.yaml` file. It is one card. Do not paste `charging_view.yaml` into the card editor.
+Inside an existing dashboard section, choose **Add card → Manual**, open the YAML editor, and paste the complete `examples/lovelace/charging_card.yaml` file. It is one card.
 
 The graph uses:
 
@@ -57,6 +57,18 @@ The graph uses:
 
 The EnergyTariff values are read directly; Smart Load Manager does not create extra copies for the graph.
 
+## Two chargers
+
+Open **Settings → Devices & services → Smart Load Manager → Configure → Add charger** and select the other Easee device. Its name comes from Easee. Meter sources, safety margin and the household consumption limit are shared. Each charger gets its own controls and sensors. Enable automatic control on each participating charger.
+
+- **Charge both:** share available power equally. When only one fits, the selected **First priority** charger receives capacity. If its minimum cannot fit, charging waits.
+- **One at a time:** priority charger goes first; the other can charge when the vehicle finishes, disconnects, is manually paused or is outside its schedule.
+- **Phase advice:** suggests single phase when it could allow both to charge. You change each charger's phase selection yourself, subject to vehicle compatibility.
+
+Completed means the vehicle stopped requesting power; battery percentage is unknown. Manual pause remains respected. Manual charging with automatic control off counts as other household demand, outside the distribution policy.
+
+Replace the old card with **examples/lovelace/two_chargers_card.yaml**. To get YAML with actual registered IDs, open **Developer tools → Actions**, run `smart_load_manager.get_dashboard`, copy its returned `yaml` value and paste it as one Manual card inside an existing section. Alternatively replace `CHARGER_SUFFIX` in the static example with the `card_suffix` attribute on the new charger's Phase advice sensor. The shared Markdown explains the mode, priority and current reason per charger. No complete-view template is provided.
+
 ## Safe test
 
 1. Make a Home Assistant backup and note how to re-enable your existing automation.
@@ -67,3 +79,5 @@ The EnergyTariff values are read directly; Smart Load Manager does not create ex
 6. If anything looks wrong, turn automatic control off and restore your previous automation. Never run both controllers at once.
 
 Automated tests check calculations and service calls. They cannot verify your electrical installation; confirm behavior in Home Assistant and with the Easee charger.
+
+For two-charger testing, check both modes, priority changes, pause, disconnect, and handover when the vehicle finishes. Automated validation does not replace physical two-charger testing.

@@ -17,7 +17,7 @@ class TranslationCoverageTests(unittest.TestCase):
             "sensor": sensor_keys,
             "switch": {"automatic_control", "schedule_control", "charging_pause"},
             "number": {"manual_current_limit"},
-            "select": {"consumption_limit", "phase_mode_control"},
+            "select": {"consumption_limit", "phase_mode_control", "allocation_mode", "priority_charger"},
             "time": {"schedule_start_time"},
         }
         for language in ("nb", "en"):

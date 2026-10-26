@@ -1,6 +1,11 @@
 # Smart Load Manager OJM
 
-Smart Load Manager OJM helps your home stay within a chosen hourly energy limit. It reads your HAN meter and the energy already used during the hour, then adjusts an Easee charger so there is more room for the rest of the home.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="custom_components/smart_load_manager/brand/dark_logo@2x.png">
+  <img src="custom_components/smart_load_manager/brand/logo@2x.png" alt="Smart Load Manager OJM — valgt effekttrinn" width="560">
+</picture>
+
+Smart Load Manager OJM helps your home stay within a chosen hourly energy limit. It reads your HAN meter and the energy already used during the hour, then adjusts one or two Easee chargers so there is more room for the rest of the home.
 
 The aim is simple: avoid unnecessary household peaks that can move you into a more expensive grid-tariff step. Whether this saves money depends on your grid company, tariff rules, and household. It is not a guaranteed saving.
 
@@ -10,9 +15,9 @@ The aim is simple: avoid unnecessary household peaks that can move you into a mo
 
 In Norway, the monthly grid charge can depend on how much power a home uses at its busiest times. Grid companies publish different steps and prices. For example, Glitre Nett’s published private-customer tariff shows a substantial monthly price difference between some neighboring steps. The exact rules and prices vary by grid company and can change, so check your own grid company’s current tariff. [Glitre Nett: grid rent and prices](https://www.glitrenett.no/kunde/nettleie-og-priser/nettleiepriser-privatkunde).
 
-Some household loads can be moved in time. An electric car can charge when the home has room under its chosen limit. In future, a hot-water tank or floor heating could also be scheduled because they can store heat for later. This project is intended for loads whose use can be planned and whose effect can be estimated.
+The long-term goal is to keep household consumption within the chosen hourly limit by shifting controllable resistive (ohmic) loads, such as electric hot-water heating and floor heating, and adjusting the current available for EV charging. Hot water and heated floors can store heat for later, while EV charging can slow down or wait when the home needs the capacity. Easee EV charging is supported today; hot-water and floor-heating control are planned extensions.
 
-The integration does not try to control every appliance. Lights, cooking, tumble dryers, and air-to-air heat pumps have changing use or need to work when needed. The first supported load is an Easee EV charger. Other load types and shared control are future work, not current features.
+The integration does not try to control every appliance. Lights, cooking, tumble dryers, and air-to-air heat pumps have changing use or need to work when needed. The first supported load is an Easee EV charger. Hot-water and floor-heating control remain planned features.
 
 The focus is the grid-capacity part of the bill, not chasing the cheapest spot-price hour. Optional night scheduling is available because some grid tariffs charge less at night. The same scheduling idea may be useful for other controllable loads later.
 
@@ -29,14 +34,29 @@ The focus is the grid-capacity part of the bill, not chasing the cheapest spot-p
 
 Install and configure Home Assistant’s **Easee** integration and [EnergyTariff](https://github.com/epaulsen/energytariff). In Smart Load Manager setup, select your Easee charger, the same instantaneous HAN power sensor used by EnergyTariff (unit W or kW), EnergyTariff’s **used this hour** sensor, and a safety margin.
 
-After setup, select **Forbruksgrense** (4.5–20 kWh, in 0.5 kWh steps). This is the Smart Load Manager target. EnergyTariff supplies the energy used and estimate; its own target is not copied into this integration. Automatic control stays off until you turn it on.
+After setup, select **Forbruksgrense** (4.5–20 kWh, in 0.5 kWh steps). This is the Smart Load Manager target.
 
 ## Dashboard
 
 - [Norwegian guide](docs/manual_nb.md)
 - [English guide](docs/manual_en.md)
-- [One card for an existing dashboard section](examples/lovelace/charging_card.yaml) — add a Manual card and paste the complete file.
-- [Complete dashboard view](examples/lovelace/charging_view.yaml) — paste into a view’s raw YAML editor.
+- [One charger: complete section card](examples/lovelace/charging_card.yaml).
+- [Two chargers: complete section card](examples/lovelace/two_chargers_card.yaml).
+
+Both are single **Manual cards inside an existing section**, not complete views. Replace the old card when moving to two chargers. For ready-to-paste YAML using your actual charger entity IDs, open **Developer tools → Actions**, run **Smart Load Manager: Get dashboard card** (`smart_load_manager.get_dashboard`), and copy the returned `yaml` value into a Manual card. This also handles entity IDs you renamed yourself. The static two-charger example instead needs `CHARGER_SUFFIX` replaced with the `card_suffix` attribute from the new charger's **Phase advice** sensor.
+
+## Two chargers
+
+Add the first charger normally. Later open **Settings → Devices & services → Smart Load Manager → Configure → Add charger**, and choose the other Easee device. Alternatively use **Add integration → Smart Load Manager** again. The second charger inherits the household meter sources and safety margin. Existing IDs and settings stay intact; new entities receive a stable charger-name/device suffix. Enable automatic control on each charger you want included in distribution.
+
+- **Charging mode / Lad begge:** share available power equally, subject to each charger's minimum and maximum. When only one fits, the selected priority charger receives capacity. If it cannot receive its minimum, charging waits.
+- **One at a time / Én om gangen:** the selected priority charger goes first. The other takes over when the vehicle stops requesting charging, disconnects, is manually paused, or is outside its schedule.
+- **First priority:** choose the actual charger name. This is a software priority, not Easee's technical master/slave role.
+- Each charger has its own phase selection, pause, schedule, manual current and diagnostic sensors. The household **Forbruksgrense** is shared and displayed once.
+- **Phase advice** suggests single phase only when the measured available capacity could support both at their single-phase minimum. It never changes the setting automatically. Vehicle compatibility still matters.
+- Easee's `Completed` means the vehicle stopped requesting power; it does not reveal battery percentage or prove the battery is full.
+
+Allocation uses the HAN household total and both charger powers. Reductions are sent before increases, and subsequent telemetry must confirm a reduction before capacity is reassigned. Missing/stale required readings pause automatic allocation. Manual charging is outside the selected distribution mode and counts as household load. No manual circuit-fuse configuration is required; Easee's reported limits still apply.
 
 The graph reads EnergyTariff’s own `sensor.energy_used_this_hour`, `sensor.energy_estimate_this_hour`, and `sensor.average_peak_hour_energy` entities directly. Smart Load Manager does not create copies just to display them.
 
@@ -54,16 +74,8 @@ These projects remain independently maintained. Mention here is attribution, not
 
 If Smart Load Manager is useful to you, you can support continued development with a coffee. **The donation link will be added when the project support account is ready.** Donations are optional.
 
-## License
-
-No license has been selected for this repository yet. Until one is added, the code is publicly viewable, but reuse and redistribution are not explicitly licensed.
-
 ## Safety and scope
 
 Automatic control is opt-in and starts off after a Home Assistant restart. When active, invalid or stale meter or tariff data, missing electrical information, a closed schedule, or an unavailable Easee current limit makes the integration send 0 A. Easee keeps the last dynamic limit when automatic control is turned off, matching the existing automation’s behavior.
 
-The agreed minimum current is 11 A for measured 230 V three-phase charging, and 6 A otherwise. There is no vehicle learning. This release supports one configured load entry per Home Assistant installation; a shared allocator is needed before multiple chargers or household loads can safely share the budget.
-
-## Checks
-
-Run the automated tests with `python -m unittest discover -s tests -v`. GitHub Actions also checks Home Assistant imports and runtime behavior. These checks do not replace testing in your own Home Assistant setup and with your charger. Keep any existing automation disabled while testing the integration’s automatic control.
+The agreed minimum current is 11 A for measured 230 V three-phase charging, and 6 A otherwise. There is no vehicle learning. This beta supports up to two Easee chargers under one household budget. More chargers and thermal-load control are future work.

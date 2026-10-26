@@ -1,0 +1,163 @@
+# One Manual card inside an existing section.
+# Replace CHARGER_SUFFIX with the new charger phase-advice card_suffix,
+# or use smart_load_manager.get_dashboard for ready-to-paste YAML.
+type: vertical-stack
+cards:
+- type: markdown
+  title: Lading hjemme – fordeling mellom laderne
+  content: '{% set mode = states(''select.slm_charging_mode'') %}
+
+    {% set priority = states(''select.slm_priority_charger'') %}
+
+    {% if mode == ''both'' %}
+
+    ⚡ **Begge bilene deler ledig ladekapasitet likt i effekt.**
+
+    Hvis det bare er kapasitet til én, får **{{ priority }}** lade først.
+
+    Når det igjen er plass til begge, deles kapasiteten.
+
+    {% else %}
+
+    🔋 **{{ priority }} lader først.**
+
+    Den andre venter til bilen har avsluttet ladingen. Er den prioriterte laderen frakoblet,
+
+    manuelt pauset eller utenfor sin ladetid, kan den andre lade.
+
+    {% endif %}
+
+
+    Forbruksgrensen for hele boligen er **{{ states(''select.smart_load_manager_ojm_easee_forbruksgrense'')
+    }} kWh per klokketime**.
+
+    Er det for lite kapasitet til minimumslading, venter laderne.
+
+    Fordelingen gjelder laderne som har automatisk laststyring på.
+
+
+    {% set entity = ''sensor.slm_control_reason'' %}
+
+    **{{ device_attr(entity, ''name'') or ''Lader'' }}:** {{ states(entity) }}
+
+    Anbefalt: {{ states(''sensor.slm_recommended_current'') }} A.
+
+    Målt: {{ states(''sensor.slm_charger_current'') }} A.
+
+
+    {% set entity = ''sensor.slm_control_reason_CHARGER_SUFFIX'' %}
+
+    **{{ device_attr(entity, ''name'') or ''Lader'' }}:** {{ states(entity) }}
+
+    Anbefalt: {{ states(''sensor.slm_recommended_current_CHARGER_SUFFIX'') }} A.
+
+    Målt: {{ states(''sensor.slm_charger_current_CHARGER_SUFFIX'') }} A.
+
+
+    💡 {{ states(''sensor.slm_phase_advice'') }}
+
+    Fasevalg gjøres separat for hver lader. En manuelt pauset lader forblir pauset.'
+- type: entities
+  title: Felles for boligen
+  show_header_toggle: false
+  entities:
+  - entity: select.smart_load_manager_ojm_easee_forbruksgrense
+    name: Forbruksgrense for hele huset
+  - entity: select.slm_charging_mode
+    name: Lademåte
+  - entity: select.slm_priority_charger
+    name: Førsteprioritet
+- type: entities
+  title: Styring – første lader
+  show_header_toggle: false
+  entities:
+  - entity: switch.slm_auto_control
+    name: Automatisk laststyring
+  - entity: switch.slm_charging_pause
+    name: Ladepause
+  - entity: select.slm_phase_mode
+    name: Fasevalg
+  - entity: number.slm_manual_current
+    name: Manuell ladestrøm (brukes når automatisk styring er av)
+  - entity: switch.slm_schedule
+    name: Tidsstyring
+  - entity: time.slm_charge_start
+    name: Starttid
+- type: entities
+  title: Målinger – første lader
+  show_header_toggle: false
+  entities:
+  - entity: sensor.slm_charger_status
+    name: Ladestatus
+  - entity: sensor.slm_charger_current
+    name: Strøm til bilen
+  - entity: sensor.slm_charger_power
+    name: Ladeeffekt
+  - entity: sensor.slm_recommended_current
+    name: Anbefalt ladestrøm
+  - entity: sensor.slm_min_current
+    name: Laveste ladestrøm for valgt oppsett
+  - entity: sensor.slm_max_current
+    name: Høyeste ladestrøm Easee tillater
+  - entity: sensor.slm_active_phases
+    name: Faser i bruk
+  - entity: sensor.slm_line_voltage
+    name: Spenning mellom fasene
+  - entity: sensor.slm_control_reason
+    name: Ladeforklaring
+- type: entities
+  title: Styring – ny lader
+  show_header_toggle: false
+  entities:
+  - entity: switch.slm_auto_control_CHARGER_SUFFIX
+    name: Automatisk laststyring
+  - entity: switch.slm_charging_pause_CHARGER_SUFFIX
+    name: Ladepause
+  - entity: select.slm_phase_mode_CHARGER_SUFFIX
+    name: Fasevalg
+  - entity: number.slm_manual_current_CHARGER_SUFFIX
+    name: Manuell ladestrøm (brukes når automatisk styring er av)
+  - entity: switch.slm_schedule_CHARGER_SUFFIX
+    name: Tidsstyring
+  - entity: time.slm_charge_start_CHARGER_SUFFIX
+    name: Starttid
+- type: entities
+  title: Målinger – ny lader
+  show_header_toggle: false
+  entities:
+  - entity: sensor.slm_charger_status_CHARGER_SUFFIX
+    name: Ladestatus
+  - entity: sensor.slm_charger_current_CHARGER_SUFFIX
+    name: Strøm til bilen
+  - entity: sensor.slm_charger_power_CHARGER_SUFFIX
+    name: Ladeeffekt
+  - entity: sensor.slm_recommended_current_CHARGER_SUFFIX
+    name: Anbefalt ladestrøm
+  - entity: sensor.slm_min_current_CHARGER_SUFFIX
+    name: Laveste ladestrøm for valgt oppsett
+  - entity: sensor.slm_max_current_CHARGER_SUFFIX
+    name: Høyeste ladestrøm Easee tillater
+  - entity: sensor.slm_active_phases_CHARGER_SUFFIX
+    name: Faser i bruk
+  - entity: sensor.slm_line_voltage_CHARGER_SUFFIX
+    name: Spenning mellom fasene
+  - entity: sensor.slm_control_reason_CHARGER_SUFFIX
+    name: Ladeforklaring
+- type: history-graph
+  title: Lading og strømforbruk – siste 12 timer
+  hours_to_show: 12
+  entities:
+  - entity: sensor.slm_recommended_current
+    name: Anbefalt strøm
+  - entity: sensor.energy_used_this_hour
+    name: Brukt
+  - entity: sensor.slm_charger_current
+    name: Målt ladestrøm
+  - entity: sensor.energy_estimate_this_hour
+    name: Timeestimat
+  - entity: sensor.average_peak_hour_energy
+    name: Snitt 3-timer
+  - entity: sensor.slm_recommended_current_CHARGER_SUFFIX
+    name: Anbefalt strøm – ny lader
+  - entity: sensor.slm_charger_current_CHARGER_SUFFIX
+    name: Målt ladestrøm – ny lader

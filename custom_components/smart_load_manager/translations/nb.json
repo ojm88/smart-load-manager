@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Konfigurer Smart Load Manager OJM",
-        "description": "Velg Easee-lader og målekilder. EnergyTariff må være installert og konfigurert først. Etter oppsett får du én Forbruksgrense for installasjonen, brukt som felles mål i beregningen. Automatisk styring starter avslått. {validation_error}",
+        "description": "Velg Easee-lader og målekilder. EnergyTariff må være installert og konfigurert først. Etter oppsett får du én Forbruksgrense for installasjonen, brukt som felles mål i beregningen. {validation_error}",
         "data": {
           "charger_device": "Lader – Easee-enhet",
           "han_power_entity": "Husmåling – HAN-effektmåler",
@@ -15,15 +15,15 @@
           "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
           "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
           "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
-        },
-        "error": {
-          "invalid_setup": "Kontroller kildeverdiene. HAN-sensoren må være tilgjengelig i W eller kW, EnergyTariff brukt energi må være tilgjengelig i kWh, og Easee må ha nødvendige sensorer."
-        },
-        "abort": {
-          "already_configured": "Denne Easee-laderen er allerede konfigurert.",
-          "single_instance": "Denne første versjonen støtter én Smart Load Manager-konfigurasjon per Home Assistant-installasjon, slik at Forbruksgrense forblir felles. Støtte for flere ladere kommer først når felles lastfordeling er implementert."
         }
       }
+    },
+    "abort": {
+      "two_chargers": "To ladere er allerede lagt til.",
+      "already_configured": "Laderen er allerede lagt til."
+    },
+    "error": {
+      "invalid_setup": "Kontroller lader og målekilder."
     }
   },
   "entity": {
@@ -105,6 +105,9 @@
       },
       "schedule_reason": {
         "name": "Tidsstyring status"
+      },
+      "phase_advice": {
+        "name": "Råd om fasevalg"
       }
     },
     "switch": {
@@ -139,7 +142,34 @@
           "auto_phase": "Automatisk",
           "3_phase": "Tre faser"
         }
+      },
+      "allocation_mode": {
+        "name": "Lademåte",
+        "state": {
+          "both": "Lad begge",
+          "one_at_a_time": "Én om gangen"
+        }
+      },
+      "priority_charger": {
+        "name": "Førsteprioritet"
       }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Legg til lader",
+        "description": "Velg en ny Easee-lader. Forbruksgrense og målekilder deles med den første laderen.",
+        "data": {
+          "charger_device": "Easee-lader"
+        }
+      }
+    },
+    "error": {
+      "invalid_setup": "Laderen kunne ikke legges til. Kontroller målinger og at den ikke allerede er lagt til."
+    },
+    "abort": {
+      "two_chargers": "To ladere er allerede lagt til."
     }
   }
 }
