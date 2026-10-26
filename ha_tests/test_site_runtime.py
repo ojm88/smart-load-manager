@@ -103,3 +103,78 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         result=await site.refresh(site.controllers['b'])
         self.assertEqual(result['recommended_current_a'],14)
         self.assertEqual(self.commands,[('b',14)])
+
+    def setup_missing_power(self, automatic=True):
+        from datetime import timedelta
+        site = self.setup_site()
+        self.entries[0].options = {'consumption_limit_kwh':10, 'allocation_mode':'both'}
+        self.delivered = {}
+        for key, c in site.controllers.items():
+            c.auto_control = automatic
+            c.entry.title = 'Garage' if key == 'b' else 'Driveway'
+            c.async_set_updated_data = lambda data, key=key: self.delivered.update({key:data})
+            c._async_sample = AsyncMock(return_value=dict(
+                inputs_valid=True, han_fresh=True, energy_used_kwh=5,
+                safety_margin_kwh=.3, minutes_left=30, han_power_w=6000,
+                charger_power_w=0, kw_per_amp=.23, schedule_allowed=True,
+                status='awaiting_start', control_minimum_current_a=6,
+                max_current_a=16, electrical={'effective_phases':1,'phase_neutral_voltage_v':230},
+                charger_current_a=0, control_reason='normal'))
+            stamp = self.now - timedelta(seconds=180) if key == 'b' else self.now
+            self.states[key+'_power'] = NS(state='unavailable' if key == 'b' else '0',last_updated=stamp,last_reported=stamp)
+        return site
+
+    async def test_missing_power_preserves_samples_and_names_the_source(self):
+        site = self.setup_missing_power()
+        data = await site.refresh(site.controllers['a'])
+        self.assertFalse(data['site_control_ready'])
+        self.assertEqual(data['han_power_w'],6000)
+        self.assertEqual(data['recommended_current_a'],0)
+        self.assertIn('Garage',data['control_reason'])
+        self.assertIn('b_power',data['control_reason'])
+        self.assertFalse(self.delivered['b']['site_control_ready'])
+        self.assertEqual(self.commands,[('a',0),('b',0)])
+        pending = dict(site.pending_reductions)
+        await site.refresh(site.controllers['a'])
+        self.assertEqual(site.pending_reductions,pending)
+        self.assertEqual(len(self.commands),2)
+
+    async def test_missing_power_with_auto_off_does_not_write_chargers(self):
+        site = self.setup_missing_power(automatic=False)
+        data = await site.refresh(site.controllers['a'])
+        self.assertFalse(data['site_control_ready'])
+        self.assertEqual(self.commands,[])
+
+    async def test_wait_recovers_with_fresh_power_and_acknowledged_zero(self):
+        from datetime import timedelta
+        site = self.setup_missing_power()
+        await site.refresh(site.controllers['a'])
+        self.commands.clear()
+        for key in ['a','b']:
+            stamp = self.now + timedelta(seconds=1)
+            self.states[key+'_power'] = NS(state='0',last_updated=stamp,last_reported=stamp)
+            self.states[key+'_current'] = NS(last_updated=stamp,last_reported=stamp)
+        data = await site.refresh(site.controllers['a'])
+        self.assertTrue(data['site_control_ready'])
+        self.assertEqual(data['recommended_current_a'],7)
+        self.assertEqual(self.commands,[('a',7),('b',7)])
+
+    async def test_failed_stop_attempts_both_and_does_not_claim_ready(self):
+        site = self.setup_missing_power()
+        site.controllers['a']._async_send_current = AsyncMock(side_effect=RuntimeError('offline'))
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+        with self.assertRaisesRegex(UpdateFailed,'offline'):
+            await site.refresh(site.controllers['a'])
+        self.assertEqual(self.commands,[('b',0)])
+
+    async def test_unchanged_available_power_does_not_expire(self):
+        from datetime import timedelta
+        site = self.setup_missing_power()
+        old = self.now - timedelta(days=2)
+        for key, c in site.controllers.items():
+            c.last_commanded_current = 0
+            self.states[key+'_power'] = NS(state='0',last_updated=old,last_reported=old)
+        data = await site.refresh(site.controllers['a'])
+        self.assertTrue(data['site_control_ready'])
+        self.assertEqual(data['recommended_current_a'],7)
+        self.assertEqual(self.commands,[('a',7),('b',7)])

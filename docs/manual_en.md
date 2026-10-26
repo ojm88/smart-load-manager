@@ -1,5 +1,17 @@
 # Smart Load Manager OJM – quick guide
 
+See the [installation instructions](../README.md#installation) for Marketplace, Marketplace and manual installation, and the [sensor reference](../README.md#sensors-and-controls).
+
+## Required Easee preparation
+
+> **Required for every Easee charger: enable the Voltage sensor first.**
+> A working charger in Easee does not mean its diagnostic sensors are enabled.
+> Open **Settings → Devices & services → Easee → the charger → Entities**,
+> include disabled entities, open **Voltage**, and enable it. Wait until it
+> shows a measured value before adding the charger to Smart Load Manager.
+> Repeat this for **each charger**, including a second charger added later.
+
+
 ## What does it do?
 
 It helps keep your home within the **Forbruksgrense** you choose for each hour. It reads the HAN meter and the energy already used this hour, then adjusts the Easee charging limit to leave room for the rest of the home.
@@ -67,7 +79,7 @@ Open **Settings → Devices & services → Smart Load Manager → Configure → 
 
 Completed means the vehicle stopped requesting power; battery percentage is unknown. Manual pause remains respected. Manual charging with automatic control off counts as other household demand, outside the distribution policy.
 
-Replace the old card with **examples/lovelace/two_chargers_card.yaml**. To get YAML with actual registered IDs, open **Developer tools → Actions**, run `smart_load_manager.get_dashboard`, copy its returned `yaml` value and paste it as one Manual card inside an existing section. Alternatively replace `CHARGER_SUFFIX` in the static example with the `card_suffix` attribute on the new charger's Phase advice sensor. The shared Markdown explains the mode, priority and current reason per charger. No complete-view template is provided.
+Replace the old card with **examples/lovelace/two_chargers_card.yaml**. To get YAML with actual registered IDs, open **Developer tools → Actions**, run `smart_load_manager.get_dashboard`, copy its returned `yaml` value and paste it as one Manual card inside an existing section. Alternatively replace `CHARGER_SUFFIX` in the static example with the `card_suffix` attribute on the new charger's Charging status sensor. The shared Markdown explains the mode, priority and current reason per charger. No complete-view template is provided.
 
 ## Safe test
 
@@ -81,3 +93,52 @@ Replace the old card with **examples/lovelace/two_chargers_card.yaml**. To get Y
 Automated tests check calculations and service calls. They cannot verify your electrical installation; confirm behavior in Home Assistant and with the Easee charger.
 
 For two-charger testing, check both modes, priority changes, pause, disconnect, and handover when the vehicle finishes. Automated validation does not replace physical two-charger testing.
+
+## Charger cannot be added
+
+If setup reports missing voltage data, open **Settings → Devices & services → Easee → the selected charger → Entities**. Include disabled entities, open **Voltage**, enable it, and wait for updated readings before retrying. An active charger can still have disabled diagnostic sensors. SLM requires measured voltage data; the Easee master/slave role does not determine which charger you can add first.
+
+## Waiting for power reports
+
+Easee reports power on changes. The beta.4 draft accepts an available numeric
+power value regardless of timestamp age, correcting beta.3's 120-second cutoff.
+Missing or unavailable inputs still pause automatic allocation and identify
+the source while successfully read measurements stay visible. HAN freshness
+and subsequent measured acknowledgement of reductions remain required.
+These changes are not yet published.
+
+## Household status on SLM – Boligen
+
+**Load control status** (`sensor.slm_status`) is the single plain-language
+information source for both Markdown cards. It summarizes the household limit,
+distribution and priority, every configured charger's explanation, and shared
+phase advice. Technical detail lives in attributes. `controlled_loads` includes
+one row for every charger, even if its information is missing. Forbruksgrense
+and **Measurement status** (sources, HAN age and validity) share the household
+device, independently of charging priority.
+
+New setups create five main sensors per charger: Charging status, Charging
+power, Charging current, Recommended current and Active phases. Current limits
+are attributes of Recommended current; electrical details are attributes of
+Charging status. Separate new Charging explanation and Phase advice entities
+are replaced by household status. Existing entities remain as compatibility
+diagnostics; nothing existing is automatically disabled or deleted.
+
+Generate cards with `smart_load_manager.get_dashboard`. Static templates need
+`sensor.SLM_HAN_POWER_SOURCE` replaced with HAN, and `CHARGER_SUFFIX` from the
+second charger's **Charging status** `card_suffix` attribute. The graph still
+reads EnergyTariff directly. A calculated recommendation is not a measurement;
+charging completion does not prove the battery is full.
+
+Prepared locally for beta.4, not yet published. The new initial wizard, master
+toggles and naming migration remain separate pending work.
+
+## Editing household sources after setup
+
+The beta.4 draft provides **Configure → Household sources and safety margin**
+for changing HAN, EnergyTariff used-this-hour and safety margin, even with two
+chargers. It can be opened from either entry. Sources are validated before
+saving and updated for both entries, retaining budget, priority and individual
+schedules. New readings are used on the next normal update without a restart.
+Add charger is a separate menu choice, only while fewer than two are configured.
+This change is prepared locally and not yet published.

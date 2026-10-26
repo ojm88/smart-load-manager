@@ -1,11 +1,16 @@
 """One serialized allocator for the household; charger adapters retain telemetry."""
 from __future__ import annotations
 import asyncio
+import math
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from homeassistant.util import dt as dt_util
 from .allocation import Demand, allocate, available_charging_kw
 from .budget import consumption_limit_value
 from .const import DOMAIN
+
+
+class MeasurementPending(ValueError):
+    """Expected missing/stale measurements; retain diagnostic visibility."""
 
 
 def site_entry(hass):
@@ -24,6 +29,7 @@ class SiteController:
         self.lock = asyncio.Lock()
         self.pending_reductions = {}
         self.manual_requests = {}
+        self.latest_samples = {}
 
     async def refresh(self, requester):
         async with self.lock:
@@ -44,19 +50,25 @@ class SiteController:
                 owner = site_entry(self.hass)
                 reference = samples[owner.entry_id]
                 if not all(d.get("inputs_valid") and d.get("han_fresh") for d in samples.values()):
-                    raise ValueError("Avventer gyldige målinger for begge laderne.")
+                    raise MeasurementPending("Automatisk laststyring avventer gyldige målinger for begge laderne.")
                 # Every charger power must be known before removing it from HAN.
-                now = dt_util.now()
                 for key, c in self.controllers.items():
                     if str(samples[key]["status"]).lower() == "disconnected":
                         samples[key]["charger_power_w"] = 0
                         continue
                     state = self.hass.states.get(c.easee.power) if c.easee.power else None
+                    name = getattr(c.entry, "title", key)
+                    source = c.easee.power or "manglende effektsensor"
                     if state is None or state.state in {"unknown", "unavailable"}:
-                        raise ValueError("Avventer ladeeffekt fra begge laderne.")
-                    reported = getattr(state, "last_reported", state.last_updated)
-                    if (now - reported).total_seconds() > 120:
-                        raise ValueError("Avventer oppdatert ladeeffekt fra begge laderne.")
+                        raise MeasurementPending(
+                            f"Automatisk laststyring avventer ladeeffekt fra {name} ({source}).")
+                    # Easee publishes power on changes, not as a heartbeat.
+                    # An old timestamp alone does not invalidate its last value.
+                    # Reduction acknowledgement below still needs new telemetry.
+                    power = samples[key].get("charger_power_w")
+                    if power is None or not math.isfinite(power) or power < 0:
+                        raise MeasurementPending(
+                            f"Automatisk laststyring avventer gyldig ladeeffekt fra {name} ({source}).")
                 managed = sum(d["charger_power_w"] for key, d in samples.items()
                               if self.controllers[key].auto_control)
                 capacity = available_charging_kw(
@@ -80,7 +92,7 @@ class SiteController:
                                and status not in {"disconnected", "completed", "charged", "error", "offline", "awaiting_authentication"})
                     if can_run:
                         if not d.get("kw_per_amp") or not d.get("control_minimum_current_a") or d["max_current_a"] <= 0:
-                            raise ValueError("Avventer fase, spenning eller strømgrense fra en lader.")
+                            raise MeasurementPending("Automatisk laststyring avventer fase, spenning eller strømgrense fra en lader.")
                         demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], d["max_current_a"]))
                         eligible.append(key)
                 priority = owner.options.get("priority_charger", owner.entry_id)
@@ -122,12 +134,47 @@ class SiteController:
                             d["control_reason"] = "Bilen har avsluttet ladingen. Kapasiteten kan brukes av den andre laderen."
                         if self.pending_reductions and key in eligible:
                             d["control_reason"] = "Avventer bekreftet reduksjon på laderne før mer strøm fordeles."
+                    d["awaiting_reduction"] = bool(self.pending_reductions)
+                    d["site_control_ready"] = True
                     d["phase_advice"] = phase_advice or "Ingen anbefaling om fasebytte nå."
                     d["site_available_kw"] = round(capacity, 3)
+                self.latest_samples = samples
                 for key, d in samples.items():
                     c = self.controllers[key]
                     if c is not requester:
                         c.async_set_updated_data(d)
+                return samples[requester.entry.entry_id]
+            except MeasurementPending as err:
+                # Missing input is a control wait, not a loss of every diagnostic
+                # entity. Keep real samples visible; never allocate on old data.
+                stop_errors = []
+                for key, c in self.controllers.items():
+                    if c.auto_control or c.charging_paused:
+                        # Do not reset an outstanding confirmation timestamp on
+                        # every refresh; that could prevent recovery forever.
+                        if c.last_commanded_current != 0:
+                            try:
+                                await c._async_send_current(0)
+                            except Exception as command_error:
+                                stop_errors.append(str(command_error))
+                            else:
+                                self.pending_reductions[key] = (0, c._last_command_at)
+                if stop_errors:
+                    error = UpdateFailed("Kunne ikke sette lading til 0 A: " + "; ".join(stop_errors))
+                    for peer in self.controllers.values():
+                        if peer is not requester:
+                            peer.async_set_update_error(error)
+                    raise error
+                for key, d in samples.items():
+                    d["recommended_current_a"] = 0
+                    d["control_reason"] = str(err)
+                    d["site_control_ready"] = False
+                    d["site_available_kw"] = None
+                    d["phase_advice"] = "Faseråd avventer oppdaterte målinger."
+                self.latest_samples = samples
+                for key, d in samples.items():
+                    if self.controllers[key] is not requester:
+                        self.controllers[key].async_set_updated_data(d)
                 return samples[requester.entry.entry_id]
             except Exception as err:
                 # Do not keep a peer on an old positive command after a failed

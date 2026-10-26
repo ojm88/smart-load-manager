@@ -73,9 +73,31 @@ def resolve_easee_entities(hass: HomeAssistant, device_id: str) -> EaseeEntities
 
     missing = [name for name, value in (("status", status), ("current", current), ("voltage", voltage)) if value is None]
     if missing:
-        raise ValueError(
-            "Easee-enheten mangler synlige sensorentiteter: " + ", ".join(missing)
-        )
+        language = getattr(getattr(hass, "config", None), "language", "en")
+        norwegian = language in {"nb", "nn", "no"}
+        details = []
+        for name in missing:
+            candidates = [entry for entry in entries
+                          if getattr(entry, "translation_key", None) == name]
+            disabled = [entry.entity_id for entry in candidates
+                        if getattr(entry, "disabled_by", None) is not None]
+            if disabled:
+                details.append(
+                    ("Aktiver Easee-sensoren " if norwegian else "Enable the Easee sensor ")
+                    + ", ".join(disabled)
+                    + (" via Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter. Vent til sensoren viser en målt verdi, og prøv igjen." if norwegian
+                       else " via Settings → Devices & services → Easee → the charger → Entities. Include disabled entities. Wait for a measured value, then try again.")
+                )
+            else:
+                labels = {"voltage": "spenning", "current": "strøm", "status": "status"}
+                label = labels[name] if norwegian else name
+                details.append(
+                    (f"Mangler aktive Easee-data for {label}. Kontroller at sensoren er aktivert "
+                     "og har oppdaterte verdier på den valgte laderen." if norwegian else
+                     f"No active Easee {label} data. Check that the sensor is enabled "
+                     "and has updated values on the selected charger.")
+                )
+        raise ValueError(" ".join(details))
 
     return EaseeEntities(
         status=status,

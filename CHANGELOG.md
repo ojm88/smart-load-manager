@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.1.1-beta.4
+
+Prepared features are released in this beta. The household-first initial wizard,
+complementary master toggles, conditional pair-control lifecycle and charger-ID
+migration remain pending; the existing setup and priority selector still apply.
+
+- Keep Configure accessible with two chargers. Add a household source/margin
+  editor and offer Add charger only when fewer than two are configured.
+  Validate before saving and retain existing charger options and identity.
+
+- Add one household Load control status sensor with plain-language summary,
+  per-load explanations, sharing policy and phase advice. Keep Measurement
+  status separate. Move shared entities onto the SLM – Boligen device.
+- Reduce new charger main sensors to five measurements; keep already registered
+  informational sensors as compatibility diagnostics. Store current limits and
+  electrical details as attributes.
+- Make both Markdown cards render only household status attributes; display
+  household measurements once and keep the source graph inputs unchanged.
+- Remove the two-charger 120-second power cutoff: Easee reports power on
+  change. Keep required HAN freshness and measured reduction acknowledgement.
+- Keep sampled diagnostics visible when required power data is unavailable;
+  identify the source in Charging explanation and hold automatic currents at
+  zero. Preserve outstanding reduction confirmation timestamps.
+
+- Highlight required Easee Voltage sensor activation for every charger in setup, errors and guides.
+
+- Use Marketplace terminology and document HA 2026.11 requirement.
+- Identify disabled required Easee sensors and retain detailed Add charger errors.
+
+- Document the agreed household-first setup redesign; implementation is pending.
+- Add Marketplace, forthcoming HA 2026.11 Marketplace and manual installation guidance.
+- Add a current sensor reference and link it from both manuals.
+
 ## 0.1.1-beta.3
 
 - Add a second Easee charger later through Configure; keep existing charger IDs and settings.
@@ -7,7 +40,7 @@
 - Confirm reductions with new telemetry before increasing the other charger; fail closed on missing required data.
 - Give each charger its own controls, measurements and phase advice. Phase changes remain manual.
 - Replace the full-view YAML with complete one-/two-charger Manual cards. Add a dashboard-YAML action using actual entity IDs.
-- Update local HA/HACS artwork with the approved OJM house, tariff steps and charging connector.
+- Update local HA/Marketplace artwork with the approved OJM house, tariff steps and charging connector.
 
 - Clarify the long-term focus on shifting controllable resistive loads and adjusting EV charging to stay within the household hourly limit; display the project logo in the README.
 
@@ -150,7 +183,7 @@ First stable release, based on the tested beta.17 build. Includes automatic Ease
 - Document the supplied Easee sensor and attribute map, separating diagnostic inputs from future safety limits.
 - Clarify the 400 V TN example: roughly 230 V phase-neutral readings with three active phase conductors imply roughly 400 V phase-phase.
 - Keep the implementation read-only. No charger command, learned current limit, active power recommendation, water heater control, or floor-heating control is included yet.
-- State explicitly that this version has not been validated inside a running Home Assistant instance and is not published to HACS.
+- State explicitly that this version has not been validated inside a running Home Assistant instance and is not published to Marketplace.
 
 ## 0.1.0-beta.1
 

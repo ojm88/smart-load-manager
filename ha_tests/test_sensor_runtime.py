@@ -100,3 +100,92 @@ class SensorRuntimeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SensorConsolidationTests(unittest.IsolatedAsyncioTestCase):
+    async def configured_sensors(self, second=False, legacy=False):
+        from unittest.mock import patch
+        from smart_load_manager.sensor import async_setup_entry
+        from smart_load_manager.entity_ids import SENSOR_OBJECT_IDS
+        from types import SimpleNamespace as NS
+        coordinator=NS(data={},last_update_success=True)
+        first=NS(entry_id='a', title='Driveway',data={},runtime_data=coordinator)
+        other=NS(entry_id='b', title='Garage',data={'entity_suffix':'garage_123'},runtime_data=coordinator)
+        entry=other if second else first
+        coordinator.entry=entry
+        hass=NS(config_entries=NS(async_entries=lambda domain:[first,other]))
+        registry=NS(async_get_entity_id=lambda domain,platform,unique:
+                    ('sensor.custom_name' if legacy and unique==entry.entry_id+'_line_voltage' else None))
+        sensors=[]
+        with patch('smart_load_manager.sensor.er.async_get',return_value=registry):
+            await async_setup_entry(hass,entry,sensors.extend)
+        return sensors
+
+    async def test_new_first_charger_has_five_sensors_and_two_shared_status_entities(self):
+        sensors=await self.configured_sensors()
+        self.assertEqual(len(sensors),7)
+        shared=[s for s in sensors if s._key=='measurement_status']
+        self.assertEqual(len(shared),1)
+        household=next(s for s in sensors if s._key=='household_status')
+        self.assertEqual(household.device_info['identifiers'],{('smart_load_manager','household')})
+        self.assertEqual(shared[0].device_info['identifiers'],household.device_info['identifiers'])
+        self.assertEqual(shared[0].entity_category.value,'diagnostic')
+
+    async def test_new_second_charger_has_same_five_and_no_household_copies(self):
+        from smart_load_manager.sensor import CHARGER_SENSOR_KEYS
+        sensors=await self.configured_sensors(second=True)
+        self.assertEqual({s._key for s in sensors},set(CHARGER_SENSOR_KEYS))
+        self.assertTrue(all(s.entity_id.endswith('_garage_123') for s in sensors))
+
+    async def test_registered_legacy_sensor_is_retained_as_diagnostic(self):
+        sensors=await self.configured_sensors(legacy=True)
+        old=next(s for s in sensors if s._key=='line_voltage')
+        self.assertEqual(old.unique_id,'a_line_voltage')
+        self.assertEqual(old.entity_category.value,'diagnostic')
+        self.assertNotIn('han_power',{s._key for s in sensors})
+
+    async def test_attributes_are_attached_only_to_their_owner(self):
+        from types import SimpleNamespace as NS
+        data=dict(minimum_current_a=6,max_current_a=16,
+                  electrical={'line_voltage_v':400,'confidence':'medium',
+                              'phase_mode_name':'3_phase','no_current_reason':'none'},
+                  han_age_seconds=12,han_fresh=True,inputs_valid=True,
+                  auto_control=True,schedule_reason='Schedule is off')
+        def attrs(key):
+            entity=NS(_key=key,coordinator=NS(data=data,entry=NS(data={
+                'han_power_entity':'sensor.actual_han','tariff_used_entity':'sensor.actual_used'})),
+                hass=NS(config=NS(language='nb')))
+            return ChargingDiagnosticSensor.extra_state_attributes.fget(entity)
+        self.assertEqual(attrs('recommended_current')['minimum_current_a'],6)
+        self.assertNotIn('line_voltage_v',attrs('recommended_current'))
+        self.assertEqual(attrs('status')['line_voltage_v'],400)
+        self.assertNotIn('minimum_current_a',attrs('status'))
+        self.assertEqual(attrs('control_reason')['manual_control'],'locked')
+        self.assertEqual(attrs('measurement_status')['han_age_seconds'],12)
+        self.assertEqual(attrs('measurement_status')['energy_used_sensor'],'sensor.actual_used')
+        self.assertNotIn('han_age_seconds',attrs('status'))
+
+    async def test_household_summary_uses_one_complete_site_snapshot(self):
+        from types import SimpleNamespace as NS
+        owner=NS(entry_id='a',title='Smart Load Manager OJM – Driveway',data={},
+                 options={'consumption_limit_kwh':10,'priority_charger':'b'})
+        peer=NS(entry_id='b',title='Smart Load Manager OJM – Garage',data={},options={})
+        payload=dict(status='charging',auto_control=True,inputs_valid=True,han_fresh=True,
+                     site_control_ready=True,recommended_current_a=7,kw_per_amp=.23,
+                     max_current_a=16,han_power_w=6000)
+        a=NS(entry=owner,data={'status':'disconnected'},last_update_success=True)
+        b=NS(entry=peer,data={'status':'disconnected'},last_update_success=True)
+        a.site=NS(controllers={'a':a,'b':b},latest_samples={'a':payload,'b':dict(payload)})
+        entity=NS(coordinator=a,hass=NS(config=NS(language='nb')))
+        state,info=ChargingDiagnosticSensor._household_payload(entity)
+        self.assertEqual(state,'automatic')
+        self.assertEqual(info['priority_charger'],'Garage')
+        self.assertEqual(info['han_power_w'],6000)
+        self.assertEqual({r['status'] for r in info['controlled_loads']},{'charging'})
+
+    async def test_shared_budget_uses_the_household_device(self):
+        from smart_load_manager.select import ConsumptionLimitSelect
+        from types import SimpleNamespace as NS
+        entity=ConsumptionLimitSelect(NS(),NS(entry_id='owner',data={}))
+        self.assertEqual(entity.device_info['identifiers'],{('smart_load_manager','household')})
+        self.assertEqual(entity.device_info['name'],'SLM – Boligen')

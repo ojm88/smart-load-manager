@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Konfigurer Smart Load Manager OJM",
-        "description": "Velg Easee-lader og målekilder. EnergyTariff må være installert og konfigurert først. Etter oppsett får du én Forbruksgrense for installasjonen, brukt som felles mål i beregningen. {validation_error}",
+        "description": "Før du fortsetter: Aktiver Spenning-sensoren på hver Easee-lader under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter ved behov. Vent til sensoren viser en målt verdi. Velg Easee-lader og målekilder. EnergyTariff må være installert og konfigurert først. Etter oppsett får du én Forbruksgrense for installasjonen, brukt som felles mål i beregningen. {validation_error}",
         "data": {
           "charger_device": "Lader – Easee-enhet",
           "han_power_entity": "Husmåling – HAN-effektmåler",
@@ -108,6 +108,25 @@
       },
       "phase_advice": {
         "name": "Råd om fasevalg"
+      },
+      "measurement_status": {
+        "name": "Målegrunnlag",
+        "state": {
+          "ready": "Gyldig",
+          "waiting": "Avventer målinger"
+        }
+      },
+      "household_status": {
+        "name": "Status for laststyring",
+        "state": {
+          "waiting": "Avventer",
+          "automatic": "Automatisk styring",
+          "manual": "Manuell styring",
+          "paused": "Lading pauset",
+          "disconnected": "Ingen bil tilkoblet",
+          "completed": "Lading avsluttet",
+          "mixed": "Ulik status på laderne"
+        }
       }
     },
     "switch": {
@@ -158,10 +177,31 @@
   "options": {
     "step": {
       "init": {
+        "title": "Konfigurer Smart Load Manager",
+        "menu_options": {
+          "household": "Boligens målekilder og sikkerhetsmargin",
+          "add_charger": "Legg til lader"
+        }
+      },
+      "add_charger": {
         "title": "Legg til lader",
-        "description": "Velg en ny Easee-lader. Forbruksgrense og målekilder deles med den første laderen.",
+        "description": "Før du fortsetter: Aktiver Spenning-sensoren på hver Easee-lader under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter ved behov. Vent til sensoren viser en målt verdi. Velg en ny Easee-lader. Forbruksgrense og målekilder deles med den første laderen. {validation_error}",
         "data": {
           "charger_device": "Easee-lader"
+        }
+      },
+      "household": {
+        "title": "Boligens målekilder",
+        "description": "Disse målekildene og sikkerhetsmarginen gjelder hele SLM-installasjonen og deles av begge laderne. Lagrede ladeinnstillinger beholdes. {validation_error}",
+        "data": {
+          "han_power_entity": "Husmåling – HAN-effektmåler",
+          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
+        },
+        "data_description": {
+          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
+          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
+          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
         }
       }
     },
@@ -169,7 +209,8 @@
       "invalid_setup": "Laderen kunne ikke legges til. Kontroller målinger og at den ikke allerede er lagt til."
     },
     "abort": {
-      "two_chargers": "To ladere er allerede lagt til."
+      "two_chargers": "To ladere er allerede lagt til.",
+      "already_configured": "Denne laderen er allerede lagt til."
     }
   }
 }

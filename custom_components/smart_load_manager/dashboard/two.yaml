@@ -1,64 +1,66 @@
-# One Manual card inside an existing section.
-# Replace CHARGER_SUFFIX with the new charger phase-advice card_suffix,
-# or use smart_load_manager.get_dashboard for ready-to-paste YAML.
+# One Manual card inside an existing section. Generate resolved YAML with
+# smart_load_manager.get_dashboard, or replace sensor.SLM_HAN_POWER_SOURCE.
+# Replace CHARGER_SUFFIX with card_suffix from the second charger Ladestatus.
 type: vertical-stack
 cards:
 - type: markdown
-  title: Lading hjemme – fordeling mellom laderne
-  content: '{% set mode = states(''select.slm_charging_mode'') %}
+  title: Laststyring hjemme – status og forklaring
+  content: '{% set info = ''sensor.slm_status'' %}
 
-    {% set priority = states(''select.slm_priority_charger'') %}
+    {% set loads = state_attr(info, ''controlled_loads'') or [] %}
 
-    {% if mode == ''both'' %}
+    {% if states(info) in [''unknown'', ''unavailable''] or not loads %}
 
-    ⚡ **Begge bilene deler ledig ladekapasitet likt i effekt.**
-
-    Hvis det bare er kapasitet til én, får **{{ priority }}** lade først.
-
-    Når det igjen er plass til begge, deles kapasiteten.
+    ℹ️ **Opplysninger om laststyringen er ikke tilgjengelige akkurat nå.**
 
     {% else %}
 
-    🔋 **{{ priority }} lader først.**
+    **{{ state_attr(info, ''summary'') }}**
 
-    Den andre venter til bilen har avsluttet ladingen. Er den prioriterte laderen frakoblet,
 
-    manuelt pauset eller utenfor sin ladetid, kan den andre lade.
+    Forbruksgrensen for hele boligen er **{{ state_attr(info, ''consumption_limit_kwh'')
+    }} kWh denne timen**.
+
+    {% if state_attr(info, ''distribution_explanation'') %}
+
+
+    {{ state_attr(info, ''distribution_explanation'') }}
+
+    Førsteprioritet: **{{ state_attr(info, ''priority_charger'') }}**.
 
     {% endif %}
 
-
-    Forbruksgrensen for hele boligen er **{{ states(''select.smart_load_manager_ojm_easee_forbruksgrense'')
-    }} kWh per klokketime**.
-
-    Er det for lite kapasitet til minimumslading, venter laderne.
-
-    Fordelingen gjelder laderne som har automatisk laststyring på.
+    {% for load in loads %}
 
 
-    {% set entity = ''sensor.slm_control_reason'' %}
+    ### {{ load.name }}
 
-    **{{ device_attr(entity, ''name'') or ''Lader'' }}:** {{ states(entity) }}
+    {{ load.explanation }}
 
-    Anbefalt: {{ states(''sensor.slm_recommended_current'') }} A.
+    {% if load.power_w is not none %}
 
-    Målt: {{ states(''sensor.slm_charger_current'') }} A.
+    Ladeeffekt: **{{ load.power_w | round(0) | int }} W**.
+
+    {% endif %}
+
+    {% if load.automatic_control and load.recommended_current_a is not none %}
+
+    Beregnet ladestrøm: **{{ load.recommended_current_a | round(0) | int }} A**.
+
+    {% endif %}
+
+    {% endfor %}
+
+    {% if state_attr(info, ''phase_advice'') %}
 
 
-    {% set entity = ''sensor.slm_control_reason_CHARGER_SUFFIX'' %}
+    💡 {{ state_attr(info, ''phase_advice'') }}
 
-    **{{ device_attr(entity, ''name'') or ''Lader'' }}:** {{ states(entity) }}
+    {% endif %}
 
-    Anbefalt: {{ states(''sensor.slm_recommended_current_CHARGER_SUFFIX'') }} A.
-
-    Målt: {{ states(''sensor.slm_charger_current_CHARGER_SUFFIX'') }} A.
-
-
-    💡 {{ states(''sensor.slm_phase_advice'') }}
-
-    Fasevalg gjøres separat for hver lader. En manuelt pauset lader forblir pauset.'
+    {% endif %}'
 - type: entities
-  title: Felles for boligen
+  title: SLM – Boligen
   show_header_toggle: false
   entities:
   - entity: select.smart_load_manager_ojm_easee_forbruksgrense
@@ -95,16 +97,8 @@ cards:
     name: Ladeeffekt
   - entity: sensor.slm_recommended_current
     name: Anbefalt ladestrøm
-  - entity: sensor.slm_min_current
-    name: Laveste ladestrøm for valgt oppsett
-  - entity: sensor.slm_max_current
-    name: Høyeste ladestrøm Easee tillater
   - entity: sensor.slm_active_phases
     name: Faser i bruk
-  - entity: sensor.slm_line_voltage
-    name: Spenning mellom fasene
-  - entity: sensor.slm_control_reason
-    name: Ladeforklaring
 - type: entities
   title: Styring – ny lader
   show_header_toggle: false
@@ -133,16 +127,20 @@ cards:
     name: Ladeeffekt
   - entity: sensor.slm_recommended_current_CHARGER_SUFFIX
     name: Anbefalt ladestrøm
-  - entity: sensor.slm_min_current_CHARGER_SUFFIX
-    name: Laveste ladestrøm for valgt oppsett
-  - entity: sensor.slm_max_current_CHARGER_SUFFIX
-    name: Høyeste ladestrøm Easee tillater
   - entity: sensor.slm_active_phases_CHARGER_SUFFIX
     name: Faser i bruk
-  - entity: sensor.slm_line_voltage_CHARGER_SUFFIX
-    name: Spenning mellom fasene
-  - entity: sensor.slm_control_reason_CHARGER_SUFFIX
-    name: Ladeforklaring
+- type: entities
+  title: Boligens målinger
+  show_header_toggle: false
+  entities:
+  - entity: sensor.SLM_HAN_POWER_SOURCE
+    name: Effekt fra strømmåleren
+  - entity: sensor.energy_used_this_hour
+    name: Forbruk hittil denne timen
+  - entity: sensor.energy_estimate_this_hour
+    name: Forventet forbruk denne timen
+  - entity: sensor.slm_measurement_status
+    name: Målegrunnlag
 - type: history-graph
   title: Lading og strømforbruk – siste 12 timer
   hours_to_show: 12

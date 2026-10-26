@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
+from homeassistant.helpers import entity_registry as er
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -14,7 +16,14 @@ from .coordinator import ChargingCoordinator
 from .entity_ids import suggested_entity_id
 
 
+# Charger measurements only. All user-facing explanations live on the household.
+CHARGER_SENSOR_KEYS = (
+    "status", "charger_power", "charger_current", "recommended_current",
+    "active_phases",
+)
+
 SENSORS = {
+    "household_status": (None, SensorDeviceClass.ENUM, "mdi:home-lightning-bolt"),    "measurement_status": (None, SensorDeviceClass.ENUM, "mdi:clipboard-check-outline"),
     "phase_advice": (None, None, "mdi:lightbulb-outline"),
     "status": (None, None, "mdi:ev-station"),
     "phase_mode": (None, None, "mdi:current-ac"),
@@ -46,6 +55,13 @@ SENSORS = {
 
 
 SENSOR_EXPLANATIONS = {
+    "household_status": (
+        "Samlet forklaring på hva laststyringen gjør, hvorfor laster lader eller venter, og eventuelle råd. Brukes av Markdown-kortet.",
+        "Shared explanation of load control, why loads are charging or waiting, and any advice. Used by the Markdown card.",
+    ),    "measurement_status": (
+        "Viser om felles målegrunnlag er klart for laststyring. Åpne sensoren for målekilder og alder på HAN-målingen.",
+        "Shows whether the shared measurement inputs are ready for load control. Open for source entities and HAN reading age.",
+    ),
     "phase_advice": ("Forslag om enfase når det kan gi plass til begge laderne. Fasevalg endres manuelt.", "Suggests single phase when it may make room for both chargers. Change phase mode manually."),
     "status": (
         "Viser om bilen er frakoblet, lader eller venter.",
@@ -159,9 +175,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up read-only sensors for one configured charger."""
     coordinator: ChargingCoordinator = entry.runtime_data
-    async_add_entities(
-        [ChargingDiagnosticSensor(coordinator, entry, key, *details) for key, details in SENSORS.items()]
-    )
+    from .site import site_entry
+    registry = er.async_get(hass)
+    keys = list(CHARGER_SENSOR_KEYS)
+    if site_entry(hass).entry_id == entry.entry_id:
+        keys.extend(["household_status", "measurement_status"])
+    # Keep previously registered entities functional for old dashboards and
+    # automations. Do not create these duplicates for a newly added charger.
+    legacy = [key for key in SENSORS if key not in keys and key not in {"measurement_status", "household_status"}
+              and registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{key}")]
+    async_add_entities([
+        ChargingDiagnosticSensor(coordinator, entry, key, *SENSORS[key], legacy=key in legacy)
+        for key in keys + legacy
+    ])
 
 
 class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEntity):
@@ -170,7 +196,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, entry, key, unit, device_class, icon):
+    def __init__(self, coordinator, entry, key, unit, device_class, icon, *, legacy=False):
         super().__init__(coordinator)
         self._key = key
         self._attr_unique_id = f"{entry.entry_id}_{key}"
@@ -182,10 +208,22 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             model="Easee charging control",
             name=entry.title,
         )
+        if key in {"household_status", "measurement_status"}:
+            from .device_info import household_device_info
+            self._attr_device_info = household_device_info()
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
         self._attr_icon = icon
+        if legacy or key == "measurement_status":
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        if legacy:
+            self._attr_entity_registry_enabled_default = False
+        if key == "measurement_status":
+            self._attr_options = ["ready", "waiting"]
+        if key == "household_status":
+            self._attr_options = ["waiting", "automatic", "manual", "paused", "disconnected", "completed", "mixed"]
         if key in {
+            "measurement_status", "household_status",
             "phase_advice", "status", "phase_mode", "output_phase", "grid_type", "voltage_type",
             "confidence", "reason", "control_reason", "no_current_reason",
             "manual_control_status", "auto_control", "han_fresh",
@@ -199,16 +237,99 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         norwegian = str(self.hass.config.language or "").startswith("nb")
         explanation_nb, explanation_en = SENSOR_EXPLANATIONS[self._key]
         attributes = {"explanation": explanation_nb if norwegian else explanation_en}
-        if self._key == "phase_advice":
+        data = self.coordinator.data or {}
+        electrical = data.get("electrical", {})
+        if self._key == "household_status":
+            _, payload = ChargingDiagnosticSensor._household_payload(self)
+            attributes.update(payload)
+        elif self._key == "phase_advice":
             attributes["card_suffix"] = self.coordinator.entry.data.get("entity_suffix", "")
+        elif self._key == "recommended_current":
+            attributes.update(
+                minimum_current_a=data.get("control_minimum_current_a", data.get("minimum_current_a")),
+                maximum_current_a=data.get("max_current_a"),
+            )
+        elif self._key == "status":
+            attributes["card_suffix"] = self.coordinator.entry.data.get("entity_suffix", "")
+            attributes.update({key: electrical.get(key) for key in (
+                "phase_mode_name", "output_phase_name", "grid_type_name", "voltage_type",
+                "line_voltage_v", "phase_neutral_voltage_v", "confidence", "reason",
+            )})
+        elif self._key == "control_reason":
+            attributes.update(
+                easee_reason=electrical.get("no_current_reason"),
+                manual_control=("locked" if data.get("auto_control") else
+                                "paused" if data.get("charging_paused") else "available"),
+                schedule_status=data.get("schedule_reason"),
+            )
+        elif self._key == "measurement_status":
+            entry_data = self.coordinator.entry.data
+            attributes.update(
+                han_sensor=data.get("han_entity", entry_data.get("han_power_entity")),
+                energy_used_sensor=entry_data.get("tariff_used_entity"),
+                han_age_seconds=data.get("han_age_seconds"),
+                han_valid=data.get("han_fresh", False),
+                inputs_valid=data.get("inputs_valid", False),
+                allocation_ready=data.get("site_control_ready", data.get("inputs_valid", False)),
+            )
         return attributes
+
+    def _household_payload(self):
+        from .household_status import build_household_status
+        from .budget import consumption_limit_value
+        coordinator = self.coordinator
+        owner = coordinator.entry
+        site = getattr(coordinator, "site", None)
+        controllers = getattr(site, "controllers", {}) or {getattr(owner, "entry_id", "local"): coordinator}
+        snapshots = getattr(site, "latest_samples", {}) if len(controllers) > 1 else {}
+        loads = []
+        devices = None
+        if hasattr(self.hass, "data"):
+            from homeassistant.helpers import device_registry as dr
+            devices = dr.async_get(self.hass).devices
+        for key, controller in controllers.items():
+            entry = controller.entry
+            name = str(getattr(entry, "title", key)).removeprefix("Smart Load Manager OJM – ")
+            device = devices.get(entry.data.get("charger_device")) if devices is not None else None
+            if device:
+                name = device.name_by_user or device.name or name
+            data = snapshots.get(key, getattr(controller, "data", None))
+            loads.append({"id": key, "name": name, "data": data,
+                          "available": key in snapshots or getattr(controller, "last_update_success", True)})
+        # Include configured peers that are still starting up, so a household
+        # overview never silently omits a temporarily unavailable load.
+        if hasattr(self.hass, "config_entries"):
+            for entry in self.hass.config_entries.async_entries(DOMAIN):
+                if entry.entry_id not in controllers:
+                    name = entry.title.removeprefix("Smart Load Manager OJM – ")
+                    device = devices.get(entry.data.get("charger_device")) if devices is not None else None
+                    if device:
+                        name = device.name_by_user or device.name or name
+                    loads.append({"id": entry.entry_id, "name": name, "data": None, "available": False})
+        options = getattr(owner, "options", {})
+        priority = options.get("priority_charger", getattr(owner, "entry_id", "local"))
+        if priority not in {load["id"] for load in loads}:
+            priority = getattr(owner, "entry_id", "local")
+        limit = consumption_limit_value(owner) if hasattr(owner, "options") else (coordinator.data or {}).get("hourly_limit_kwh", 15)
+        state, payload = build_household_status(loads, limit_kwh=limit,
+            mode=options.get("allocation_mode", "both"), priority=priority,
+            norwegian=str(self.hass.config.language or "").startswith("nb"))
+        reference = snapshots.get(getattr(owner, "entry_id", ""), coordinator.data or {})
+        payload.update({key: reference.get(key) for key in (
+            "han_power_w", "energy_used_kwh", "safety_margin_kwh", "minutes_left",
+        )})
+        return state, payload
 
     @property
     def native_value(self):
+        if self._key == "household_status":
+            return ChargingDiagnosticSensor._household_payload(self)[0]
         data = self.coordinator.data or {}
         electrical = data.get("electrical", {})
         norwegian = str(self.hass.config.language or "").startswith("nb")
         values = {
+            "measurement_status": "ready" if (data.get("inputs_valid") and data.get("han_fresh")
+                                                    and data.get("site_control_ready", True)) else "waiting",
             "phase_advice": data.get("phase_advice", "Ingen anbefaling om fasebytte nå."),
             "status": data.get("status", "unknown"),
             "phase_mode": electrical.get("phase_mode_name", "unknown"),

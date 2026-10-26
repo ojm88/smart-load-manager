@@ -5,6 +5,8 @@ from __future__ import annotations
 from .const import DOMAIN
 
 SENSOR_OBJECT_IDS = {
+    "household_status": "slm_status",
+    "measurement_status": "slm_measurement_status",
     "phase_advice": "slm_phase_advice",
     "status": "slm_charger_status",
     "phase_mode": "slm_charger_phase_mode",
@@ -57,7 +59,11 @@ def suggested_entity_id(domain: str, translation_key: str, entry=None) -> str:
     object_id = ENTITY_OBJECT_IDS.get(domain, {}).get(translation_key)
     if object_id is None:
         raise KeyError(f"No stable entity ID for {domain}.{translation_key}")
-    suffix = getattr(entry, "data", {}).get("entity_suffix", "")
+    shared = (domain, translation_key) in {
+        ("sensor", "household_status"), ("sensor", "measurement_status"),
+        ("select", "consumption_limit"), ("select", "allocation_mode"), ("select", "priority_charger"),
+    }
+    suffix = "" if shared else getattr(entry, "data", {}).get("entity_suffix", "")
     return f"{object_id}_{suffix}" if suffix else object_id
 
 
@@ -76,8 +82,7 @@ def migrate_entity_ids(hass, entry) -> None:
         object_id = ENTITY_OBJECT_IDS.get(entity.domain, {}).get(translation_key)
         if object_id is None:
             continue
-        suffix = entry.data.get("entity_suffix", "")
-        target_entity_id = f"{entity.domain}.{object_id}_{suffix}" if suffix else f"{entity.domain}.{object_id}"
+        target_entity_id = f"{entity.domain}.{suggested_entity_id(entity.domain, translation_key, entry)}"
         if entity.entity_id == target_entity_id:
             continue
         # Migrate only the historical generated long IDs. Preserve user

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -26,14 +28,21 @@ def _validate_sources(
     """Validate the selected Easee device, HAN power sensor, and tariff sensors."""
 
     device_id = str(user_input[CONF_CHARGER_DEVICE])
-    han_entity = str(user_input[CONF_HAN_POWER_ENTITY])
     resolve_easee_entities(hass, device_id)
+    _validate_meter_sources(hass, user_input)
+    return device_id, str(user_input[CONF_HAN_POWER_ENTITY])
 
+
+def _validate_meter_sources(hass, user_input):
+    """Validate shared sources independently of charger diagnostics."""
+    han_entity = str(user_input[CONF_HAN_POWER_ENTITY])
     han_state = hass.states.get(han_entity)
     if han_state is None or han_state.state in {"unknown", "unavailable"}:
         raise ValueError("HAN-effektsensoren er utilgjengelig")
     try:
-        power_to_watts(float(han_state.state), str(han_state.attributes.get("unit_of_measurement", "")))
+        power = power_to_watts(float(han_state.state), str(han_state.attributes.get("unit_of_measurement", "")))
+        if not math.isfinite(power) or power <= 0:
+            raise ValueError("HAN-effekten må være et positivt, gyldig tall")
     except (TypeError, ValueError) as err:
         raise ValueError(str(err)) from err
 
@@ -44,13 +53,18 @@ def _validate_sources(
             "EnergyTariff må være konfigurert først; mangler " + used_entity
         )
     try:
-        float(state.state)
+        used = float(state.state)
+        if not math.isfinite(used) or used < 0:
+            raise ValueError("EnergyTariff-forbruk må være et gyldig, ikke-negativt tall")
     except (TypeError, ValueError) as err:
         raise ValueError("EnergyTariff-sensoren er ikke numerisk: " + used_entity) from err
     if str(state.attributes.get("unit_of_measurement", "")).lower() != "kwh":
         raise ValueError("EnergyTariff-sensoren må være i kWh: " + used_entity)
 
-    return device_id, han_entity
+    margin = float(user_input.get(CONF_SAFETY_MARGIN_KWH, 0.3))
+    if not math.isfinite(margin) or not 0 <= margin <= 3:
+        raise ValueError("Sikkerhetsmargin må være mellom 0 og 3 kWh")
+
 
 class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configure the first supported controllable load and meter source."""
@@ -119,20 +133,69 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class ChargerOptionsFlow(config_entries.OptionsFlow):
-    """Add a charger later through Configure without rebuilding the first."""
+    """Edit household sources or add a charger without rebuilding the site."""
 
     async def async_step_init(self, user_input=None):
+        # Retain direct add-charger calls used by older clients/tests.
+        if user_input is not None and CONF_CHARGER_DEVICE in user_input:
+            return await self.async_step_add_charger(user_input)
+        menu = ["household"]
+        if len(self.hass.config_entries.async_entries(DOMAIN)) < 2:
+            menu.append("add_charger")
+        return self.async_show_menu(step_id="init", menu_options=menu)
+
+    async def async_step_household(self, user_input=None):
+        from .site import site_entry
+        owner = site_entry(self.hass)
+        fields = (CONF_HAN_POWER_ENTITY, CONF_TARIFF_USED_ENTITY, CONF_SAFETY_MARGIN_KWH)
+        values = {field: owner.data.get(field) for field in fields}
+        detail = ""
+        errors = {}
+        if user_input is not None:
+            values.update(user_input)
+            try:
+                _validate_meter_sources(self.hass, values)
+            except (ValueError, TypeError) as err:
+                errors["base"] = "invalid_setup"
+                detail = str(err)
+            else:
+                shared = {field: values[field] for field in fields}
+                # Validate everything before changing entries. Existing limits,
+                # priorities, charger IDs and per-charger schedules are retained.
+                for entry in self.hass.config_entries.async_entries(DOMAIN):
+                    self.hass.config_entries.async_update_entry(entry, data={**entry.data, **shared})
+                return self.async_create_entry(title="", data=dict(self.config_entry.options))
+        schema = vol.Schema({
+            vol.Required(CONF_HAN_POWER_ENTITY): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Required(CONF_TARIFF_USED_ENTITY): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Required(CONF_SAFETY_MARGIN_KWH): selector.NumberSelector(selector.NumberSelectorConfig(
+                min=0, max=3, step=0.1, unit_of_measurement="kWh", mode="box")),
+        })
+        return self.async_show_form(step_id="household",
+            data_schema=self.add_suggested_values_to_schema(schema, values),
+            errors=errors, description_placeholders={"validation_error": detail})
+
+    async def async_step_add_charger(self, user_input=None):
         entries = self.hass.config_entries.async_entries(DOMAIN)
         if len(entries) >= 2:
             return self.async_abort(reason="two_chargers")
+        detail = ""
+        errors = {}
         if user_input is not None:
             result = await self.hass.config_entries.flow.async_init(
                 DOMAIN, context={"source": "user"}, data=user_input)
             if result["type"] == "create_entry":
                 return self.async_create_entry(title="", data=dict(self.config_entry.options))
-            return self.async_show_form(step_id="init", data_schema=self._schema(),
-                                        errors={"base": "invalid_setup"})
-        return self.async_show_form(step_id="init", data_schema=self._schema())
+            detail = result.get("description_placeholders", {}).get("validation_error", "")
+            if result.get("type") == "abort":
+                return self.async_abort(reason=result["reason"])
+            # A failed nested flow is replaced by this form, not left running.
+            if result.get("flow_id"):
+                self.hass.config_entries.flow.async_abort(result["flow_id"])
+            errors["base"] = "invalid_setup"
+        return self.async_show_form(
+            step_id="add_charger", data_schema=self.add_suggested_values_to_schema(self._schema(), user_input),
+            errors=errors, description_placeholders={"validation_error": detail})
 
     def _schema(self):
         return vol.Schema({vol.Required(CONF_CHARGER_DEVICE): selector.DeviceSelector(

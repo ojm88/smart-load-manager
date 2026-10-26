@@ -237,3 +237,98 @@ These decisions supersede the earlier temporary single-entry/view boundary.
   adjustable EV current; current thermal control must not be claimed.
 - Remove License and Checks sections from README, without changing legal files
   or removing tests. Simplify introductory setup wording as requested.
+
+## 2026-10-26 — Beta.4 installation-first setup
+
+- Replace the charger-first setup journey with household measurements first,
+  then load-type selection and explanatory device setup. Select one or two
+  Easee chargers during the same journey; permit later additions via Configure.
+- Hot water and floor heating remain planned until their workshops define the
+  implementation. Versatile Thermostat is the intended floor-heating dependency,
+  not a dependency of the current EV integration.
+- Preserve existing IDs/settings and charging logic during the setup redesign.
+- Improve README installation and sensor/control documentation, distinguishing
+  Marketplace through HA 2026.10 from Marketplace starting in HA 2026.11.
+- Detailed scope and acceptance criteria: [Beta.4 plan](BETA4_PLAN.md).
+  Requirements only; no beta.4 runtime implementation or release yet.
+
+## 2026-10-26 — Required Easee voltage preparation
+
+- Owner confirmed Garage setup works after enabling its Voltage sensor.
+- Explain this prerequisite prominently before setup in README and both manuals,
+  in initial/add-charger UI, and in actionable errors. Apply it to each charger.
+- Wait for real measured values; do not substitute assumed voltage.
+
+## 2026-10-26 — Expected multi-charger measurement waits
+
+- Separate expected missing/stale site inputs from transport/command exceptions.
+  Preserve successfully sampled diagnostic values and show a concrete wait
+  reason rather than marking all entities unavailable for stale power alone.
+- Keep the 120-second power freshness guard pending upstream investigation.
+  Hold automatic/paused chargers at zero, never use online status as freshness.
+- Avoid resetting an outstanding reduction confirmation with repeated zero
+  commands. Recovery still requires fresh measured acknowledgement.
+
+## 2026-10-26 — Easee change-based power reporting (supersedes age guard)
+
+- Owner confirms power updates on value changes or integration restart, not
+  periodically. Remove the 120-second power age guard from the beta.4 draft.
+- Accept available numeric power values independently of report age. Keep
+  missing/unavailable/nonfinite/negative data checks, HAN freshness and
+  post-command current/power confirmation before reassigning capacity.
+- A heartbeat must not be inferred from the power value's change timestamp.
+
+## 2026-10-26 — Compact sensors approved for beta.4
+
+- Create seven main sensors per charger: status, power, current, recommended
+  current, control explanation, active phases and phase advice.
+- Move minimum/maximum to recommended-current attributes; electrical details
+  to status; Easee/manual/schedule explanations to control explanation.
+- Create one household Measurement status diagnostic with sources/HAN age and
+  input readiness. Use source HAN/EnergyTariff values directly in cards.
+  Reuse switches for on/off states; avoid new duplicate sensors.
+- Compatibility: retain only already registered legacy sensors under Diagnostics,
+  preserving unique IDs, user renames, enabled/disabled preferences and history.
+  Do not create legacy sensors for new entries or automatically disable old ones.
+- Update both Manual-card examples, packaged templates, registry-aware generation,
+  README and both manuals together. Keep allocator/control math unchanged.
+
+## 2026-10-26 — Shared household settings and priority role visibility
+
+- Owner requests Forbruksgrense isolated from charger Controls, on a shared
+  household device. Pair controls belong there and appear only with two chargers.
+- A single Master (first-priority) dropdown determines both complementary SLM
+  roles. Add read-only per-charger role diagnostics. These are software priority
+  roles, not Easee hardware-role reconfiguration or ownership of the budget.
+- Separate live charger Controls from Configuration (phase/schedule/start).
+  Native HA headings are fixed; custom distribution blocks belong in dashboards.
+- Include charger identity in names/default IDs from the first charger. Shared
+  household diagnostics stay charger-independent. Existing-ID migration needs
+  explicit compatibility handling; no silent overwrite of user customizations.
+- Detailed acceptance/migration requirements are in BETA4_PLAN.md. These latest
+  UI/role/naming changes are requirements, not yet implemented.
+
+## 2026-10-26 — Complementary priority toggles and editable site sources
+
+- Replace the proposed visible Master dropdown with per-charger complementary
+  toggles when two chargers exist, backed by one saved priority entry ID.
+  No independent role booleans; no Easee hardware-role changes. Pending UI work.
+- Recommend retaining independent schedules for different start times; common
+  household budget/source settings remain wholly independent of charger roles.
+- Configure must remain accessible with two chargers. Household sources/margin
+  edit is now implemented locally; Add charger is a separate conditional choice.
+- Validate all sources before saving shared changes across entries; retain all
+  charger identity, budget, priority and schedule settings; no forced reload.
+
+## 2026-10-26 — One household explanation contract
+
+- Add Status for laststyring on SLM – Boligen with one summary and structured
+  per-load attributes; retain Measurement status separately for diagnostics.
+- Move the household budget and shared selectors onto the household device.
+- New charger entries have only five main measurements; no separate new
+  explanation/advice sensors. Registered old entities remain compatible.
+- Markdown renders central attributes only. Extend the central presenter for
+  every future load type; never fork control rules into dashboard templates.
+- Publish complete site snapshots before peer updates so household presentation
+  does not mix sampling cycles. Presentation does not allocate or send commands.
+- The previous seven-main-sensor arrangement is superseded. See ARCHITECTURE.md.

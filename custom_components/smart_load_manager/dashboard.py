@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import entity_registry as er, device_registry as dr
-from .const import DOMAIN
+from .const import DOMAIN, CONF_HAN_POWER_ENTITY
 from .entity_ids import ENTITY_OBJECT_IDS
 from .site import site_entry
 
@@ -20,7 +20,7 @@ async def async_register_dashboard_service(hass):
         path = Path(__file__).parent / "dashboard" / template
         text = await hass.async_add_executor_job(path.read_text)
         registry = er.async_get(hass)
-        replacements = {}
+        replacements = {"sensor.SLM_HAN_POWER_SOURCE": owner.data[CONF_HAN_POWER_ENTITY]}
         for entry in [owner] + others:
             second = entry.entry_id != owner.entry_id
             for domain, mapping in ENTITY_OBJECT_IDS.items():
