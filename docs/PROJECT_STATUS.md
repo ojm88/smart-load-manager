@@ -4,8 +4,9 @@ Updated: 2026-10-26
 
 ## Release
 
-Stable: 0.1.0. Last published beta: 0.1.1-beta.2.
-Preparing 0.1.1-beta.3 for the owner's requested two-charger test.
+Stable: 0.1.0. Published beta: 0.1.1-beta.3.
+Release: https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.3
+Code commit: 293e399a433b5915aea65a8dddbd7b37e09c44e8.
 
 ## Implemented in beta.3
 
@@ -39,7 +40,8 @@ Preparing 0.1.1-beta.3 for the owner's requested two-charger test.
 imports/compilation, JSON and native dashboard YAML validation pass locally.
 These runtime tests exercise sensor payloads, shared sampling, command
 ordering, cold-start readiness, completed handover, failure handling and
-registry-aware dashboard generation. GitHub Actions must pass before release.
+registry-aware dashboard generation. GitHub Actions passed both jobs before publication:
+https://github.com/ojm88/smart-load-manager/actions/runs/40378512066
 
 The owner previously confirmed single-charger operation on physical HA/Easee.
 New two-charger functionality has NOT been verified with physical chargers.
