@@ -4,7 +4,15 @@ Updated: 2026-10-26
 
 ## Release
 
-Stable: 0.1.0. Published beta: 0.1.1-beta.3. Beta.4 publication in progress.
+Stable: 0.1.0. Published beta: 0.1.1-beta.4.
+Release: https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.4
+Release code: 708e97e6f43c1a96270cfa70847e3be2798db0b5.
+CI: https://github.com/ojm88/smart-load-manager/actions/runs/40409176196
+Both jobs passed before publishing.
+
+Beta.4 contains the prepared fixes/status/cards. Initial household wizard, master
+toggles, conditional pair controls and ID naming migration remain pending.
+Earlier draft/not-published statements below are historical workshop notes.
 Release: https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.3
 Code commit: 293e399a433b5915aea65a8dddbd7b37e09c44e8.
 
