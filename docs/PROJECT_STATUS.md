@@ -5,9 +5,9 @@ Updated: 2026-10-27
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.6** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.6)).
-- Release code: `7b7cb7fce2e75063923f2bba2cc49014e939422c`; merged PR #2.
-- GitHub Actions [40503440753](https://github.com/ojm88/smart-load-manager/actions/runs/40503440753) passed all three jobs for the merged PR head. Published as a prerelease after owner approval.
+- Published beta: **0.1.1-beta.7** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.7)).
+- Release code: `c1a43b681aca0891d986a0a83b57154ff0361209`; merged PR #3.
+- GitHub Actions [40524396170](https://github.com/ojm88/smart-load-manager/actions/runs/40524396170) passed all four jobs for the merged PR head. Published as a prerelease after owner approval.
 
 ## Published beta.6 corrections
 
@@ -57,9 +57,11 @@ Live acceptance of beta.6; more than two chargers; supported hot-water tanks; fl
 
 The owner confirms the beta.6 setup menu renders correctly in Safari; Companion showed stale/missing strings. Both chargers and household status appeared in the owner's recording. This is setup/UI acceptance, not physical charging acceptance.
 
-Branch `experiment-integration-logo-picker` adds an optional read-only custom panel under `experiments/logo-picker`. It compares a plain dropdown with HA's native logo-bearing device picker, using an exact allowed-ID predicate and a transient first/second flow. It never starts a real config flow, saves membership, or sends commands. Beta.6 code/version remain unchanged. Syntax and candidate-filter checks are local; browser rendering, logos, phone latency and applicability to the native setup dialog are unverified. No beta.7 has been published. VT support is not implemented.
+Branch `experiment-integration-logo-picker` adds an optional read-only custom panel under `experiments/logo-picker`. It compares a plain dropdown with HA's native logo-bearing device picker, using an exact allowed-ID predicate and a transient first/second flow. It never starts a real config flow, saves membership, or sends commands. Beta.6 code/version remain unchanged. Syntax and candidate-filter checks are local; browser rendering, logos, phone latency and applicability to the native setup dialog are unverified. This initial experiment was subsequently packaged and published in beta.7; see below. VT support is not implemented.
 
 
-## Beta.7 packaging (prepared)
+## Beta.7 packaging (published)
 
-Owner requests an installable beta instead of manual test-panel files. The integration now packages the read-only module and registers the admin-only SLM velgertest panel automatically when HA frontend is enabled. Normal compact setup, memberships and charging math remain unchanged. Static route is registered once, panel removed on last runtime unload, and reload re-registers it. No beta.7 publication or phone-rendering acceptance is claimed yet.
+Owner requests an installable beta instead of manual test-panel files. The integration now packages the read-only module and registers the admin-only SLM velgertest panel automatically when HA frontend is enabled. Normal compact setup, memberships and charging math remain unchanged. Static route is registered once, panel removed on last runtime unload, and reload re-registers it. Beta.7 is published after the owner's request to package the experiment as a beta. Phone rendering and performance acceptance are still pending.
+
+Beta.7 validation: **106 distinct automated tests** pass: 56 pure tests, 49 HA runtime tests (run locally and in CI on both HA 2026.2.3 and 2026.10.4), and one Node candidate-filter test. JavaScript syntax, packaged/source module equality, Python lint, JSON and whitespace checks pass. No live charger command or actual browser logo/latency test was performed.
