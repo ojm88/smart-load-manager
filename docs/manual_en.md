@@ -6,7 +6,7 @@ SLM adjusts charging to a shared hourly household energy target. It can help avo
 
 Use Home Assistant 2026.2 or newer, configured Easee devices, and EnergyTariff with a HAN power sensor in W or kW. **Enable the Voltage sensor on every Easee charger** under Settings → Devices & services → Easee → charger → Entities. Include disabled entities and wait for measured values.
 
-Download a GitHub release, copy `custom_components/smart_load_manager` into `config/custom_components/`, then restart Home Assistant. From HA 2026.11 you can also add `https://github.com/ojm88/smart-load-manager` as a custom Integration in **Settings → Marketplace**; custom repositories require a GitHub connection. 
+Download a GitHub release, copy `custom_components/smart_load_manager` into `config/custom_components/`, then restart Home Assistant. From HA 2026.11 you can also add `https://github.com/ojm88/smart-load-manager` as a custom Integration in **Settings → Marketplace**; custom repositories require a GitHub connection.
 
 ## Setup
 

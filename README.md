@@ -19,7 +19,7 @@ Keep household consumption within a chosen hourly energy target by adjusting EV 
 
 Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy `custom_components/smart_load_manager` into your Home Assistant `config/custom_components/`, and restart.
 
-From HA 2026.11, **Settings → Marketplace** also supports adding this repository as a custom **Integration**: `https://github.com/ojm88/smart-load-manager`. A GitHub connection is required for custom repositories. See the [official guide](https://contributors.home-assistant.io/marketplace/how-it-works/). 
+From HA 2026.11, **Settings → Marketplace** also supports adding this repository as a custom **Integration**: `https://github.com/ojm88/smart-load-manager`. A GitHub connection is required for custom repositories. See the [official guide](https://contributors.home-assistant.io/marketplace/how-it-works/).
 
 ## Set up
 
