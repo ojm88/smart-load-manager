@@ -5,8 +5,9 @@ Updated: 2026-10-27
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.4**, code `708e97e6f43c1a96270cfa70847e3be2798db0b5`.
-- Prepared: **0.1.1-beta.5**, approved by owner for publication; publication is in progress.
+- Published beta: **0.1.1-beta.5** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.5)).
+- Release code: `8b76ac3fc0f9e2bd7174798b1d0a2017490e6763`; merged PR #1.
+- GitHub Actions [40484447173](https://github.com/ojm88/smart-load-manager/actions/runs/40484447173) passed both jobs for the released commit. Published as a prerelease after owner approval.
 
 ## Implemented in beta 5
 
