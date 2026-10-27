@@ -102,3 +102,23 @@ Validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4, and six Node tes
 ## Approved beta.9 publication
 
 Published 0.1.1-beta.9 from merge commit 8313556a0f81a23e546444863f72a2fcbdce54be after owner approval. Verified release draft=false, prerelease=true and tag points to the merge commit. All 117 distinct tests pass (56 pure, 55 runtime and six Node tests), with runtime suites on HA 2026.2.3 and 2026.10.4. Phone UI/navigation and physical charging acceptance remain pending. Stable 0.1.0 and all earlier tags remain unchanged.
+
+
+## Native in-app setup correction (not released)
+
+Owner tested beta.9 and confirms the external logo step leaves iOS Companion for Safari. This violates the requirement to keep the whole setup in the app; seeing the custom page and images does not constitute acceptance of that flow. HA renders external-step links with target=_blank. The fast SelectSelector schema supports value/label pairs, not image options; the supported DeviceSelector does not expose exact selected-device exclusions.
+
+Restore the native compact name dropdown for initial and additive setup, including when an external/Cloud URL is configured. Remove external-step handlers, the hidden setup panel/API bridge and its frontend module. No sidebar page is registered. Preserve indexed options, first/second exclusion, saved records/options, grouping and all calculation/control/allocation files. Keep the unregistered read-only comparison experiment separate from setup.
+
+Validation: 56 pure tests, 51 HA runtime tests on HA 2026.10.4, and one existing Node experiment test pass locally. New real FlowManager regressions configure a Cloud URL, fail on any external-step call, and complete initial two-charger setup and additive second-charger setup entirely with native forms/menus. Actual Companion acceptance and physical charging remain separate. No new release has been published or installed.
+
+
+## Approved beta.10 native logo selector
+
+Owner explicitly requests publication of a new in-Companion logo solution and will test responsiveness. The unshipped text-only correction is superseded by HA's supported DeviceSelector. Research of HA frontend 20260128.6 (HA 2026.2.3) and 20260930.5 (HA 2026.10.4) confirms the multi-device add picker excludes current values. Initial selection is single-device; second/add forms preselect the existing source and permit exactly one new source on the server. Removing/replacing the existing selection is rejected; use the explicit remove action. Native forms/menus never call an external step, even with a Cloud URL.
+
+Manufacturer/model filters are derived from Easee's indexed devices, avoiding ha-selector-device's additional getDeviceIntegrationLookup path when metadata is complete. The native picker still performs its own normal HA registry/config-entry work and branding requests. Missing manufacturer metadata uses the supported Easee integration filter. Presentation filters are not source authorization: all submitted IDs are validated against enabled Easee registry membership and electrical inputs before saving. Similar-model devices from other integrations, duplicate/replacement/excess additions are rejected. No sensor probes run on form creation and no charging math changes.
+
+Sources reviewed: home-assistant/frontend src/components/ha-selector/ha-selector-device.ts, src/components/device/ha-devices-picker.ts, src/components/device/ha-device-picker.ts and src/data/device/device_registry.ts; core helpers/selector.py. No injected frontend module or sidebar page is used for setup.
+
+Local validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4 and one Node test. Runtime tests exercise actual flow managers and serialized native selector defaults, plus configured Cloud URLs without external calls. Both HA runtimes are checked in CI before publication. Native logo appearance and responsiveness in the actual iOS app, and physical charging, remain owner acceptance tasks.

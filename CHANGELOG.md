@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1-beta.10
+
+- Use HA's native device selector with integration branding inside the normal setup dialog, including Companion. Remove the external logo bridge and hidden setup page.
+- Preselect existing chargers in the native multiple-device selector. Its add field excludes selected devices; saving validates one new source and preserves existing membership/settings.
+- Prefer manufacturer/model filters from Easee's indexed registry devices to avoid the selector's extra integration-membership lookup. Fall back to the Easee integration filter when metadata is missing. No sensor probes or charger commands run when opening the form.
+- Reject replacement, duplicate, excess, disabled and non-Easee additions on the server. Charging calculations and grouping remain unchanged. Actual phone responsiveness requires owner testing.
+
 ## 0.1.1-beta.9
 
 - Use one EV charging menu item for logo selection; remove duplicate test choices.

@@ -414,3 +414,18 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 ## 2026-10-27 — Beta.9 publication approval
 
 - Owner explicitly approves publishing the reviewed beta.8 setup correction as 0.1.1-beta.9. Keep stable 0.1.0 and earlier tags unchanged. Phone UI and physical charging acceptance remain pending.
+
+
+## 2026-10-27 — All setup must remain in Companion
+
+- Owner confirms beta.9 opens Safari and requires the entire setup to stay in the app. This supersedes the external-step logo approach. Do not attempt another browser/deep-link workaround for this requirement.
+- Restore fast native name-only selectors with exact exclusions and additive membership. Remove active external flow/hosting code. Logos may return only with a supported solution that preserves native in-app setup, filtering and responsiveness; the logo is secondary to a working setup.
+- Add explicit configured-Cloud-URL runtime coverage: a missing-URL fallback test cannot prove the real Companion path. Do not label API/DOM tests as actual phone UI acceptance.
+
+
+## 2026-10-27 — Publish native in-dialog logos as beta.10
+
+- Owner asks to publish an in-Companion logo solution and accepts testing phone responsiveness. Supersede the unshipped name-only choice with supported native DeviceSelector forms. No external page, browser navigation, custom frontend injection or sidebar test is part of setup.
+- Use a single-device first selector and a native multi-device selector with existing sources preselected for additions. HA's own add picker excludes current values. Reject removal/replacement of existing sources and enforce exactly one new enabled Easee source; do not confuse list edits with replacement membership.
+- Prefer actual manufacturer/model metadata to avoid the selector's additional integration-membership lookup. Fall back to integration=easee when metadata is missing. Validate Easee membership and electrical sources on the server because presentation metadata is not authoritative. Do not claim a phone speed improvement until the owner measures it.
+- Publication of beta.10 is authorized by the current request. Charging/control/budget/allocation algorithms and automatic-control-off policy remain unchanged.
