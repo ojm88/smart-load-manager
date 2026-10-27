@@ -30,7 +30,11 @@
         "title": "Elbillading",
         "description": "Velg første Easee-lader. Aktiver Spenning-sensoren på laderen først og vent på en målt verdi. Deretter kan du fullføre med én lader eller legge til en til. Begge deler boligens forbruksgrense, med egen tidsstyring per lader. Automatisk laststyring starter avslått. {validation_error}",
         "data": {
-          "charger_device": "Første Easee-lader"
+          "charger_device": "Første Easee-lader",
+          "electrical_connection": "Laderens fysiske tilkobling"
+        },
+        "data_description": {
+          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget."
         }
       },
       "charging_next": {
@@ -44,7 +48,11 @@
         "title": "Andre Easee-lader",
         "description": "Første lader er allerede valgt. Behold den, og bruk det tomme feltet under til å velge én lader til. Valgte ladere er utelatt fra legg-til-listen. Aktiver Easees Spenning-sensor på den nye laderen før du fortsetter. {validation_error}",
         "data": {
-          "charger_device": "Valgte ladere og ny lader"
+          "charger_device": "Valgte ladere og ny lader",
+          "electrical_connection": "Den nye laderens fysiske tilkobling"
+        },
+        "data_description": {
+          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget."
         }
       }
     },
@@ -241,14 +249,19 @@
         "title": "Administrer ladere",
         "menu_options": {
           "add_charger": "Legg til lader",
-          "remove_charger": "Fjern lader"
+          "remove_charger": "Fjern lader",
+          "connection": "Ladernes tilkobling"
         }
       },
       "add_charger": {
         "title": "Legg til lader",
         "description": "Eksisterende lader er allerede valgt. Behold den, og bruk det tomme feltet under til å velge én ny lader. Den eksisterende laderen og innstillingene beholdes. Bruk Fjern lader for å fjerne en lader. Aktiver Easees Spenning-sensor på den nye laderen først. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
         "data": {
-          "charger_device": "Valgte ladere og ny lader"
+          "charger_device": "Valgte ladere og ny lader",
+          "electrical_connection": "Den nye laderens fysiske tilkobling"
+        },
+        "data_description": {
+          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget."
         }
       },
       "remove_charger": {
@@ -256,6 +269,18 @@
         "description": "Velg laderen du vil fjerne. Den andre laderen og boligens innstillinger beholdes. SLM sender først 0 A til laderen som fjernes. Innstillingene lagres dersom du legger den til igjen senere. {validation_error}",
         "data": {
           "charger_device": "Lader som skal fjernes"
+        }
+      },
+      "connection": {
+        "title": "Laderens fysiske tilkobling",
+        "description": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget. {validation_error}",
+        "data": {
+          "charger_device": "Lader",
+          "electrical_connection": "Laderens fysiske tilkobling"
+        },
+        "data_description": {
+          "charger_device": "Velg laderen som skal endres.",
+          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget. Endring sender 0 A til den lastede laderen og laster SLM på nytt med automatisk styring av."
         }
       }
     },
@@ -265,6 +290,16 @@
     "abort": {
       "two_chargers": "To ladere er allerede konfigurert.",
       "one_charger_required": "Minst én lader må være konfigurert."
+    }
+  },
+  "selector": {
+    "electrical_connection": {
+      "options": {
+        "it_1": "230 V IT/TT – énfase",
+        "it_3": "230 V IT/TT – trefase",
+        "tn_1": "400/230 V TN – énfase",
+        "tn_3": "400/230 V TN – trefase"
+      }
     }
   }
 }

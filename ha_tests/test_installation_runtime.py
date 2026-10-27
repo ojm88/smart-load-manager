@@ -52,6 +52,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
             unique_id=identity,
             data={
                 "charger_device": identity + "_device",
+                "electrical_connection": "tn_3",
                 "charger_name": name,
                 "entity_suffix": suffix,
                 "han_power_entity": "sensor.han",
@@ -292,7 +293,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
             "smart_load_manager.config_flow.resolve_easee_entities",
             side_effect=ValueError("Enable sensor.garage_voltage"),
         ):
-            result = await flow.async_step_charging({"charger_device": "garage"})
+            result = await flow.async_step_charging({"charger_device": "garage", "electrical_connection": "tn_3"})
         self.assertIn(
             "Enable sensor.garage_voltage",
             result["description_placeholders"]["validation_error"],
@@ -664,7 +665,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
             {e.config_subentry_id for e in currents}, {group_id(a, "charging")}
         )
         self.assertEqual(
-            float(self.hass.states.get("sensor.slm_line_voltage_garasje").state), 400
+            float(self.hass.states.get("sensor.slm_line_voltage_garasje").state), 398.4
         )
         self.assertEqual(
             self.hass.states.get("sensor.slm_line_voltage_garasje").attributes[
@@ -686,5 +687,19 @@ class InstallationTests(IsolatedAsyncioTestCase):
             self.assertFalse(c.auto_control)
             self.assertEqual(c.data["max_current_a"], 16)
             self.assertEqual(c.data["control_minimum_current_a"], 6)
-            self.assertGreater(c.data["kw_per_amp"], 0.69)
+            self.assertAlmostEqual(c.data["kw_per_amp"], 0.69)
+        # An old installation with no confirmed wiring must not revive the
+        # previously cached TN factor after a zero-current pause.
+        records = [dict(r, data=dict(r["data"])) for r in a.data["loads"]]
+        records[0]["data"].pop("electrical_connection")
+        original_data = dict(a.data)
+        self.hass.config_entries.async_update_entry(a, data={**a.data, "loads": records})
+        c = a.runtime_data.controllers[records[0]["id"]]
+        c.last_commanded_current = 0
+        data = await c._async_sample()
+        self.assertIsNone(data["kw_per_amp"])
+        self.assertIsNone(data["control_minimum_current_a"])
+        self.assertFalse(data["inputs_valid"])
+        self.assertIn("Bekreft", data["electrical_error"])
+        self.hass.config_entries.async_update_entry(a, data=original_data)
         self.assertTrue(await self.hass.config_entries.async_unload(a.entry_id))

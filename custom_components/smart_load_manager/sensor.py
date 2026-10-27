@@ -88,12 +88,12 @@ SENSOR_EXPLANATIONS = {
         "The grid type reported by Easee.",
     ),
     "voltage_type": (
-        "Beregnet spenningssystem ut fra målt spenning.",
-        "Voltage system inferred from measured voltage.",
+        "Spenningssystem for den bekreftede fysiske tilkoblingen.",
+        "Voltage system of the confirmed physical connection.",
     ),
     "line_voltage": (
-        "Målt eller beregnet spenning mellom fasene.",
-        "Measured or inferred voltage between phases.",
+        "Målt spenning for ladingen. Ved enfase TN vises fase–nøytral; ved trefase TN utledes linjespenningen fra målt fasespenning.",
+        "Charging voltage from measured terminal values. Single-phase TN shows phase–neutral; three-phase TN shows line voltage inferred from measured phase voltages.",
     ),
     "ln_voltage": (
         "Målt spenning mellom fase og nøytral.",
@@ -261,7 +261,7 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
             attributes["card_suffix"] = self.coordinator.entry.data.get("entity_suffix", "")
             attributes.update({key: electrical.get(key) for key in (
                 "phase_mode_name", "output_phase_name", "grid_type_name", "voltage_type",
-                "line_voltage_v", "phase_neutral_voltage_v", "confidence", "reason",
+                "line_voltage_v", "phase_neutral_voltage_v", "confidence", "reason", "connection",
             )})
         elif self._key == "control_reason":
             attributes.update(
@@ -355,7 +355,9 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
             "active_phases": electrical.get("active_phases"),
             "grid_type": electrical.get("grid_type_name", "unknown"),
             "voltage_type": electrical.get("voltage_type", "unknown"),
-            "line_voltage": electrical.get("line_voltage_v"),
+            "line_voltage": (electrical.get("phase_neutral_voltage_v")
+                             if electrical.get("effective_phases") == 1 and electrical.get("phase_neutral_voltage_v") is not None
+                             else electrical.get("line_voltage_v")),
             "ln_voltage": electrical.get("phase_neutral_voltage_v"),
             "minimum_current": data.get("minimum_current_a"),
             "recommended_current": data.get("recommended_current_a"),

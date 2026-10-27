@@ -35,9 +35,19 @@ No custom helpers or YAML automation are required. Hot water and floor heating a
 
 Minimum current is 11 A for measured 230 V three-phase charging, otherwise 6 A. Maximum current comes from Easee and cannot be manually configured in SLM. SLM does not identify the vehicle. Easee Completed does not prove a full battery.
 
+## Connection and phase control
+
+Confirm the actual connection for each charger: **230 V IT/TT – single phase**, **230 V IT/TT – three phase**, **400/230 V TN – single phase** or **400/230 V TN – three phase**. This describes physical wiring, not the desired charging mode. Calculations use the relevant measured Easee voltages, including values such as 210 V; no fixed nominal voltage replaces measurements. IT/TT calculations use the highest relevant measured pair voltage when multiple paths are involved, to avoid granting too many amperes.
+
+Three-phase connections retain single/automatic/three-phase mode control. Single-phase connections hide the control and reject direct phase-control requests. Missing required measurements or conflicting Easee information prevents positive current regulation.
+
+Confirm existing chargers under **Configure → Chargers → Charger connections**. Edits preserve identities/settings, send 0 A to the loaded charger and reload SLM with automatic control off. An acknowledgement is not measured physical-stop confirmation. Generate dashboard YAML again after a connection change; single-phase cards omit phase control.
+
+The Voltage sensor shows phase–neutral for single-phase TN, inferred line voltage for three-phase TN, and measured phase–phase for IT/TT. Nominal TN supply remains 400/230 V even when the car uses one phase. Charging status exposes the confirmed connection and electrical details.
+
 ## Measurements and dashboard
 
-Each charger has six main measurements: status, charging power, measured current, recommended current, active phases and voltage. Names use function followed by the charger name, consistently from the first charger. Voltage is measured or inferred line-to-line voltage; phase-neutral voltage and electrical details remain status attributes. Recommended current includes minimum and maximum attributes. A diagnostic priority sensor appears with two chargers.
+Each charger has six main measurements: status, charging power, measured current, recommended current, active phases and voltage. Names use function followed by the charger name, consistently from the first charger. Voltage follows the confirmed connection and charging mode; phase–neutral voltage and electrical details remain status attributes. Recommended current includes minimum and maximum attributes. A diagnostic priority sensor appears with two chargers.
 
 The household status explains why each load runs or waits and provides phase advice. Measurement status contains shared source IDs, HAN age and input validity.
 
@@ -65,4 +75,4 @@ For later additions, use Configure → Chargers → **Add charger**. The existin
 
 ### When to regenerate the dashboard card
 
-Run `smart_load_manager.get_dashboard` and replace the existing Manual card YAML after adding/removing/replacing a charger, changing the HAN source or referenced entity IDs, changing charger names used in headings, or adopting a feature that changes the card layout. YAML is not automatically regenerated. Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection and pause update through existing entity references and require no new card. Preserve manual customizations before replacing the YAML.
+Run `smart_load_manager.get_dashboard` and replace the existing Manual card YAML after adding/removing/replacing a charger, changing physical charger connections, the HAN source or referenced entity IDs, changing charger names used in headings, or adopting a feature that changes the card layout. YAML is not automatically regenerated. Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection and pause update through existing entity references and require no new card. Preserve manual customizations before replacing the YAML.

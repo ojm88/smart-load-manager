@@ -14,6 +14,8 @@ from homeassistant.helpers import device_registry as dr, selector
 
 from .const import (
     CONF_CHARGER_DEVICE,
+    CONF_CONNECTION,
+    CONNECTION_OPTIONS,
     CONF_HAN_POWER_ENTITY,
     CONF_SAFETY_MARGIN_KWH,
     CONF_TARIFF_USED_ENTITY,
@@ -126,6 +128,7 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 records = _make_loads(self.hass, [device_id])
                 if device_id not in {o["value"] for o in _charger_options(self.hass)}:
                     raise ValueError("Velg en tilgjengelig Easee-lader / Select an available Easee charger")
+                records[0]["data"][CONF_CONNECTION] = _connection(user_input)
                 self._draft_loads = records
             except ValueError as err:
                 errors["base"] = "invalid_setup"
@@ -152,10 +155,12 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 device_id = _new_charger_device(self.hass, user_input, excluded)
                 second = _make_loads(self.hass, [device_id], self._draft_loads)
+                connection = _connection(user_input)
             except ValueError as err:
                 errors["base"] = "invalid_setup"
                 detail = str(err)
             else:
+                second[0] = {**second[0], "data": {**second[0]["data"], CONF_CONNECTION: connection}}
                 self._draft_loads += second
                 return await self.async_step_finish_charging()
         return self.async_show_form(
@@ -216,7 +221,7 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
     async def async_step_chargers(self, user_input=None):
         """Membership actions are explicit; an add never replaces current loads."""
         parent = self.config_entry
-        menu = []
+        menu = ["connection"]
         if len(parent.data["loads"]) < 2:
             menu.append("add_charger")
         if len(parent.data["loads"]) > 1:
@@ -240,6 +245,8 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                     [device_id],
                     active + list(parent.data.get("retired_loads", [])),
                 )
+                connection = _connection(user_input)
+                new = [{**r, "data": {**r["data"], CONF_CONNECTION: connection}} for r in new]
             except ValueError as err:
                 errors["base"] = "invalid_setup"
                 detail = str(err)
@@ -257,6 +264,43 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
             data_schema=_charger_schema(self.hass, exclude=excluded),
             errors=errors,
             description_placeholders={"validation_error": detail},
+        )
+
+    async def async_step_connection(self, user_input=None):
+        """Confirm/edit one load's wiring, retaining all identities and settings."""
+        parent = self.config_entry
+        active = list(parent.data["loads"])
+        errors = {}
+        detail = ""
+        if user_input is not None:
+            record = next((r for r in active if r["data"][CONF_CHARGER_DEVICE] == user_input.get(CONF_CHARGER_DEVICE)), None)
+            try:
+                connection = _connection(user_input)
+                if record is None:
+                    raise ValueError("Velg en konfigurert lader / Select a configured charger")
+                if record["data"].get(CONF_CONNECTION) == connection:
+                    return self.async_create_entry(title="", data=dict(parent.options))
+                controller = getattr(getattr(parent, "runtime_data", None), "controllers", {}).get(record["id"])
+                if controller is not None:
+                    async with controller.site.lock:
+                        await controller._async_send_current(0)
+                        controller.auto_control = False
+                records = [
+                    {**r, "data": {**r["data"], CONF_CONNECTION: connection}} if r["id"] == record["id"] else r
+                    for r in active
+                ]
+            except Exception as err:
+                errors["base"] = "invalid_setup"
+                detail = str(err)
+            else:
+                return await self._save_membership(records, list(parent.data.get("retired_loads", [])))
+        choices = [{"value": r["data"][CONF_CHARGER_DEVICE], "label": r["data"].get("charger_name", r["title"])} for r in active]
+        return self.async_show_form(
+            step_id="connection",
+            data_schema=vol.Schema({
+                vol.Required(CONF_CHARGER_DEVICE): _choice_selector(choices),
+                vol.Required(CONF_CONNECTION): _connection_selector(),
+            }), errors=errors, description_placeholders={"validation_error": detail},
         )
 
     async def async_step_remove_charger(self, user_input=None):
@@ -393,7 +437,8 @@ def _charger_schema(hass, *, exclude=()):
     return vol.Schema({
         key: selector.DeviceSelector(selector.DeviceSelectorConfig(
             filter=_native_charger_filter(hass), multiple=bool(selected)
-        ))
+        )),
+        vol.Required(CONF_CONNECTION): _connection_selector(),
     })
 
 
@@ -480,3 +525,16 @@ def _make_loads(hass, device_ids, existing=()):
         )
     order = {r["id"]: i for i, r in enumerate(existing)}
     return sorted(records, key=lambda r: order.get(r["id"], len(order)))
+
+
+def _connection_selector():
+    return selector.SelectSelector(selector.SelectSelectorConfig(
+        options=list(CONNECTION_OPTIONS), translation_key=CONF_CONNECTION,
+        mode=selector.SelectSelectorMode.DROPDOWN))
+
+
+def _connection(user_input):
+    value = user_input.get(CONF_CONNECTION)
+    if not isinstance(value, str) or value not in CONNECTION_OPTIONS:
+        raise ValueError("Bekreft fysisk tilkobling / Confirm the physical connection")
+    return value

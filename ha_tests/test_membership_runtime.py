@@ -95,6 +95,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             config_entry_id="vendor", identifiers={("easee", "second")}, name="Carport", manufacturer="Easee", model="Home"
         )
         self.record = flow._make_loads(self.hass, [self.a.id])[0]
+        self.record["data"]["electrical_connection"] = "tn_3"
         self.parent = self.config_entry(
             "smart_load_manager",
             "installation",
@@ -151,7 +152,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         return flow
 
     async def add_second(self):
-        result = await self.flow().async_step_add_charger({"charger_device": self.b.id})
+        result = await self.flow().async_step_add_charger({"charger_device": self.b.id, "electrical_connection": "tn_3"})
         self.assertEqual(result["type"], "create_entry")
         await self.hass.async_block_till_done()
         self.assertEqual(self.parent.state.value, "loaded")
@@ -229,7 +230,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         site.manual_requests[self.record["id"]] = 6
         site.latest_samples[self.record["id"]] = {"status": "disconnected"}
         result = await self.flow().async_step_remove_charger(
-            {"charger_device": self.a.id}
+            {"charger_device": self.a.id, "electrical_connection": "tn_3"}
         )
         self.assertEqual(result["type"], "create_entry")
         # The old adapter remains valid until HA completes native unload.
@@ -243,7 +244,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         self.assertNotIn(self.record["id"], site.manual_requests)
         self.assertNotIn(self.record["id"], site.latest_samples)
         self.assert_visible(self.parent.data["loads"][0])
-        result = await self.flow().async_step_add_charger({"charger_device": self.a.id})
+        result = await self.flow().async_step_add_charger({"charger_device": self.a.id, "electrical_connection": "tn_3"})
         self.assertEqual(result["type"], "create_entry")
         await self.hass.async_block_till_done()
         self.assertIn(self.record, self.parent.data["loads"])
@@ -287,12 +288,12 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
     async def test_stale_or_already_configured_add_is_rejected_without_changes(self):
         original = dict(self.parent.data)
         for bad in [self.a.id, "not_a_device"]:
-            result = await self.flow().async_step_add_charger({"charger_device": bad})
+            result = await self.flow().async_step_add_charger({"charger_device": bad, "electrical_connection": "tn_3"})
             self.assertEqual(result["type"], "form")
             self.assertTrue(result["errors"])
             self.assertEqual(dict(self.parent.data), original)
         await self.add_second()
-        result = await self.flow().async_step_add_charger({"charger_device": self.a.id})
+        result = await self.flow().async_step_add_charger({"charger_device": self.a.id, "electrical_connection": "tn_3"})
         self.assertEqual(result["type"], "abort")
         self.assertEqual(result["reason"], "two_chargers")
 
@@ -303,7 +304,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         controller.auto_control = True
         controller._async_send_current.side_effect = ValueError("zero command failed")
         result = await self.flow().async_step_remove_charger(
-            {"charger_device": self.a.id}
+            {"charger_device": self.a.id, "electrical_connection": "tn_3"}
         )
         self.assertEqual(result["type"], "form")
         self.assertIn(
@@ -326,7 +327,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             side_effect=ValueError("Enable voltage"),
         ):
             result = await self.flow().async_step_add_charger(
-                {"charger_device": self.b.id}
+                {"charger_device": self.b.id, "electrical_connection": "tn_3"}
             )
         self.assertIn(
             "Enable voltage", result["description_placeholders"]["validation_error"]
@@ -370,7 +371,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
     ):
         fid = await self.begin_fresh_wizard()
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"charger_device": self.a.id}
+            fid, {"charger_device": self.a.id, "electrical_connection": "tn_3"}
         )
         self.assertEqual(result["type"], "menu")
         self.assertEqual(
@@ -383,7 +384,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         self.assertTrue(field.config["multiple"])
         self.assertEqual(next(iter(result["data_schema"].schema)).default(), [self.a.id])
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"charger_device": [self.a.id, self.b.id]}
+            fid, {"charger_device": [self.a.id, self.b.id], "electrical_connection": "tn_3"}
         )
         self.assertEqual(result["type"], "create_entry")
         self.parent = result["result"]
@@ -399,7 +400,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
     async def test_actual_wizard_finish_one_or_cancel_never_creates_partial_entry(self):
         fid = await self.begin_fresh_wizard()
         await self.hass.config_entries.flow.async_configure(
-            fid, {"charger_device": self.a.id}
+            fid, {"charger_device": self.a.id, "electrical_connection": "tn_3"}
         )
         self.hass.config_entries.flow.async_abort(fid)
         self.assertEqual(
@@ -422,7 +423,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             fid, {"next_step_id": "charging"}
         )
         await self.hass.config_entries.flow.async_configure(
-            fid, {"charger_device": self.a.id}
+            fid, {"charger_device": self.a.id, "electrical_connection": "tn_3"}
         )
         result = await self.hass.config_entries.flow.async_configure(
             fid, {"next_step_id": "finish_charging"}
@@ -436,7 +437,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         self.hass.config.external_url = "https://cloud.example.test"
         with patch.object(self.flow_module.SmartLoadManagerConfigFlow, 'async_external_step', side_effect=AssertionError('Setup must stay in-app')):
             fid = await self.begin_fresh_wizard()
-            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': self.a.id})
+            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': self.a.id, 'electrical_connection': 'tn_3'})
             self.assertEqual(result['type'], 'menu')
             self.assertNotIn('url', result)
             result = await self.hass.config_entries.flow.async_configure(fid, {'next_step_id': 'second_charger'})
@@ -444,7 +445,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             field = next(iter(result['data_schema'].schema.values()))
             self.assertTrue(field.config['multiple'])
             self.assertEqual(next(iter(result['data_schema'].schema)).default(), [self.a.id])
-            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': [self.a.id, self.b.id]})
+            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': [self.a.id, self.b.id], 'electrical_connection': 'tn_3'})
         self.parent = result['result']
         await self.hass.async_block_till_done()
         self.assertEqual([r['data']['charger_device'] for r in self.parent.data['loads']], [self.a.id, self.b.id])
@@ -457,7 +458,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         result = await manager.async_init(self.parent.entry_id)
         fid = result['flow_id']
         result = await manager.async_configure(fid, {'next_step_id': 'chargers'})
-        self.assertEqual(result['menu_options'], ['add_charger'])
+        self.assertEqual(result['menu_options'], ['connection', 'add_charger'])
         with patch.object(self.flow_module.ChargerOptionsFlow, 'async_external_step', side_effect=AssertionError('Add must stay in-app')):
             result = await manager.async_configure(fid, {'next_step_id': 'add_charger'})
             self.assertEqual(result['type'], 'form')
@@ -471,7 +472,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             self.assertEqual(field_packet['default'], [self.a.id])
             self.assertTrue(field_packet['selector']['device']['multiple'])
             self.assertEqual(field_packet['selector']['device']['filter'], [{'manufacturer': 'Easee', 'model': 'Home'}])
-            await manager.async_configure(fid, {'charger_device': [self.a.id, self.b.id]})
+            await manager.async_configure(fid, {'charger_device': [self.a.id, self.b.id], 'electrical_connection': 'tn_3'})
         await self.hass.async_block_till_done()
         self.assertEqual(self.parent.data['loads'][0], self.record)
         self.assertEqual(len(self.parent.data['loads']), 2)
@@ -493,7 +494,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         original = dict(self.parent.data)
         for selected in ([self.b.id], [self.a.id], [self.a.id, self.b.id, self.b.id],
                          [self.a.id, self.b.id, 'unknown'], [self.a.id, 'unknown']):
-            result = await self.flow().async_step_add_charger({'charger_device': selected})
+            result = await self.flow().async_step_add_charger({'charger_device': selected, 'electrical_connection': 'tn_3'})
             self.assertEqual(result['type'], 'form')
             self.assertEqual(result['errors'], {'base': 'invalid_setup'})
             self.assertEqual(dict(self.parent.data), original)
@@ -508,7 +509,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         flow = self.flow_module.SmartLoadManagerConfigFlow()
         flow.hass = self.hass
         flow.context = {'source': 'user'}
-        result = await flow.async_step_charging({'charger_device': rogue.id})
+        result = await flow.async_step_charging({'charger_device': rogue.id, 'electrical_connection': 'tn_3'})
         self.assertEqual(result['type'], 'form')
         self.assertEqual(result['errors'], {'base': 'invalid_setup'})
         self.assertEqual(len(self.parent.data['loads']), 1)
@@ -519,6 +520,113 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             manufacturer='Easee', model='Home', name='Matching model',
         )
         original = dict(self.parent.data)
-        result = await self.flow().async_step_add_charger({'charger_device': [self.a.id, rogue.id]})
+        result = await self.flow().async_step_add_charger({'charger_device': [self.a.id, rogue.id], 'electrical_connection': 'tn_3'})
         self.assertEqual(result['errors'], {'base': 'invalid_setup'})
         self.assertEqual(dict(self.parent.data), original)
+
+    async def test_connection_change_hides_phase_control_and_preserves_other_settings(self):
+        await self.add_second()
+        original_peer = self.parent.data['loads'][1]
+        original_options = dict(self.parent.options['loads'][self.record['id']])
+        unique = self.record['id'] + '_phase_mode_control'
+        entity_id = self.registry.async_get_entity_id('select', 'smart_load_manager', unique)
+        self.assertIsNotNone(self.hass.states.get(entity_id))
+        controller = self.parent.runtime_data.controllers[self.record['id']]
+        result = await self.flow().async_step_connection({
+            'charger_device': self.a.id, 'electrical_connection': 'it_1'})
+        self.assertEqual(result['type'], 'create_entry')
+        controller._async_send_current.assert_awaited_once_with(0)
+        await self.hass.async_block_till_done()
+        self.assertEqual(self.parent.data['loads'][1], original_peer)
+        self.assertEqual(self.parent.options['loads'][self.record['id']], original_options)
+        self.assertEqual(self.registry.async_get(entity_id).disabled_by, er.RegistryEntryDisabler.INTEGRATION)
+        self.assertIn(getattr(self.hass.states.get(entity_id), "state", None), {None, "unavailable"})
+        card = await self.hass.services.async_call('smart_load_manager', 'get_dashboard', {},
+                                                 blocking=True, return_response=True)
+        self.assertNotIn(entity_id, card['yaml'])
+        self.assertNotIn('CHARGER_SUFFIX', card['yaml'])
+        result = await self.flow().async_step_connection({
+            'charger_device': self.a.id, 'electrical_connection': 'tn_3'})
+        await self.hass.async_block_till_done()
+        self.assertEqual(result['type'], 'create_entry')
+        self.assertIsNone(self.registry.async_get(entity_id).disabled_by)
+        self.assertIsNotNone(self.hass.states.get(entity_id))
+        self.assertTrue(all(not c.auto_control for c in self.parent.runtime_data.controllers.values()))
+
+    async def test_connection_change_preserves_user_disabled_phase_control(self):
+        unique = self.record['id'] + '_phase_mode_control'
+        entity_id = self.registry.async_get_entity_id('select', 'smart_load_manager', unique)
+        self.registry.async_update_entity(entity_id, disabled_by=er.RegistryEntryDisabler.USER)
+        await self.hass.async_block_till_done()
+        for connection in ['tn_1', 'tn_3']:
+            await self.flow().async_step_connection({
+                'charger_device': self.a.id, 'electrical_connection': connection})
+            await self.hass.async_block_till_done()
+        self.assertEqual(self.registry.async_get(entity_id).disabled_by, er.RegistryEntryDisabler.USER)
+
+    async def test_connection_change_command_failure_does_not_save(self):
+        original = dict(self.parent.data)
+        controller = self.parent.runtime_data.controllers[self.record['id']]
+        controller._async_send_current.side_effect = ValueError('command rejected')
+        result = await self.flow().async_step_connection({
+            'charger_device': self.a.id, 'electrical_connection': 'it_1'})
+        self.assertEqual(result['errors'], {'base': 'invalid_setup'})
+        self.assertEqual(dict(self.parent.data), original)
+
+    async def test_initial_and_add_require_explicit_connection(self):
+        flow = self.flow_module.SmartLoadManagerConfigFlow()
+        flow.hass = self.hass
+        flow.context = {'source': 'user'}
+        for connection in [None, 'wrong']:
+            data = {'charger_device': self.a.id}
+            if connection is not None:
+                data['electrical_connection'] = connection
+            result = await flow.async_step_charging(data)
+            self.assertEqual(result['errors'], {'base': 'invalid_setup'})
+        original = dict(self.parent.data)
+        result = await self.flow().async_step_add_charger({'charger_device': self.b.id})
+        self.assertEqual(result['errors'], {'base': 'invalid_setup'})
+        self.assertEqual(dict(self.parent.data), original)
+
+    async def test_phase_control_rejects_single_phase_wiring_even_if_called_directly(self):
+        from custom_components.smart_load_manager.select import ChargerPhaseModeSelect
+        from types import SimpleNamespace as NS
+        for connection in ['it_1', 'tn_1', None]:
+            fake = NS(coordinator=NS(entry=NS(data={'electrical_connection': connection})))
+            with self.assertRaisesRegex(ValueError, 'trefasetilkobling'):
+                await ChargerPhaseModeSelect.async_select_option(fake, '3_phase')
+
+    async def test_existing_installation_without_connection_hides_selector_until_confirmed(self):
+        records = [dict(r, data=dict(r['data'])) for r in self.parent.data['loads']]
+        records[0]['data'].pop('electrical_connection')
+        self.hass.config_entries.async_update_entry(self.parent, data={**self.parent.data, 'loads': records})
+        await self.hass.config_entries.async_reload(self.parent.entry_id)
+        await self.hass.async_block_till_done()
+        entity_id = self.registry.async_get_entity_id('select', 'smart_load_manager', self.record['id'] + '_phase_mode_control')
+        self.assertEqual(self.registry.async_get(entity_id).disabled_by, er.RegistryEntryDisabler.INTEGRATION)
+        result = await self.flow().async_step_connection({'charger_device': self.a.id, 'electrical_connection': 'tn_3'})
+        await self.hass.async_block_till_done()
+        self.assertEqual(result['type'], 'create_entry')
+        self.assertIsNone(self.registry.async_get(entity_id).disabled_by)
+        self.assertEqual(self.parent.data['loads'][0]['id'], self.record['id'])
+
+    async def test_native_options_flow_exposes_four_connection_choices_and_saves(self):
+        from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
+        self.hass.config.external_url = 'https://cloud.example.test'
+        manager = self.hass.config_entries.options
+        result = await manager.async_init(self.parent.entry_id)
+        fid = result['flow_id']
+        with patch.object(self.flow_module.ChargerOptionsFlow, 'async_external_step', side_effect=AssertionError('No external navigation')):
+            await manager.async_configure(fid, {'next_step_id': 'chargers'})
+            result = await manager.async_configure(fid, {'next_step_id': 'connection'})
+            self.assertEqual(result['type'], 'form')
+            self.assertEqual(result['step_id'], 'connection')
+            packet = FlowManagerIndexView(manager)._prepare_result_json(result)
+            connection = next(row for row in packet['data_schema'] if row['name'] == 'electrical_connection')
+            self.assertTrue(connection['required'])
+            self.assertEqual(connection['selector']['select']['options'], ['it_1', 'it_3', 'tn_1', 'tn_3'])
+            self.assertEqual(connection['selector']['select']['translation_key'], 'electrical_connection')
+            result = await manager.async_configure(fid, {'charger_device': self.a.id, 'electrical_connection': 'it_1'})
+        await self.hass.async_block_till_done()
+        self.assertEqual(result['type'], 'create_entry')
+        self.assertEqual(self.parent.data['loads'][0]['data']['electrical_connection'], 'it_1')

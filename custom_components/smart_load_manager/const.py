@@ -9,6 +9,8 @@ HAN_MAX_AGE_SECONDS = 60
 SCHEDULE_WINDOW_HOURS = 12
 
 CONF_CHARGER_DEVICE = "charger_device"
+CONF_CONNECTION = "electrical_connection"
+CONNECTION_OPTIONS = ("it_1", "it_3", "tn_1", "tn_3")
 CONF_HAN_POWER_ENTITY = "han_power_entity"
 CONF_HOURLY_LIMIT_KWH = "hourly_limit_kwh"
 CONF_CONSUMPTION_LIMIT_KWH = "consumption_limit_kwh"

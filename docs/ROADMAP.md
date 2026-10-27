@@ -3,7 +3,7 @@
 ## Current focus: finish and test the charging integration
 
 - Confirm initial setup, cancellation and adding a second charger entirely in the native Home Assistant dialog, including Companion. Test responsiveness of the native logo-bearing device selector and its preselected first/second flow on the owner’s phone.
-- Confirm physical charging with one charger and with two sharing the household budget.
+- Confirm physical charging with one charger and with two sharing the household budget. Validate the per-charger physical connection choices, measured-voltage calculations on 230 V IT/TT and 400/230 V TN, and phase-control visibility for single/three-phase wiring.
 - Test both allocation modes, first priority, independent schedules, pause and recovery when required measurements are missing. Confirm that the selected household target leaves useful charging capacity.
 - Fix blocking faults before moving to a stable release. Software tests supplement physical acceptance; they do not replace it.
 

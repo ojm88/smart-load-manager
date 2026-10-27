@@ -1,3 +1,4 @@
+# Ved énfasetilkobling: utelat fasevalg-raden. get_dashboard gjør dette automatisk.
 # Manual card template. Replace FIRST_CHARGER_SUFFIX with the first charger card_suffix.
 # For two chargers, replace CHARGER_SUFFIX with the second charger card_suffix.
 # Replace SLM_HAN_POWER_SOURCE with your HAN power sensor. Prefer generating this card

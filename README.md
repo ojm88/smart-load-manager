@@ -39,8 +39,10 @@ Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy
 
 1. Open **Settings → Devices & services → Add integration → Smart Load Manager OJM**.
 2. Select HAN power, EnergyTariff energy used this hour, and the safety margin.
-3. Choose EV charging, select the first charger, then finish or add a second.
+3. Choose EV charging, select the first charger and confirm its physical supply/wired phases, then finish or add a second with its own connection.
 4. Set the household consumption target on **SLM – Boligen**. Enable automatic control deliberately on each charger, with no competing automation controlling it.
+
+Choose **230 V IT/TT – single phase / three phase** or **400/230 V TN – single phase / three phase** for each charger’s actual wiring. This does not set a fixed calculation voltage: SLM uses measured Easee voltages. Phase-mode control appears only for three-phase connections. Confirm existing chargers under **Configure → Chargers → Charger connections** before enabling control.
 
 **Boligen / Household** contains the shared budget and status. **Lading / Charging** contains the chargers. Use **Configure** to edit household sources or add/remove a charger while retaining the others.
 
@@ -74,7 +76,7 @@ Household information is grouped under **SLM – Boligen**. Each charger's measu
 | Current to car | Present current measured by Easee in A. |
 | Recommended charging current | The current limit SLM recommends now, in A; this is not measured current or proof that charging is running. |
 | Phases in use | Number of phases actually drawing current during charging. |
-| Voltage | Measured or inferred line voltage in V, used in the electrical calculations. |
+| Voltage | Charging voltage from relevant Easee measurements. Single-phase TN shows phase–neutral; three-phase TN shows inferred line voltage. The confirmed supply determines which terminal pairs are used. |
 | Charging priority | With two chargers, a diagnostic showing first or second priority in SLM. |
 
 ## Ready-made dashboard YAML
@@ -99,7 +101,7 @@ The generator uses your actual registered entity IDs, including custom names. Th
 The YAML card is a saved snapshot of the configured layout, entity references and charger labels. It is **not automatically regenerated** when setup changes. Run `smart_load_manager.get_dashboard` again and replace the existing Manual card YAML after:
 
 - Adding, removing or replacing a charger.
-- Changing the HAN source or entity IDs referenced by the card.
+- Changing a charger’s physical connection, the HAN source or entity IDs referenced by the card.
 - Renaming chargers when their names are used in the card's headings or labels.
 - Installing a feature that changes the generated card layout or entities.
 

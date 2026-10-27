@@ -153,7 +153,10 @@ def reconcile_pair_entities(hass, parent):
         removed = not shared and not any(
             entity.unique_id.startswith(key + "_") for key in retained
         )
-        should_disable = removed or (not pair and entity.unique_id.endswith(keys))
+        phase_owner = next((r for r in parent.data["loads"]
+                            if entity.unique_id == r["id"] + "_phase_mode_control"), None)
+        phase_hidden = phase_owner is not None and phase_owner["data"].get("electrical_connection") not in {"it_3", "tn_3"}
+        should_disable = removed or phase_hidden or (not pair and entity.unique_id.endswith(keys))
         if should_disable and entity.disabled_by is None:
             registry.async_update_entity(
                 entity.entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION
