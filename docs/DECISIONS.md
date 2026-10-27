@@ -360,3 +360,11 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Preserve the household and charging groups, original per-load identities/settings, user disabled preferences and opt-in automatic control. Re-adding a saved retired load restores its integration-disabled entities and previous settings; intentional removal is not silently undone.
 - Use current indexed device-registry access and current single-owner migration on HA 2026.10 while keeping HA 2026.2 compatibility. Preserve deliberate full function-first names on HA's newer friendly-name builder without overwriting user-supplied names.
 - CI now runs the full runtime tests against HA 2026.2.3/Python 3.13 and HA 2026.10.4/Python 3.14. Beta.5's original tests did not exercise the actual add/reload sequence sufficiently. No physical beta.6 validation has occurred; release approval remains separate.
+
+
+## 2026-10-27 — Isolate logo-picker performance experiment
+
+- Keep beta.6 as the installation baseline. Do not restore the old selector on assumption alone: the cause of phone latency has not been profiled.
+- Native DeviceSelector does not expose an exact allowed-device-ID predicate in the supported backend schema. Its underlying frontend device-picker component does expose a deviceFilter function. Test that path in an optional read-only custom panel, without broadening integration control or changing setup behavior.
+- Preserve the first/optional-second selection model in the test, with exact ID exclusion. Existing configured chargers are eligible in the initial test list so testing does not require removing the working installation.
+- Native picker branding is supplied by HA. Do not claim that a successful custom-panel experiment establishes support inside native config flows, or guarantees VT climate branding. Private frontend APIs and actual phone performance require separate validation.
