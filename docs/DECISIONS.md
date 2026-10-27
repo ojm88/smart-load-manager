@@ -368,3 +368,9 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Native DeviceSelector does not expose an exact allowed-device-ID predicate in the supported backend schema. Its underlying frontend device-picker component does expose a deviceFilter function. Test that path in an optional read-only custom panel, without broadening integration control or changing setup behavior.
 - Preserve the first/optional-second selection model in the test, with exact ID exclusion. Existing configured chargers are eligible in the initial test list so testing does not require removing the working installation.
 - Native picker branding is supplied by HA. Do not claim that a successful custom-panel experiment establishes support inside native config flows, or guarantees VT climate branding. Private frontend APIs and actual phone performance require separate validation.
+
+
+## 2026-10-27 — Package comparison in beta.7
+
+- Owner requests beta.7 rather than manual YAML/file installation. Package and automatically register the read-only admin comparison panel. Keep normal config flow compact until frontend viability and phone performance are established.
+- Optional panel failure must not stop load-management setup. Register static hosting once per process and remove the sidebar item when the final runtime unloads. Do not cache the experimental module.

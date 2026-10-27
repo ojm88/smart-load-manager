@@ -63,3 +63,9 @@ De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](
 Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv Easee-spenningssensor, rapportert strømgrense, pause og tidsvindu. HAN må være gyldig og høyst 60 sekunder gammel. En uendret, tilgjengelig Easee-effektverdi er gyldig selv med gammelt tidsstempel. Fordeling venter på nye målinger som bekrefter en reduksjon før mer strøm gis til den andre laderen.
 
 SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automatikk av betyr at SLM slutter å regulere; Easee beholder siste dynamiske grense. Bruk Ladepause for en uttrykkelig 0 A-kommando.
+
+## Test av ladervelger
+
+Beta 7 har **SLM velgertest** i sidemenyen for administratorer. Etter oppdatering og omstart trenger du ingen YAML-endringer eller ekstra filer. Sammenlign **Rask liste** og **Velger med logo** med samme ladere. Velg først én, deretter **Legg til lader to**: første lader skal være utelatt. Valgene er midlertidige; testen lagrer ikke oppsett og sender ingen kommandoer. Ladere som allerede er konfigurert vises i den første testlisten, slik at du slipper å fjerne dem. Det vanlige oppsettet bruker fortsatt den raske listen.
+
+Prøv i både Safari og Companion. Dersom testsiden melder at en komponent ikke er lastet, åpne Innstillinger → Enheter og tjenester og gå tilbake. Faktisk logo og responstid må bekreftes på telefonen.

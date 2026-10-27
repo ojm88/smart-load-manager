@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1-beta.7
+
+- Package an administrator-only SLM velgertest page comparing the compact charger list with HA native integration logos, without manual YAML or file copying.
+- Read-only first/second test selections exclude the first source device; no membership or charger commands are changed. Normal setup and load-control calculations remain unchanged.
+- Native frontend logo rendering and actual phone latency require owner verification.
+
 ## 0.1.1-beta.6
 
 - Add a charger without removing or disabling the existing one. Explicit add/remove actions and filtered first/second-charger lists.

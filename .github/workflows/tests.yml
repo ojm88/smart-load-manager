@@ -5,6 +5,18 @@ on:
   pull_request:
 
 jobs:
+  logo-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate packaged read-only picker experiment
+        run: |
+          node --check custom_components/smart_load_manager/frontend/logo-picker-probe.mjs
+          node --test experiments/logo-picker/test-probe.mjs
+          cmp experiments/logo-picker/logo-picker-probe.mjs custom_components/smart_load_manager/frontend/logo-picker-probe.mjs
   unit-tests:
     runs-on: ubuntu-latest
     steps:
