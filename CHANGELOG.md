@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1-beta.6 (prepared)
+## 0.1.1-beta.6
 
 - Add a charger without removing or disabling the existing one. Explicit add/remove actions and filtered first/second-charger lists.
 - Compact dropdown options resolved through Easee registry indexes, avoiding the global frontend device picker.
