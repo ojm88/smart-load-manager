@@ -374,3 +374,10 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 
 - Owner requests beta.7 rather than manual YAML/file installation. Package and automatically register the read-only admin comparison panel. Keep normal config flow compact until frontend viability and phone performance are established.
 - Optional panel failure must not stop load-management setup. Register static hosting once per process and remove the sidebar item when the final runtime unloads. Do not cache the experimental module.
+
+
+## 2026-10-27 — Opt-in native external-step bridge for logo selection
+
+- Keep HA's normal config-entry persistence and additive membership logic. Use a supported native external step to open a hidden HA panel with the tested frontend picker, then resume the original flow. Do not inject or patch HA frontend components.
+- Offer explicit logo test paths alongside compact setup while Safari/Companion navigation is unverified. Initial flow supports one/two chargers; options flow allows one unused charger and retains the existing load.
+- Treat frontend IDs as untrusted: require authenticated administrators, random expiring session bound to an active flow, server-side eligibility and electrical validation, and cancellation/replay cleanup. Never save partial installation or change physical control in the picker callback. Existing final options persistence/reload policy remains unchanged.

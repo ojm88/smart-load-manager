@@ -107,8 +107,33 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_load_type(self, user_input=None):
         return self.async_show_menu(
-            step_id="load_type", menu_options=["charging", "planned"]
+            step_id="load_type", menu_options=["charging", "charging_logo", "planned"]
         )
+
+    async def async_step_charging_logo(self, user_input=None):
+        from . import picker_bridge as bridge
+
+        if user_input is None:
+            self._logo_url = await bridge.begin(self, self.hass.config_entries.flow)
+        else:
+            devices = bridge.take(self, user_input)
+            self._draft_loads = _make_loads(self.hass, devices)
+            bridge.close(self)
+            return self.async_external_step_done(next_step_id="finish_charging")
+        return self.async_external_step(step_id="charging_logo", url=self._logo_url)
+
+    def _logo_choices(self, excluded):
+        return _charger_options(self.hass, excluded)
+
+    def _validate_logo_devices(self, devices):
+        return _make_loads(self.hass, devices)
+
+    @callback
+    def async_remove(self):
+        from .picker_bridge import close
+
+        close(self)
+        super().async_remove()
 
     async def async_step_planned(self, user_input=None):
         if user_input is not None:
@@ -220,9 +245,43 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
         menu = []
         if len(parent.data["loads"]) < 2:
             menu.append("add_charger")
+            menu.append("add_charger_logo")
         if len(parent.data["loads"]) > 1:
             menu.append("remove_charger")
         return self.async_show_menu(step_id="chargers", menu_options=menu)
+
+    def _logo_choices(self, excluded):
+        return _charger_options(self.hass, excluded)
+
+    def _validate_logo_devices(self, devices):
+        return _make_loads(self.hass, devices)
+
+    async def async_step_add_charger_logo(self, user_input=None):
+        from . import picker_bridge as bridge
+
+        active = self.config_entry.data["loads"]
+        if len(active) >= 2:
+            return self.async_abort(reason="two_chargers")
+        if user_input is None:
+            self._logo_url = await bridge.begin(
+                self, self.hass.config_entries.options,
+                excluded=[r["data"][CONF_CHARGER_DEVICE] for r in active], maximum=1,
+            )
+        else:
+            self._logo_device = bridge.take(self, user_input)[0]
+            bridge.close(self)
+            return self.async_external_step_done(next_step_id="apply_logo_charger")
+        return self.async_external_step(step_id="add_charger_logo", url=self._logo_url)
+
+    async def async_step_apply_logo_charger(self, user_input=None):
+        return await self.async_step_add_charger({CONF_CHARGER_DEVICE: self._logo_device})
+
+    @callback
+    def async_remove(self):
+        from .picker_bridge import close
+
+        close(self)
+        super().async_remove()
 
     async def async_step_add_charger(self, user_input=None):
         parent = self.config_entry

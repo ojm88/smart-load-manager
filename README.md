@@ -61,3 +61,7 @@ A voluntary coffee-support link will be added when the support account is ready.
 ## Picker comparison in beta 7
 
 After installation and restart, administrators can open **SLM velgertest** in the sidebar. Compare **Rask liste** with **Velger med logo**, then try a first and a second charger. These are temporary test selections; nothing is saved or sent to chargers. The normal setup continues to use the compact dropdown. No YAML or extra file copying is needed. See [test instructions](experiments/logo-picker/README.md).
+
+## Logo picker in setup
+
+Choose **EV charging – logo picker (test)** to open the native-logo picker in a separate HA page. Choose one or two chargers and confirm, then return to the original setup dialog to finish. Configure → Add/remove charger also offers **Add charger with logo (test)**. The compact picker is available alongside it. Choices are checked again on the server; cancellation creates no installation. Safari/Companion navigation acceptance is pending.

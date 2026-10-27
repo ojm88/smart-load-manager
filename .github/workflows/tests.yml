@@ -15,6 +15,7 @@ jobs:
       - name: Validate packaged read-only picker experiment
         run: |
           node --check custom_components/smart_load_manager/frontend/logo-picker-probe.mjs
+          node --check custom_components/smart_load_manager/frontend/charger-picker.mjs
           node --test experiments/logo-picker/test-probe.mjs
           cmp experiments/logo-picker/logo-picker-probe.mjs custom_components/smart_load_manager/frontend/logo-picker-probe.mjs
   unit-tests:
