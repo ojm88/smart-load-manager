@@ -26,7 +26,7 @@ Updated: 2026-10-27
 - **38 HA 2026.2.3 runtime tests** pass, including real device/entity registries, config-entry migration, concurrent old-entry startup, native platform setup/unload, grouped entity registration and translated names. Synthetic telemetry and mocked Easee resolution are used; no real charger is contacted.
 - Existing two-charger control regressions cover reduction-before-increase, new telemetry acknowledgements, missing data, recovery and unchanged power readings.
 - Native HA startup also exercises the real coordinators against synthetic electrical/HAN measurements, automatic control off.
-- Compilation, JSON/YAML validation and patch whitespace checks pass locally. GitHub CI status must be recorded after the branch is pushed.
+- Compilation, JSON/YAML validation and patch whitespace checks pass locally. GitHub Actions push workflow [40478887739](https://github.com/ojm88/smart-load-manager/actions/runs/40478887739) passed both jobs for code commit `2880f27d3307cf4135354a65c9d6f8e3827a0a32`.
 - `calculations.py`, `control.py` and `budget.py` are identical between beta.2 and beta.4 and remain unchanged in beta.5. `allocation.py` is unchanged from beta.4. Coordinator changes adapt storage/load enumeration rather than rewrite the calculation.
 
 ## Owner validation
