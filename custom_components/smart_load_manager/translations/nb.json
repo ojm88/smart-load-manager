@@ -42,9 +42,9 @@
       },
       "second_charger": {
         "title": "Andre Easee-lader",
-        "description": "Velg laderen du vil legge til. Laderen du allerede har valgt, er ikke med i listen. Aktiver Easees Spenning-sensor før du fortsetter. {validation_error}",
+        "description": "Første lader er allerede valgt. Behold den, og bruk det tomme feltet under til å velge én lader til. Valgte ladere er utelatt fra legg-til-listen. Aktiver Easees Spenning-sensor på den nye laderen før du fortsetter. {validation_error}",
         "data": {
-          "charger_device": "Andre Easee-lader"
+          "charger_device": "Valgte ladere og ny lader"
         }
       }
     },
@@ -246,9 +246,9 @@
       },
       "add_charger": {
         "title": "Legg til lader",
-        "description": "Velg laderen du vil legge til. Bare Easee-enheter som ikke allerede er konfigurert, vises. Den eksisterende laderen og dens innstillinger beholdes. Aktiver Easees Spenning-sensor før du fortsetter. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
+        "description": "Eksisterende lader er allerede valgt. Behold den, og bruk det tomme feltet under til å velge én ny lader. Den eksisterende laderen og innstillingene beholdes. Bruk Fjern lader for å fjerne en lader. Aktiver Easees Spenning-sensor på den nye laderen først. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
         "data": {
-          "charger_device": "Easee-lader"
+          "charger_device": "Valgte ladere og ny lader"
         }
       },
       "remove_charger": {

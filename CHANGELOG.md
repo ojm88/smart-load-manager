@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.1.1-beta.10
 
-- Keep initial setup and charger additions inside Home Assistant’s native dialog, including Companion. Use the fast filtered name list without logos.
-- Remove the external logo-picker bridge and hidden setup page. Retain first/second exclusion, additive saves, grouping and charging calculations.
+- Use HA's native device selector with integration branding inside the normal setup dialog, including Companion. Remove the external logo bridge and hidden setup page.
+- Preselect existing chargers in the native multiple-device selector. Its add field excludes selected devices; saving validates one new source and preserves existing membership/settings.
+- Prefer manufacturer/model filters from Easee's indexed registry devices to avoid the selector's extra integration-membership lookup. Fall back to the Easee integration filter when metadata is missing. No sensor probes or charger commands run when opening the form.
+- Reject replacement, duplicate, excess, disabled and non-Easee additions on the server. Charging calculations and grouping remain unchanged. Actual phone responsiveness requires owner testing.
 
 ## 0.1.1-beta.9
 

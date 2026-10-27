@@ -89,10 +89,10 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             p.start()
         self.vendor = self.config_entry("easee", "vendor", {})
         self.a = self.devices.async_get_or_create(
-            config_entry_id="vendor", identifiers={("easee", "first")}, name="Garage"
+            config_entry_id="vendor", identifiers={("easee", "first")}, name="Garage", manufacturer="Easee", model="Home"
         )
         self.b = self.devices.async_get_or_create(
-            config_entry_id="vendor", identifiers={("easee", "second")}, name="Carport"
+            config_entry_id="vendor", identifiers={("easee", "second")}, name="Carport", manufacturer="Easee", model="Home"
         )
         self.record = flow._make_loads(self.hass, [self.a.id])[0]
         self.parent = self.config_entry(
@@ -276,11 +276,10 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         ):
             result = await self.flow().async_step_add_charger()
         field = next(iter(result["data_schema"].schema.values()))
-        self.assertEqual(field.selector_type, "select")
-        self.assertFalse(field.config["multiple"])
-        self.assertEqual(
-            field.config["options"], [{"value": self.b.id, "label": "Carport"}]
-        )
+        self.assertEqual(field.selector_type, "device")
+        self.assertTrue(field.config["multiple"])
+        self.assertEqual(field.config["filter"], [{"manufacturer": "Easee", "model": "Home"}])
+        self.assertEqual(next(iter(result["data_schema"].schema)).default(), [self.a.id])
         self.assertEqual(
             [r["id"] for r in self.parent.data["loads"]], [self.record["id"]]
         )
@@ -361,9 +360,8 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         )
         self.assertEqual(result["step_id"], "charging")
         field = next(iter(result["data_schema"].schema.values()))
-        self.assertEqual(
-            {o["value"] for o in field.config["options"]}, {self.a.id, self.b.id}
-        )
+        self.assertEqual(field.selector_type, "device")
+        self.assertEqual(field.config["filter"], [{"manufacturer": "Easee", "model": "Home"}])
         self.assertFalse(field.config["multiple"])
         return fid
 
@@ -382,11 +380,10 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             fid, {"next_step_id": "second_charger"}
         )
         field = next(iter(result["data_schema"].schema.values()))
-        self.assertEqual(
-            field.config["options"], [{"value": self.b.id, "label": "Carport"}]
-        )
+        self.assertTrue(field.config["multiple"])
+        self.assertEqual(next(iter(result["data_schema"].schema)).default(), [self.a.id])
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"charger_device": self.b.id}
+            fid, {"charger_device": [self.a.id, self.b.id]}
         )
         self.assertEqual(result["type"], "create_entry")
         self.parent = result["result"]
@@ -445,8 +442,9 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             result = await self.hass.config_entries.flow.async_configure(fid, {'next_step_id': 'second_charger'})
             self.assertEqual(result['type'], 'form')
             field = next(iter(result['data_schema'].schema.values()))
-            self.assertEqual([o['value'] for o in field.config['options']], [self.b.id])
-            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': self.b.id})
+            self.assertTrue(field.config['multiple'])
+            self.assertEqual(next(iter(result['data_schema'].schema)).default(), [self.a.id])
+            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': [self.a.id, self.b.id]})
         self.parent = result['result']
         await self.hass.async_block_till_done()
         self.assertEqual([r['data']['charger_device'] for r in self.parent.data['loads']], [self.a.id, self.b.id])
@@ -465,10 +463,62 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             self.assertEqual(result['type'], 'form')
             self.assertNotIn('url', result)
             field = next(iter(result['data_schema'].schema.values()))
-            self.assertEqual([o['value'] for o in field.config['options']], [self.b.id])
-            await manager.async_configure(fid, {'charger_device': self.b.id})
+            self.assertTrue(field.config['multiple'])
+            self.assertEqual(next(iter(result['data_schema'].schema)).default(), [self.a.id])
+            from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
+            packet = FlowManagerIndexView(manager)._prepare_result_json(result)
+            field_packet = packet['data_schema'][0]
+            self.assertEqual(field_packet['default'], [self.a.id])
+            self.assertTrue(field_packet['selector']['device']['multiple'])
+            self.assertEqual(field_packet['selector']['device']['filter'], [{'manufacturer': 'Easee', 'model': 'Home'}])
+            await manager.async_configure(fid, {'charger_device': [self.a.id, self.b.id]})
         await self.hass.async_block_till_done()
         self.assertEqual(self.parent.data['loads'][0], self.record)
         self.assertEqual(len(self.parent.data['loads']), 2)
         for record in self.parent.data['loads']:
             self.assert_visible(record)
+
+    async def test_native_picker_metadata_fallback_and_model_filters(self):
+        filters = self.flow_module._native_charger_filter(self.hass)
+        self.assertEqual(filters, [{'manufacturer': 'Easee', 'model': 'Home'}])
+        self.devices.async_update_device(self.b.id, model='Charge Up')
+        self.assertEqual(self.flow_module._native_charger_filter(self.hass), [
+            {'manufacturer': 'Easee', 'model': 'Charge Up'},
+            {'manufacturer': 'Easee', 'model': 'Home'},
+        ])
+        self.devices.async_update_device(self.b.id, manufacturer=None)
+        self.assertEqual(self.flow_module._native_charger_filter(self.hass), [{'integration': 'easee'}])
+
+    async def test_native_add_rejects_replacement_duplicates_and_extra_choices(self):
+        original = dict(self.parent.data)
+        for selected in ([self.b.id], [self.a.id], [self.a.id, self.b.id, self.b.id],
+                         [self.a.id, self.b.id, 'unknown'], [self.a.id, 'unknown']):
+            result = await self.flow().async_step_add_charger({'charger_device': selected})
+            self.assertEqual(result['type'], 'form')
+            self.assertEqual(result['errors'], {'base': 'invalid_setup'})
+            self.assertEqual(dict(self.parent.data), original)
+            self.assert_visible(self.record)
+
+    async def test_native_initial_rejects_non_easee_with_same_manufacturer_and_model(self):
+        rogue = self.devices.async_get_or_create(
+            config_entry_id=self.parent.entry_id, identifiers={('test', 'not-easee')},
+            manufacturer='Easee', model='Home', name='Other source',
+        )
+        # A matching presentation filter is not authorization to become a source.
+        flow = self.flow_module.SmartLoadManagerConfigFlow()
+        flow.hass = self.hass
+        flow.context = {'source': 'user'}
+        result = await flow.async_step_charging({'charger_device': rogue.id})
+        self.assertEqual(result['type'], 'form')
+        self.assertEqual(result['errors'], {'base': 'invalid_setup'})
+        self.assertEqual(len(self.parent.data['loads']), 1)
+
+    async def test_native_add_list_cannot_accept_non_easee_matching_metadata(self):
+        rogue = self.devices.async_get_or_create(
+            config_entry_id=self.parent.entry_id, identifiers={('test', 'matching-model')},
+            manufacturer='Easee', model='Home', name='Matching model',
+        )
+        original = dict(self.parent.data)
+        result = await self.flow().async_step_add_charger({'charger_device': [self.a.id, rogue.id]})
+        self.assertEqual(result['errors'], {'base': 'invalid_setup'})
+        self.assertEqual(dict(self.parent.data), original)

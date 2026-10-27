@@ -57,9 +57,11 @@ SLM does not replace installation protection. Turning automatic control off stop
 
 ## Charger selection
 
-Complete setup in Home Assistant's normal dialog, including in the Companion app. Choose **EV charging – Easee**, select the first charger, then finish or add a second. The second list excludes the first choice. The list shows charger names without logos.
+Complete setup in Home Assistant's normal dialog, including Companion. Choose **EV charging – Easee**, select the first charger in HA's device selector with integration branding, then finish or add a second.
 
-For later additions, use Configure → Chargers → **Add charger**. Only unused Easee chargers appear, and the existing charger and settings are preserved. Cancelling initial setup before completion creates no partial installation.
+When adding a charger, the first is already selected. Keep it selected and use the empty field below to choose one new charger. Home Assistant excludes selected devices from that add field. Confirm in the same dialog. Use **Remove charger** to remove a configured charger; adding never replaces the existing setup.
+
+For later additions, use Configure → Chargers → **Add charger**. The existing charger and settings are preserved. Cancelling initial setup before completion creates no partial installation.
 
 ### When to regenerate the dashboard card
 

@@ -66,9 +66,11 @@ SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automati
 
 ## Valg av ladere
 
-Hele oppsettet skjer i Home Assistants vanlige dialog, også i Companion-appen. Velg **Elbillading – Easee**, velg første lader i listen, og fullfør med én eller legg til en til. Den andre listen utelater laderen du allerede har valgt. Listen viser ladernavn uten logoer.
+Hele oppsettet skjer i Home Assistants vanlige dialog, også i Companion-appen. Velg **Elbillading – Easee**, velg første lader i enhetsvelgeren med integrasjonslogo, og fullfør med én eller legg til en til.
 
-Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Bare ledige Easee-ladere vises, og eksisterende lader og innstillinger beholdes. Avbryter du førstegangsoppsettet før fullføring, opprettes ingen delvis installasjon.
+Når du legger til en lader, står den første allerede som valgt. Behold den og bruk det tomme feltet under til å velge én ny lader. Home Assistant utelater de valgte enhetene fra dette legg-til-feltet. Bekreft deretter valgene i samme dialog. Bruk **Fjern lader** for å fjerne en konfigurert lader; tillegging erstatter aldri eksisterende oppsett.
+
+Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Eksisterende lader og innstillinger beholdes. Avbryter du førstegangsoppsettet før fullføring, opprettes ingen delvis installasjon.
 
 ### Når må dashboardkortet genereres på nytt?
 

@@ -42,9 +42,9 @@
       },
       "second_charger": {
         "title": "Second Easee charger",
-        "description": "Choose the charger to add. The charger already selected is excluded. Enable its Easee Voltage sensor before continuing. {validation_error}",
+        "description": "The first charger is already selected. Keep it selected and use the empty field below to add one charger. Selected devices are excluded from the add list. Enable the new charger’s Easee Voltage sensor before continuing. {validation_error}",
         "data": {
-          "charger_device": "Second Easee charger"
+          "charger_device": "Selected chargers and new charger"
         }
       }
     },
@@ -246,9 +246,9 @@
       },
       "add_charger": {
         "title": "Add charger",
-        "description": "Choose the charger to add. Only Easee devices not already configured are shown. Your existing charger and its settings are kept. Enable its Easee Voltage sensor before continuing. The integration reloads and automatic control starts off. {validation_error}",
+        "description": "The existing charger is already selected. Keep it selected and use the empty field below to add one new charger. The existing charger and settings are preserved. Use Remove charger to remove a charger. Enable the new charger’s Easee Voltage sensor first. The integration reloads and automatic control starts off. {validation_error}",
         "data": {
-          "charger_device": "Easee charger"
+          "charger_device": "Selected chargers and new charger"
         }
       },
       "remove_charger": {

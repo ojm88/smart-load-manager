@@ -122,9 +122,11 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         detail = ""
         if user_input is not None:
             try:
-                self._draft_loads = _make_loads(
-                    self.hass, [user_input.get(CONF_CHARGER_DEVICE)]
-                )
+                device_id = user_input.get(CONF_CHARGER_DEVICE)
+                records = _make_loads(self.hass, [device_id])
+                if device_id not in {o["value"] for o in _charger_options(self.hass)}:
+                    raise ValueError("Velg en tilgjengelig Easee-lader / Select an available Easee charger")
+                self._draft_loads = records
             except ValueError as err:
                 errors["base"] = "invalid_setup"
                 detail = str(err)
@@ -147,12 +149,8 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         detail = ""
         excluded = {r["data"][CONF_CHARGER_DEVICE] for r in self._draft_loads}
         if user_input is not None:
-            device_id = user_input.get(CONF_CHARGER_DEVICE)
             try:
-                if device_id in excluded:
-                    raise ValueError(
-                        "Laderen er allerede valgt / Charger already selected"
-                    )
+                device_id = _new_charger_device(self.hass, user_input, excluded)
                 second = _make_loads(self.hass, [device_id], self._draft_loads)
             except ValueError as err:
                 errors["base"] = "invalid_setup"
@@ -235,15 +233,8 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
         errors = {}
         detail = ""
         if user_input is not None:
-            device_id = user_input.get(CONF_CHARGER_DEVICE)
             try:
-                choices = {
-                    option["value"] for option in _charger_options(self.hass, excluded)
-                }
-                if device_id not in choices:
-                    raise ValueError(
-                        "Velg en ledig Easee-lader / Select an unused Easee charger"
-                    )
+                device_id = _new_charger_device(self.hass, user_input, excluded)
                 new = _make_loads(
                     self.hass,
                     [device_id],
@@ -369,15 +360,62 @@ def _choice_selector(options, *, multiple=False):
     )
 
 
-def _charger_schema(hass, *, multiple=False, exclude=()):
-    key = "chargers" if multiple else CONF_CHARGER_DEVICE
-    return vol.Schema(
-        {
-            vol.Required(key): _choice_selector(
-                _charger_options(hass, exclude), multiple=multiple
-            )
-        }
+def _native_charger_filter(hass):
+    """Use registry metadata to avoid HA's integration-wide membership lookup.
+
+    DeviceSelector remains responsible for HA branding. Manufacturer/model
+    filters are presentation only; submissions are checked against Easee's
+    indexed source devices before saving. Missing metadata uses the supported
+    integration filter rather than hiding a valid charger.
+    """
+    registry = dr.async_get(hass)
+    devices = [get_device(registry, o["value"]) for o in _charger_options(hass)]
+    if not devices or any(not d or not d.manufacturer for d in devices):
+        return [{"integration": "easee"}]
+    pairs = sorted({(d.manufacturer, d.model or "") for d in devices})
+    filters = []
+    for manufacturer, model in pairs:
+        device_filter = {"manufacturer": manufacturer}
+        if model:
+            device_filter["model"] = model
+        filters.append(device_filter)
+    return filters
+
+
+def _charger_schema(hass, *, exclude=()):
+    # HA's supported multi-device picker excludes current values from its ADD
+    # dropdown. Preselect existing sources; never replace membership on submit.
+    selected = sorted(exclude)
+    key = (
+        vol.Required(CONF_CHARGER_DEVICE, default=selected)
+        if selected else vol.Required(CONF_CHARGER_DEVICE)
     )
+    return vol.Schema({
+        key: selector.DeviceSelector(selector.DeviceSelectorConfig(
+            filter=_native_charger_filter(hass), multiple=bool(selected)
+        ))
+    })
+
+
+def _new_charger_device(hass, user_input, existing):
+    selected = user_input.get(CONF_CHARGER_DEVICE)
+    # Retain compatibility with the old single-choice submission contract.
+    if isinstance(selected, str):
+        added = [selected]
+    else:
+        if (
+            not isinstance(selected, list)
+            or any(not isinstance(item, str) or not item for item in selected)
+            or len(set(selected)) != len(selected)
+        ):
+            raise ValueError("Velg forskjellige ladere / Select distinct chargers")
+        if not set(existing).issubset(selected):
+            raise ValueError("Behold eksisterende lader som valgt / Keep the existing charger selected")
+        added = [device for device in selected if device not in existing]
+    allowed = {o["value"] for o in _charger_options(hass, existing)}
+    if len(added) != 1 or added[0] not in allowed:
+        raise ValueError("Velg én ledig Easee-lader / Select one unused Easee charger")
+    return added[0]
 
 
 def _household_schema():
