@@ -5,9 +5,9 @@ Updated: 2026-10-27
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.9** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.9)).
-- Release code: `8313556a0f81a23e546444863f72a2fcbdce54be`; merged PR #5.
-- GitHub Actions [40571544701](https://github.com/ojm88/smart-load-manager/actions/runs/40571544701) passed all four jobs for release head 9b5a38bff0f5e854d56661721326e0ef70d7347c. Published as a prerelease after explicit owner approval.
+- Published beta: **0.1.1-beta.10** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.10)).
+- Release code: `7c85400f0bc19c5b53d613e703f75b69647cd584`; merged PR #6.
+- GitHub Actions [40576433464](https://github.com/ojm88/smart-load-manager/actions/runs/40576433464) passed all four jobs for release head 87de4a364c5604bddf0bdb88f3c6896d7318f902, including runtime tests on HA 2026.2.3 and 2026.10.4. Published after explicit owner approval.
 
 ## Published beta.6 corrections
 
@@ -122,3 +122,8 @@ Manufacturer/model filters are derived from Easee's indexed devices, avoiding ha
 Sources reviewed: home-assistant/frontend src/components/ha-selector/ha-selector-device.ts, src/components/device/ha-devices-picker.ts, src/components/device/ha-device-picker.ts and src/data/device/device_registry.ts; core helpers/selector.py. No injected frontend module or sidebar page is used for setup.
 
 Local validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4 and one Node test. Runtime tests exercise actual flow managers and serialized native selector defaults, plus configured Cloud URLs without external calls. Both HA runtimes are checked in CI before publication. Native logo appearance and responsiveness in the actual iOS app, and physical charging, remain owner acceptance tasks.
+
+
+## Beta.10 publication verified
+
+Published 0.1.1-beta.10 as a prerelease from merge commit 7c85400f0bc19c5b53d613e703f75b69647cd584 after the owner's explicit request. Verified tag/manifest version and draft=false, prerelease=true. All 112 distinct tests pass (56 pure, 55 runtime and one Node test); CI covers HA 2026.2.3 and 2026.10.4. Native branding appearance, responsiveness and actual Companion acceptance are for owner testing, as agreed; physical charging remains unconfirmed. Stable 0.1.0 and earlier tags are unchanged.
