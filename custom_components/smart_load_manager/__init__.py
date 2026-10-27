@@ -175,6 +175,9 @@ async def async_setup_entry(hass, entry):
     from .dashboard import async_register_dashboard_service
 
     await async_register_dashboard_service(hass)
+    from .logo_probe import async_register_logo_probe
+
+    await async_register_logo_probe(hass)
     return True
 
 
@@ -194,4 +197,8 @@ async def async_unload_entry(hass, entry):
             site.pending_reductions.pop(key, None)
             site.manual_requests.pop(key, None)
             site.latest_samples.pop(key, None)
+        if not site.controllers:
+            from .logo_probe import async_remove_logo_probe
+
+            async_remove_logo_probe(hass)
     return unloaded

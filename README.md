@@ -57,3 +57,7 @@ Hot-water tanks and floor-heating zones under the same household budget. Floor h
 Thanks to [Home Assistant](https://www.home-assistant.io/), the Easee integration maintainers, and [EnergyTariff / Erling Paulsen](https://github.com/epaulsen/energytariff). These projects are independently maintained.
 
 A voluntary coffee-support link will be added when the support account is ready.
+
+## Picker comparison in beta 7
+
+After installation and restart, administrators can open **SLM velgertest** in the sidebar. Compare **Rask liste** with **Velger med logo**, then try a first and a second charger. These are temporary test selections; nothing is saved or sent to chargers. The normal setup continues to use the compact dropdown. No YAML or extra file copying is needed. See [test instructions](experiments/logo-picker/README.md).

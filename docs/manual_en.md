@@ -54,3 +54,9 @@ Run **Developer tools → Actions → `smart_load_manager.get_dashboard`**, then
 Read household status and Measurement status first. Check HAN freshness, EnergyTariff, enabled Easee Voltage sensors, reported current limits, pause and schedules. HAN must be valid and at most 60 seconds old. An available unchanged Easee power value remains valid despite an old timestamp. Capacity moves between chargers only after subsequent current/power readings confirm a reduction.
 
 SLM does not replace installation protection. Turning automatic control off stops further automatic writes and leaves Easee's last dynamic limit in place. Use Charging pause to explicitly send 0 A.
+
+## Charger picker comparison
+
+Beta 7 adds **SLM velgertest** to the administrator sidebar. Install and restart; no YAML or extra files are needed. Compare **Rask liste** (compact list) with **Velger med logo** (native logo picker). Select a first charger, then **Legg til lader to**: the first must be excluded. Choices are temporary: no setup is saved and no commands are sent. Already configured source chargers are shown initially so they need not be removed. Normal setup still uses the compact list.
+
+Try Safari and Companion. If a frontend component is unavailable, visit Settings → Devices & services once and return. Actual logos and phone responsiveness require separate verification.
