@@ -279,7 +279,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
             "safety_margin_kwh": 0.3,
         }
         menu = await flow.async_step_household(data)
-        self.assertEqual(menu["menu_options"], ["charging", "charging_logo", "planned"])
+        self.assertEqual(menu["menu_options"], ["charging", "planned"])
         self.assertEqual(
             self.hass.config_entries.async_entries("smart_load_manager"), []
         )

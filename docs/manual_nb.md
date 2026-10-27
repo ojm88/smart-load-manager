@@ -66,7 +66,7 @@ SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automati
 
 ## Logovelger i oppsettet
 
-Velg **Elbillading – logovelger (test)** for å åpne en egen HA-side med Easee-logoer. Velg én lader og eventuelt en til, trykk **Bruk valgene**, og gå tilbake til den opprinnelige oppsettsdialogen for å fullføre. Ved senere tillegging finnes **Legg til lader med logo (test)** under Konfigurer → Ladere. Eksisterende lader er utelatt fra denne listen og beholdes ved lagring. Den vanlige, kompakte velgeren er også tilgjengelig. Avbryt lukker den aktuelle oppsettsflyten; valgene på siden alene lagrer ikke installasjonen. Retur mellom sidene må fortsatt prøves i Safari og Companion.
+Velg **Elbillading – Easee**, og åpne ladervelgeren med knappen i dialogen. Listen viser navn og logo hentet fra Home Assistants integrasjonsbilder. Velg én lader og eventuelt en til, trykk **Bruk valgene**, og gå tilbake til den opprinnelige oppsettsdialogen for å fullføre. Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Eksisterende lader er utelatt og beholdes ved lagring. Hvis Home Assistant mangler en brukbar adresse, vises den kompakte listen direkte i dialogen. Avbryt lukker den aktuelle oppsettsflyten; valgene på siden alene lagrer ikke installasjonen.
 
 ### Når må dashboardkortet genereres på nytt?
 

@@ -19,8 +19,7 @@
         "title": "What would you like to control?",
         "menu_options": {
           "charging": "EV charging – Easee",
-          "planned": "Hot water and floor heating – planned",
-          "charging_logo": "EV charging – logo picker (test)"
+          "planned": "Hot water and floor heating – planned"
         }
       },
       "planned": {
@@ -29,7 +28,7 @@
       },
       "charging": {
         "title": "EV charging",
-        "description": "Select the first Easee charger. First enable its Voltage sensor and wait for a measured value. You can then finish with one charger or add a second. Both share the household limit and retain independent schedules. Automatic control starts off. {validation_error}",
+        "description": "Open the charger picker with the button below. Choose chargers, confirm and return here to finish. If a compact list appears here, select the charger directly. Select the first Easee charger. First enable its Voltage sensor and wait for a measured value. You can then finish with one charger or add a second. Both share the household limit and retain independent schedules. Automatic control starts off. {validation_error}",
         "data": {
           "charger_device": "First Easee charger"
         }
@@ -246,13 +245,12 @@
         "title": "Manage chargers",
         "menu_options": {
           "add_charger": "Add charger",
-          "remove_charger": "Remove charger",
-          "add_charger_logo": "Add charger with logo (test)"
+          "remove_charger": "Remove charger"
         }
       },
       "add_charger": {
         "title": "Add charger",
-        "description": "Choose the charger to add. Only Easee devices not already configured are shown. Your existing charger and its settings are kept. Enable its Easee Voltage sensor before continuing. The integration reloads and automatic control starts off. {validation_error}",
+        "description": "Open the charger picker with the button below. Choose chargers, confirm and return here to finish. If a compact list appears here, select the charger directly. Choose the charger to add. Only Easee devices not already configured are shown. Your existing charger and its settings are kept. Enable its Easee Voltage sensor before continuing. The integration reloads and automatic control starts off. {validation_error}",
         "data": {
           "charger_device": "Easee charger"
         }
