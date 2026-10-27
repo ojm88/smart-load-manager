@@ -41,7 +41,7 @@ Each charger has six main measurements: status, charging power, measured current
 
 The household status explains why each load runs or waits and provides phase advice. Measurement status contains shared source IDs, HAN age and input validity.
 
-Run **Developer tools → Actions → `smart_load_manager.get_dashboard`**, then paste the returned `yaml` into a **Manual card inside an existing section**. The generator resolves actual registered IDs, including your own renames. The graph reads EnergyTariff directly. Static [one](../examples/lovelace/charging_card.yaml) and [two](../examples/lovelace/two_chargers_card.yaml) charger examples are templates; generating the card is recommended.
+Run **Settings → Tools → Actions → `smart_load_manager.get_dashboard`**, then paste the returned `yaml` into a **Manual card inside an existing section**. The generator resolves actual registered IDs, including your own renames. The graph reads EnergyTariff directly. Static [one](../examples/lovelace/charging_card.yaml) and [two](../examples/lovelace/two_chargers_card.yaml) charger examples are templates; generating the card is recommended.
 
 ## Configuration
 
@@ -55,8 +55,10 @@ Read household status and Measurement status first. Check HAN freshness, EnergyT
 
 SLM does not replace installation protection. Turning automatic control off stops further automatic writes and leaves Easee's last dynamic limit in place. Use Charging pause to explicitly send 0 A.
 
-## Charger picker comparison
+## Logo picker during setup
 
-Beta 7 adds **SLM velgertest** to the administrator sidebar. Install and restart; no YAML or extra files are needed. Compare **Rask liste** (compact list) with **Velger med logo** (native logo picker). Select a first charger, then **Legg til lader to**: the first must be excluded. Choices are temporary: no setup is saved and no commands are sent. Already configured source chargers are shown initially so they need not be removed. Normal setup still uses the compact list.
+Choose **EV charging – logo picker (test)** to open a separate HA page with Easee logos. Pick one or two chargers, confirm and return to the original setup dialog to finish. Configure → Chargers also offers **Add charger with logo (test)**, excluding the existing charger and preserving it when the new charger is saved. Compact selection remains available. Cancel aborts the current flow; selecting devices alone creates no installation. Safari and Companion navigation still requires acceptance testing.
 
-Try Safari and Companion. If a frontend component is unavailable, visit Settings → Devices & services once and return. Actual logos and phone responsiveness require separate verification.
+### When to regenerate the dashboard card
+
+Run `smart_load_manager.get_dashboard` and replace the existing Manual card YAML after adding/removing/replacing a charger, changing the HAN source or referenced entity IDs, changing charger names used in headings, or adopting a feature that changes the card layout. YAML is not automatically regenerated. Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection and pause update through existing entity references and require no new card. Preserve manual customizations before replacing the YAML.

@@ -335,7 +335,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(dict(self.parent.data), original)
         self.assert_visible(self.record)
 
-    async def begin_fresh_wizard(self):
+    async def begin_fresh_wizard(self, mode="charging"):
         self.assertTrue(
             await self.hass.config_entries.async_unload(self.parent.entry_id)
         )
@@ -356,8 +356,10 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             },
         )
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"next_step_id": "charging"}
+            fid, {"next_step_id": mode}
         )
+        if mode == "charging_logo":
+            return fid, result
         self.assertEqual(result["step_id"], "charging")
         field = next(iter(result["data_schema"].schema.values()))
         self.assertEqual(
@@ -433,3 +435,90 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         await self.hass.async_block_till_done()
         self.assertEqual(len(self.parent.data["loads"]), 1)
         self.assert_visible(self.parent.data["loads"][0])
+
+
+    async def test_logo_bridge_validates_then_returns_to_native_finish(self):
+        import json
+        from types import SimpleNamespace
+        from urllib.parse import urlparse, parse_qs
+        from smart_load_manager import picker_bridge as bridge
+        # Flow's canonical package namespace is custom_components.
+        import custom_components.smart_load_manager.picker_bridge as native_bridge
+
+        class Request(dict):
+            async def json(request):
+                return request.payload
+
+        with patch.object(native_bridge, "register", new=AsyncMock()), patch.object(bridge, "register", new=AsyncMock()):
+            fid, result = await self.begin_fresh_wizard("charging_logo")
+        self.assertEqual(result["type"], "external")
+        token = parse_qs(urlparse(result["url"]).query)["session"][0]
+        view = bridge.PickerView(self.hass)
+        request = Request(hass_user=SimpleNamespace(is_admin=True))
+        request.payload = {"devices": [self.a.id, self.a.id]}
+        response = await view.post(request, token)
+        self.assertEqual(response.status, 400)
+        self.assertEqual(self.hass.config_entries.async_entries("smart_load_manager"), [])
+        request.payload = {"devices": [self.a.id, self.b.id]}
+        response = await view.post(request, token)
+        self.assertEqual(response.status, 200, response.text)
+        self.assertEqual(json.loads(response.text)["type"], "external_done")
+        self.assertEqual(self.hass.config_entries.async_entries("smart_load_manager"), [])
+        result = await self.hass.config_entries.flow.async_configure(fid)
+        self.assertEqual(result["type"], "create_entry")
+        self.parent = result["result"]
+        await self.hass.async_block_till_done()
+        self.assertEqual(len(self.parent.data["loads"]), 2)
+        for record in self.parent.data["loads"]:
+            self.assert_visible(record)
+
+    async def test_logo_cancel_removes_session_without_creating_entry(self):
+        from urllib.parse import urlparse, parse_qs
+        import custom_components.smart_load_manager.picker_bridge as bridge
+        with patch.object(bridge, "register", new=AsyncMock()), patch("smart_load_manager.picker_bridge.register", new=AsyncMock()):
+            fid, result = await self.begin_fresh_wizard("charging_logo")
+        token = parse_qs(urlparse(result["url"]).query)["session"][0]
+        self.assertIn(token, bridge._state(self.hass)["sessions"])
+        self.hass.config_entries.flow.async_abort(fid)
+        self.assertNotIn(token, bridge._state(self.hass)["sessions"])
+        self.assertEqual(self.hass.config_entries.async_entries("smart_load_manager"), [])
+
+    async def test_logo_add_excludes_existing_and_preserves_first_until_finish(self):
+        import json
+        from types import SimpleNamespace
+        from urllib.parse import urlparse, parse_qs
+        from aiohttp import web
+        import custom_components.smart_load_manager.picker_bridge as bridge
+
+        class Request(dict):
+            async def json(request):
+                return request.payload
+
+        manager = self.hass.config_entries.options
+        result = await manager.async_init(self.parent.entry_id)
+        fid = result['flow_id']
+        await manager.async_configure(fid, {'next_step_id': 'chargers'})
+        with patch.object(bridge, 'register', new=AsyncMock()), patch('smart_load_manager.picker_bridge.register', new=AsyncMock()):
+            result = await manager.async_configure(fid, {'next_step_id': 'add_charger_logo'})
+        token = parse_qs(urlparse(result['url']).query)['session'][0]
+        view = bridge.PickerView(self.hass)
+        request = Request(hass_user=SimpleNamespace(is_admin=False))
+        with self.assertRaises(web.HTTPForbidden):
+            await view.get(request, token)
+        request['hass_user'].is_admin = True
+        response = await view.get(request, token)
+        self.assertEqual([o['value'] for o in json.loads(response.text)['options']], [self.b.id])
+        request.payload = {'devices': [self.a.id]}
+        self.assertEqual((await view.post(request, token)).status, 400)
+        request.payload = {'devices': [self.b.id]}
+        response = await view.post(request, token)
+        self.assertEqual(response.status, 200, response.text)
+        self.assertEqual(len(self.parent.data['loads']), 1)
+        with self.assertRaises(web.HTTPNotFound):
+            await view.post(request, token)
+        await manager.async_configure(fid)
+        await self.hass.async_block_till_done()
+        self.assertEqual(self.parent.data['loads'][0], self.record)
+        self.assertEqual(len(self.parent.data['loads']), 2)
+        for record in self.parent.data['loads']:
+            self.assert_visible(record)

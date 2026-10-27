@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 from homeassistant.components import frontend
 from homeassistant.core import HomeAssistant
@@ -57,3 +57,18 @@ class LogoProbeTests(IsolatedAsyncioTestCase):
         self.hass.http.async_register_static_paths.side_effect = None
         await async_register_logo_probe(self.hass)
         self.assertTrue(PANEL_PATH in self.hass.data.get(frontend.DATA_PANELS, {}))
+
+
+    async def test_flow_bridge_hosts_hidden_admin_panel_before_installation(self):
+        from smart_load_manager import picker_bridge
+        self.hass.http.register_view = Mock()
+        await picker_bridge.register(self.hass)
+        await picker_bridge.register(self.hass)
+        self.hass.http.register_view.assert_called_once()
+        self.hass.http.async_register_static_paths.assert_awaited_once()
+        panel = self.hass.data[frontend.DATA_PANELS][picker_bridge.PANEL].to_response()
+        self.assertIsNone(panel['title'])
+        self.assertTrue(panel['require_admin'])
+        self.assertEqual(panel['config']['_panel_custom']['module_url'], picker_bridge.URL)
+        view = self.hass.http.register_view.call_args.args[0]
+        self.assertTrue(view.requires_auth)

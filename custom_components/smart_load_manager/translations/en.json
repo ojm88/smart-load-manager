@@ -19,7 +19,8 @@
         "title": "What would you like to control?",
         "menu_options": {
           "charging": "EV charging – Easee",
-          "planned": "Hot water and floor heating – planned"
+          "planned": "Hot water and floor heating – planned",
+          "charging_logo": "EV charging – logo picker (test)"
         }
       },
       "planned": {
@@ -46,6 +47,10 @@
         "data": {
           "charger_device": "Second Easee charger"
         }
+      },
+      "charging_logo": {
+        "title": "Choose chargers with Easee logo",
+        "description": "Open the charger picker, then return here to finish. Nothing is saved until setup is completed."
       }
     },
     "abort": {
@@ -241,7 +246,8 @@
         "title": "Manage chargers",
         "menu_options": {
           "add_charger": "Add charger",
-          "remove_charger": "Remove charger"
+          "remove_charger": "Remove charger",
+          "add_charger_logo": "Add charger with logo (test)"
         }
       },
       "add_charger": {
@@ -257,6 +263,10 @@
         "data": {
           "charger_device": "Charger to remove"
         }
+      },
+      "add_charger_logo": {
+        "title": "Add a charger with Easee logo",
+        "description": "Open the picker and return to finish. Your existing charger is kept."
       }
     },
     "error": {

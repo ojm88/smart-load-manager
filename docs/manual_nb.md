@@ -48,7 +48,7 @@ Seks hovedsensorer per lader: **Ladestatus**, **Effekt til bilen**, **Strøm til
 
 ## Dashboard
 
-Kjør `smart_load_manager.get_dashboard` under **Utviklerverktøy → Handlinger**. Kopier `yaml` til et **Manuelt kort i en eksisterende seksjon**. Generatoren bruker de faktiske entitets-ID-ene, også når du har gitt dem egne navn. Grafen leser EnergyTariff direkte.
+Kjør `smart_load_manager.get_dashboard` under **Settings → Tools → Actions**. Kopier `yaml` til et **Manuelt kort i en eksisterende seksjon**. Generatoren bruker de faktiske entitets-ID-ene, også når du har gitt dem egne navn. Grafen leser EnergyTariff direkte.
 
 De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](../examples/lovelace/two_chargers_card.yaml)-kortene er maler. Generer helst kortet for din installasjon.
 
@@ -64,8 +64,10 @@ Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv
 
 SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automatikk av betyr at SLM slutter å regulere; Easee beholder siste dynamiske grense. Bruk Ladepause for en uttrykkelig 0 A-kommando.
 
-## Test av ladervelger
+## Logovelger i oppsettet
 
-Beta 7 har **SLM velgertest** i sidemenyen for administratorer. Etter oppdatering og omstart trenger du ingen YAML-endringer eller ekstra filer. Sammenlign **Rask liste** og **Velger med logo** med samme ladere. Velg først én, deretter **Legg til lader to**: første lader skal være utelatt. Valgene er midlertidige; testen lagrer ikke oppsett og sender ingen kommandoer. Ladere som allerede er konfigurert vises i den første testlisten, slik at du slipper å fjerne dem. Det vanlige oppsettet bruker fortsatt den raske listen.
+Velg **Elbillading – logovelger (test)** for å åpne en egen HA-side med Easee-logoer. Velg én lader og eventuelt en til, trykk **Bruk valgene**, og gå tilbake til den opprinnelige oppsettsdialogen for å fullføre. Ved senere tillegging finnes **Legg til lader med logo (test)** under Konfigurer → Ladere. Eksisterende lader er utelatt fra denne listen og beholdes ved lagring. Den vanlige, kompakte velgeren er også tilgjengelig. Avbryt lukker den aktuelle oppsettsflyten; valgene på siden alene lagrer ikke installasjonen. Retur mellom sidene må fortsatt prøves i Safari og Companion.
 
-Prøv i både Safari og Companion. Dersom testsiden melder at en komponent ikke er lastet, åpne Innstillinger → Enheter og tjenester og gå tilbake. Faktisk logo og responstid må bekreftes på telefonen.
+### Når må dashboardkortet genereres på nytt?
+
+Kjør `smart_load_manager.get_dashboard` og erstatt YAML-en i det eksisterende manuelle kortet når du legger til, fjerner eller bytter lader, endrer HAN-kilde eller entitets-ID-er som kortet bruker, endrer ladernavn som står i kortoverskriftene, eller tar i bruk en funksjon med endret kortoppsett. Kortets YAML oppdateres ikke automatisk. Vanlige endringer i forbruksgrense, sikkerhetsmargin, prioritet, lademåte, tidsplan, fasevalg og pause krever ikke nytt kort; verdiene oppdateres i visningen. Ta vare på egne manuelle korttilpasninger før du erstatter YAML-en.

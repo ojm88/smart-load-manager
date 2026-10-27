@@ -65,3 +65,21 @@ Branch `experiment-integration-logo-picker` adds an optional read-only custom pa
 Owner requests an installable beta instead of manual test-panel files. The integration now packages the read-only module and registers the admin-only SLM velgertest panel automatically when HA frontend is enabled. Normal compact setup, memberships and charging math remain unchanged. Static route is registered once, panel removed on last runtime unload, and reload re-registers it. Beta.7 is published after the owner's request to package the experiment as a beta. Phone rendering and performance acceptance are still pending.
 
 Beta.7 validation: **106 distinct automated tests** pass: 56 pure tests, 49 HA runtime tests (run locally and in CI on both HA 2026.2.3 and 2026.10.4), and one Node candidate-filter test. JavaScript syntax, packaged/source module equality, Python lint, JSON and whitespace checks pass. No live charger command or actual browser logo/latency test was performed.
+
+
+## Prepared beta.8 logo-flow prototype
+
+Owner verified the beta.7 read-only logo picker was responsive and displayed Easee branding. A new opt-in native external-step bridge now connects the picker to initial setup and additive options setup. The default compact paths remain available. A hidden admin-only HA panel and authenticated admin API serve a short-lived, flow-bound session; source IDs are filtered and validated again, duplicate/stale selections rejected, cancellation cleans sessions, and replay is rejected. No membership is saved until the original native flow finishes. Full UI popup/return/cancellation acceptance in Safari and Companion is pending. Beta.8 is not published. VT control and VT logo acceptance are not implemented.
+
+
+## Beta.8 sidebar and documentation cleanup
+
+Automatic SLM velgertest sidebar registration is removed at the owner's request. The setup logo picker is still hidden and available only through the opt-in flow. README follows a concise project presentation inspired by merkens/ha-xcomfort-bridge, with a support/limitations section and links to both guides. CI [40534718962](https://github.com/ojm88/smart-load-manager/actions/runs/40534718962) passed all four jobs for prototype commit a5734306062045d29fb21f73d54f7733671289e0. This revision changes sidebar registration/documentation only; new CI is required. Beta.8 is still unpublished, with physical charging and Safari/Companion flow-return validation pending.
+
+
+README review: remove the frontend experiment paragraph from the project introduction. Restore explicit Settings → Tools → Actions dashboard generation, a sensor meaning table, the required EnergyTariff dependency, Norwegian grid/capacity context with Glitre Nett/NVE source links, and guidance on realistic whole-home hourly targets. No control behavior changes in this revision.
+
+
+## Presentation baseline and stable release direction
+
+Owner accepts the README structure and requests a documentation/structure freeze except for agreed features and necessary fixes. Clarified when generated dashboard YAML must be replaced, and added ROADMAP.md. Stable 2.0.0 is planned after successful two-charger charging tests, including retained one-charger behavior and no blocking setup/control faults. No physical acceptance, publication date or stable release approval is implied.

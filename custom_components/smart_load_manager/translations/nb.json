@@ -19,7 +19,8 @@
         "title": "Hva vil du styre?",
         "menu_options": {
           "charging": "Elbillading – Easee",
-          "planned": "Varmtvann og gulvvarme – planlagt"
+          "planned": "Varmtvann og gulvvarme – planlagt",
+          "charging_logo": "Elbillading – logovelger (test)"
         }
       },
       "planned": {
@@ -46,6 +47,10 @@
         "data": {
           "charger_device": "Andre Easee-lader"
         }
+      },
+      "charging_logo": {
+        "title": "Velg ladere med Easee-logo",
+        "description": "Åpne ladervelgeren og gå tilbake hit for å fullføre. Ingenting lagres før oppsettet er fullført."
       }
     },
     "abort": {
@@ -241,7 +246,8 @@
         "title": "Administrer ladere",
         "menu_options": {
           "add_charger": "Legg til lader",
-          "remove_charger": "Fjern lader"
+          "remove_charger": "Fjern lader",
+          "add_charger_logo": "Legg til lader med logo (test)"
         }
       },
       "add_charger": {
@@ -257,6 +263,10 @@
         "data": {
           "charger_device": "Lader som skal fjernes"
         }
+      },
+      "add_charger_logo": {
+        "title": "Legg til en lader med Easee-logo",
+        "description": "Åpne velgeren og gå tilbake for å fullføre. Eksisterende lader beholdes."
       }
     },
     "error": {
