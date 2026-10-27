@@ -5,9 +5,9 @@ Updated: 2026-10-27
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.8** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.8)).
-- Release code: `8b5a88821fc2955d915d9003b07bde1c3c0128da`; merged PR #4.
-- GitHub Actions [40554267715](https://github.com/ojm88/smart-load-manager/actions/runs/40554267715) passed all four jobs for the tested PR head e2947329dab483167f3c055afa830938922a184f. The subsequent pre-release commit only removes the prepared changelog marker. Published as a prerelease after owner approval.
+- Published beta: **0.1.1-beta.9** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.9)).
+- Release code: `8313556a0f81a23e546444863f72a2fcbdce54be`; merged PR #5.
+- GitHub Actions [40571544701](https://github.com/ojm88/smart-load-manager/actions/runs/40571544701) passed all four jobs for release head 9b5a38bff0f5e854d56661721326e0ef70d7347c. Published as a prerelease after explicit owner approval.
 
 ## Published beta.6 corrections
 
@@ -90,10 +90,15 @@ Owner accepts the README structure and requests a documentation/structure freeze
 Published 0.1.1-beta.8 from merge commit 8b5a88821fc2955d915d9003b07bde1c3c0128da after owner approval. All 110 distinct automated tests pass (56 pure, 53 HA runtime and one Node test); runtime suites run against HA 2026.2.3 and 2026.10.4. Release is a prerelease. Physical charging and actual external-step navigation/return in Safari/Companion remain unconfirmed. Stable 2.0.0 remains conditional on acceptance; the agreed presentation baseline stays frozen except for agreed features, required fixes and release/validation status.
 
 
-## Beta.8 setup correction (approved for beta.9)
+## Beta.9 setup correction (published)
 
 Owner reports a blank third menu choice and an external-step message with no open button. The bridge supplied a relative URL, which HA's frontend URL sanitizer rejects. The extra choice is removed: normal charging/add actions now open the branded picker. Absolute URLs are resolved with HA's current-request helper, falling back to configured external/Cloud URLs; missing URLs retain compact setup. External refresh retains the existing session. Existing translation step IDs are reused, avoiding dependence on a new menu translation cached by the client.
 
 The setup page now renders a small filtered list with authenticated HA integration brand images, falling back to the brands CDN on older HA versions. It does not depend on cold-loading ha-form/ha-device-picker in a separate tab. Candidate eligibility, additive saves, cancellation and server-side validation remain unchanged. Calculation/control/budget/allocation files are untouched.
 
 Validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4, and six Node tests (including five DOM interaction regressions). Actual Safari/Companion rendering/navigation and physical charging remain unverified. Browser installation was unavailable in this environment; DOM tests are not visual browser acceptance. The owner has approved publication as beta.9. CI run 40570428801 passed all four jobs for f1984e34171b0682317247cf220176cc64d37e13, including runtime tests on HA 2026.2.3 and 2026.10.4. The release preparation changes only the version and release documentation. Publication and installation on the owner's HA are separate steps.
+
+
+## Approved beta.9 publication
+
+Published 0.1.1-beta.9 from merge commit 8313556a0f81a23e546444863f72a2fcbdce54be after owner approval. Verified release draft=false, prerelease=true and tag points to the merge commit. All 117 distinct tests pass (56 pure, 55 runtime and six Node tests), with runtime suites on HA 2026.2.3 and 2026.10.4. Phone UI/navigation and physical charging acceptance remain pending. Stable 0.1.0 and all earlier tags remain unchanged.
