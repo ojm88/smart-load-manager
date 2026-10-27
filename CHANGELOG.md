@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1-beta.8 (prepared)
+## 0.1.1-beta.8
 
 - Remove automatic comparison-test sidebar entry; setup logo selection remains available through its hidden panel.
 - Restructure README into concise installation, setup, functions, limitations and support sections.
