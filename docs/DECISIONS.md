@@ -388,3 +388,9 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Owner requests no test page in the left sidebar. Stop automatic registration of the beta.7 comparison panel; the logo picker used by setup remains a hidden panel and does not add a sidebar item. Retain its shared frontend picker code. A full restart removes beta.7's in-memory sidebar registration.
 - Structure README around introduction, requirements, installation, configuration, supported functions, limitations, help, future work and credits, inspired by merkens/ha-xcomfort-bridge. Describe current behavior only; keep technical history in developer documentation. No license, donation destination or support guarantee is invented.
 - Preserve the beta.2 calculation/control/budget functions and beta.4 allocation formulas. Software tests and retained source do not establish physical beta.8 acceptance or prove two-charger performance.
+
+
+## 2026-10-27 — README content requested by owner
+
+- Keep experiment/navigation implementation details out of README. Explain the required EnergyTariff input, sensor meanings and ready-made YAML generation via Settings → Tools → Actions.
+- Explain Norwegian household capacity-step use using current primary Glitre Nett/NVE sources without hard-coded prices. A whole-home hourly target must be realistic: insufficient budget for minimum charging current causes waiting, and two chargers share the remaining capacity. Distinguish kWh per clock hour from instantaneous kW or fuse protection.
