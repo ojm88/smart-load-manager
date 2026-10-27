@@ -381,3 +381,10 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Keep HA's normal config-entry persistence and additive membership logic. Use a supported native external step to open a hidden HA panel with the tested frontend picker, then resume the original flow. Do not inject or patch HA frontend components.
 - Offer explicit logo test paths alongside compact setup while Safari/Companion navigation is unverified. Initial flow supports one/two chargers; options flow allows one unused charger and retains the existing load.
 - Treat frontend IDs as untrusted: require authenticated administrators, random expiring session bound to an active flow, server-side eligibility and electrical validation, and cancellation/replay cleanup. Never save partial installation or change physical control in the picker callback. Existing final options persistence/reload policy remains unchanged.
+
+
+## 2026-10-27 — Beta.8 presentation and sidebar
+
+- Owner requests no test page in the left sidebar. Stop automatic registration of the beta.7 comparison panel; the logo picker used by setup remains a hidden panel and does not add a sidebar item. Retain its shared frontend picker code. A full restart removes beta.7's in-memory sidebar registration.
+- Structure README around introduction, requirements, installation, configuration, supported functions, limitations, help, future work and credits, inspired by merkens/ha-xcomfort-bridge. Describe current behavior only; keep technical history in developer documentation. No license, donation destination or support guarantee is invented.
+- Preserve the beta.2 calculation/control/budget functions and beta.4 allocation formulas. Software tests and retained source do not establish physical beta.8 acceptance or prove two-charger performance.

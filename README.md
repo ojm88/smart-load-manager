@@ -5,63 +5,70 @@
   <img src="custom_components/smart_load_manager/brand/logo@2x.png" alt="Smart Load Manager OJM" width="480">
 </picture>
 
-Keep household consumption within a chosen hourly energy target by adjusting EV charging. This can help avoid a higher grid-tariff capacity step. Savings depend on your household and grid tariff.
+[![Tests](https://github.com/ojm88/smart-load-manager/actions/workflows/tests.yml/badge.svg)](https://github.com/ojm88/smart-load-manager/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/ojm88/smart-load-manager?include_prereleases)](https://github.com/ojm88/smart-load-manager/releases)
 
-**Supported:** one or two Easee chargers, one shared household budget, independent schedules, manual pause and current control. Hot-water tanks and floor heating are planned.
+Home Assistant integration that adjusts one or two Easee chargers to leave room for household consumption within a chosen hourly energy target. This can help avoid a higher grid-tariff capacity step; savings depend on your household and tariff.
+
+[🇳🇴 Norsk brukerveiledning](docs/manual_nb.md) · [English guide](docs/manual_en.md)
 
 ## Requirements
 
 - Home Assistant **2026.2 or newer**.
-- Easee devices configured in Home Assistant. **Enable the Voltage sensor on every charger** and wait for a measured value.
-- A HAN power sensor in W or kW and [EnergyTariff](https://github.com/epaulsen/energytariff), configured with that meter.
+- Easee chargers configured in Home Assistant, with an enabled **Voltage** sensor and a measured value on each charger.
+- A HAN power sensor in W or kW, plus [EnergyTariff](https://github.com/epaulsen/energytariff) reporting energy used during the current hour from that meter.
 
-## Install
+## Installation
 
-Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy `custom_components/smart_load_manager` into your Home Assistant `config/custom_components/`, and restart.
+### Marketplace
 
-From HA 2026.11, **Settings → Marketplace** also supports adding this repository as a custom **Integration**: `https://github.com/ojm88/smart-load-manager`. A GitHub connection is required for custom repositories. See the [official guide](https://contributors.home-assistant.io/marketplace/how-it-works/).
+On HA **2026.11 or newer**, add `https://github.com/ojm88/smart-load-manager` as a custom **Integration** repository in **Settings → Marketplace**. Install Smart Load Manager OJM and restart Home Assistant. See the [Marketplace guide](https://contributors.home-assistant.io/marketplace/how-it-works/).
 
-## Set up
+### Manual
 
-1. **Settings → Devices & services → Add integration → Smart Load Manager OJM.**
-2. Select the household HAN power, EnergyTariff **used this hour**, and safety margin.
-3. Choose **EV charging**, select the first Easee charger, then finish or add a second.
-4. Set **Forbruksgrense** on the household device. Ensure only one controller regulates each charger, then enable SLM automatic control deliberately on each charger.
+Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy `custom_components/smart_load_manager` into your HA `config/custom_components/` folder and restart.
 
-The integration has two native groups: **Boligen / Household** for shared measurements and the budget; **Lading / Charging** for the chargers. Under **Configure**, edit shared sources or choose **Add charger** / **Remove charger**. Adding a charger keeps the existing charger and lists only unused Easee devices. Changing the charger selection reloads SLM and automatic control starts off again.
+## Configuration
 
-## How it works
+1. Open **Settings → Devices & services → Add integration → Smart Load Manager OJM**.
+2. Select HAN power, EnergyTariff energy used this hour, and the safety margin.
+3. Choose EV charging, select the first charger, then finish or add a second.
+4. Set the household consumption target on **SLM – Boligen**. Enable automatic control deliberately on each charger, with no competing automation controlling it.
 
-SLM combines the energy used so far this hour with the current HAN power and the safety margin. It adjusts the chargers' dynamic current limits to leave room for other household use. The focus is the capacity tariff; there is no spot-price optimization.
+**Boligen / Household** contains the shared budget and status. **Lading / Charging** contains the chargers. Use **Configure** to edit household sources or add/remove a charger while retaining the others.
 
-With two chargers, choose **Charge both** to share available power, or **One at a time**. Each charger has a **First priority** switch: choosing one automatically makes the other secondary. These are SLM priorities, not Easee hardware roles. Each charger keeps its own schedule and phase selection.
+The optional **logo picker (test)** opens a separate HA page with Easee branding. Confirm the choices, then return to the original dialog to finish. Its Safari/Companion navigation still requires testing. Compact selection is also available. No comparison-test page is added to the sidebar.
 
-Required missing measurements stop automatic allocation. Capacity is reassigned only after subsequent measurements confirm a requested reduction. Available, unchanged Easee power readings do not expire just because their timestamp is old. HAN freshness remains required.
+## Supported functions
 
-## Dashboard and measurements
+| Function | Behavior |
+| --- | --- |
+| Shared household budget | Combines hourly energy, current HAN power and a safety margin to adjust charging limits. |
+| One or two chargers | Charge both or one at a time, with a selectable first priority. |
+| Per-charger controls | Independent schedule, pause, manual current and phase selection. |
+| Measurements | Status, power, current, recommended current, active phases and voltage. |
+| Explanations | Household status describes why charging runs, waits or is limited. |
+| Dashboard | `smart_load_manager.get_dashboard` returns a Manual card using actual registered entity IDs. |
 
-Run **Developer tools → Actions → `smart_load_manager.get_dashboard`**. Paste the returned `yaml` into a **Manual card** in your existing dashboard. It uses actual registered IDs, including user-renamed entities.
+## Limitations and testing
 
-Each charger has six main measurements: status, power, current, recommended current, active phases, and voltage. Names consistently end with the charger name, such as **Volt Garasje** and **Volt Tesla**. The household status explains why chargers run or wait; detailed electrical limits remain attributes. With two chargers, a diagnostic shows each charger's priority.
+This project is under development. Physical charging validation of the current version, including two-charger operation, is pending. Automated tests cover calculations, allocation and Home Assistant setup; see [validation status](docs/PROJECT_STATUS.md).
 
-[Guide in Norwegian](docs/manual_nb.md) · [English guide](docs/manual_en.md) · [Changes](CHANGELOG.md)
+- Automatic control starts **off after restart**.
+- Missing or stale required meter data pauses automatic allocation. Reductions must be confirmed by subsequent measurements before capacity is reassigned.
+- Phase changes are manual. There is no spot-price optimization or vehicle battery control.
+- Hot-water and floor-heating control are not implemented. SLM does not replace electrical protection.
 
-Automatic control starts off after restart. Enable it deliberately on each charger. SLM does not replace electrical protection. This project is under development; see [project status](docs/PROJECT_STATUS.md) for validation.
+## Help and feedback
 
-## Next
+[Open an issue](https://github.com/ojm88/smart-load-manager/issues) with the integration and HA versions, what you expected, what happened, and relevant log excerpts. Remove credentials and private installation details before attaching logs or screenshots.
 
-Hot-water tanks and floor-heating zones under the same household budget. Floor heating is planned through [Versatile Thermostat](https://github.com/jmcollin78/versatile_thermostat); thermal control is not implemented yet.
+[Releases](https://github.com/ojm88/smart-load-manager/releases) · [Changelog](CHANGELOG.md) · [Norwegian guide](docs/manual_nb.md) · [English guide](docs/manual_en.md)
 
-## Thanks and support
+## Planned
 
-Thanks to [Home Assistant](https://www.home-assistant.io/), the Easee integration maintainers, and [EnergyTariff / Erling Paulsen](https://github.com/epaulsen/energytariff). These projects are independently maintained.
+More chargers, hot-water tanks and floor-heating zones sharing the household budget. Floor heating is planned through [Versatile Thermostat](https://github.com/jmcollin78/versatile_thermostat). A voluntary coffee-support link will be added when the account is ready.
 
-A voluntary coffee-support link will be added when the support account is ready.
+## Acknowledgements
 
-## Picker comparison in beta 7
-
-After installation and restart, administrators can open **SLM velgertest** in the sidebar. Compare **Rask liste** with **Velger med logo**, then try a first and a second charger. These are temporary test selections; nothing is saved or sent to chargers. The normal setup continues to use the compact dropdown. No YAML or extra file copying is needed. See [test instructions](experiments/logo-picker/README.md).
-
-## Logo picker in setup
-
-Choose **EV charging – logo picker (test)** to open the native-logo picker in a separate HA page. Choose one or two chargers and confirm, then return to the original setup dialog to finish. Configure → Add/remove charger also offers **Add charger with logo (test)**. The compact picker is available alongside it. Choices are checked again on the server; cancellation creates no installation. Safari/Companion navigation acceptance is pending.
+Thanks to [Home Assistant](https://www.home-assistant.io/), the Easee integration maintainers and [EnergyTariff / Erling Paulsen](https://github.com/epaulsen/energytariff). These projects are independently maintained.

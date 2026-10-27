@@ -2,6 +2,9 @@
 
 ## 0.1.1-beta.8 (prepared)
 
+- Remove automatic comparison-test sidebar entry; setup logo selection remains available through its hidden panel.
+- Restructure README into concise installation, setup, functions, limitations and support sections.
+
 - Optional Easee-logo selection linked to initial and additive setup through a native external step; compact selection remains available.
 - Authenticated, flow-bound selection with server validation, cancellation and replay protection. Return to the original native dialog to finish. Safari/Companion navigation remains unverified.
 

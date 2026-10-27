@@ -64,12 +64,6 @@ Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv
 
 SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automatikk av betyr at SLM slutter å regulere; Easee beholder siste dynamiske grense. Bruk Ladepause for en uttrykkelig 0 A-kommando.
 
-## Test av ladervelger
-
-Beta 7 har **SLM velgertest** i sidemenyen for administratorer. Etter oppdatering og omstart trenger du ingen YAML-endringer eller ekstra filer. Sammenlign **Rask liste** og **Velger med logo** med samme ladere. Velg først én, deretter **Legg til lader to**: første lader skal være utelatt. Valgene er midlertidige; testen lagrer ikke oppsett og sender ingen kommandoer. Ladere som allerede er konfigurert vises i den første testlisten, slik at du slipper å fjerne dem. Det vanlige oppsettet bruker fortsatt den raske listen.
-
-Prøv i både Safari og Companion. Dersom testsiden melder at en komponent ikke er lastet, åpne Innstillinger → Enheter og tjenester og gå tilbake. Faktisk logo og responstid må bekreftes på telefonen.
-
 ## Logovelger i oppsettet
 
 Velg **Elbillading – logovelger (test)** for å åpne en egen HA-side med Easee-logoer. Velg én lader og eventuelt en til, trykk **Bruk valgene**, og gå tilbake til den opprinnelige oppsettsdialogen for å fullføre. Ved senere tillegging finnes **Legg til lader med logo (test)** under Konfigurer → Ladere. Eksisterende lader er utelatt fra denne listen og beholdes ved lagring. Den vanlige, kompakte velgeren er også tilgjengelig. Avbryt lukker den aktuelle oppsettsflyten; valgene på siden alene lagrer ikke installasjonen. Retur mellom sidene må fortsatt prøves i Safari og Companion.

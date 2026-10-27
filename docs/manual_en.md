@@ -55,12 +55,6 @@ Read household status and Measurement status first. Check HAN freshness, EnergyT
 
 SLM does not replace installation protection. Turning automatic control off stops further automatic writes and leaves Easee's last dynamic limit in place. Use Charging pause to explicitly send 0 A.
 
-## Charger picker comparison
-
-Beta 7 adds **SLM velgertest** to the administrator sidebar. Install and restart; no YAML or extra files are needed. Compare **Rask liste** (compact list) with **Velger med logo** (native logo picker). Select a first charger, then **Legg til lader to**: the first must be excluded. Choices are temporary: no setup is saved and no commands are sent. Already configured source chargers are shown initially so they need not be removed. Normal setup still uses the compact list.
-
-Try Safari and Companion. If a frontend component is unavailable, visit Settings → Devices & services once and return. Actual logos and phone responsiveness require separate verification.
-
 ## Logo picker during setup
 
 Choose **EV charging – logo picker (test)** to open a separate HA page with Easee logos. Pick one or two chargers, confirm and return to the original setup dialog to finish. Configure → Chargers also offers **Add charger with logo (test)**, excluding the existing charger and preserving it when the new charger is saved. Compact selection remains available. Cancel aborts the current flow; selecting devices alone creates no installation. Safari and Companion navigation still requires acceptance testing.
