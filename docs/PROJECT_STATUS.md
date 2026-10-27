@@ -5,9 +5,9 @@ Updated: 2026-10-27
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.7** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.7)).
-- Release code: `c1a43b681aca0891d986a0a83b57154ff0361209`; merged PR #3.
-- GitHub Actions [40524396170](https://github.com/ojm88/smart-load-manager/actions/runs/40524396170) passed all four jobs for the merged PR head. Published as a prerelease after owner approval.
+- Published beta: **0.1.1-beta.8** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.8)).
+- Release code: `8b5a88821fc2955d915d9003b07bde1c3c0128da`; merged PR #4.
+- GitHub Actions [40554267715](https://github.com/ojm88/smart-load-manager/actions/runs/40554267715) passed all four jobs for the tested PR head e2947329dab483167f3c055afa830938922a184f. The subsequent pre-release commit only removes the prepared changelog marker. Published as a prerelease after owner approval.
 
 ## Published beta.6 corrections
 
@@ -67,14 +67,14 @@ Owner requests an installable beta instead of manual test-panel files. The integ
 Beta.7 validation: **106 distinct automated tests** pass: 56 pure tests, 49 HA runtime tests (run locally and in CI on both HA 2026.2.3 and 2026.10.4), and one Node candidate-filter test. JavaScript syntax, packaged/source module equality, Python lint, JSON and whitespace checks pass. No live charger command or actual browser logo/latency test was performed.
 
 
-## Prepared beta.8 logo-flow prototype
+## Beta.8 logo-flow prototype (published)
 
-Owner verified the beta.7 read-only logo picker was responsive and displayed Easee branding. A new opt-in native external-step bridge now connects the picker to initial setup and additive options setup. The default compact paths remain available. A hidden admin-only HA panel and authenticated admin API serve a short-lived, flow-bound session; source IDs are filtered and validated again, duplicate/stale selections rejected, cancellation cleans sessions, and replay is rejected. No membership is saved until the original native flow finishes. Full UI popup/return/cancellation acceptance in Safari and Companion is pending. Beta.8 is not published. VT control and VT logo acceptance are not implemented.
+Owner verified the beta.7 read-only logo picker was responsive and displayed Easee branding. A new opt-in native external-step bridge now connects the picker to initial setup and additive options setup. The default compact paths remain available. A hidden admin-only HA panel and authenticated admin API serve a short-lived, flow-bound session; source IDs are filtered and validated again, duplicate/stale selections rejected, cancellation cleans sessions, and replay is rejected. No membership is saved until the original native flow finishes. Full UI popup/return/cancellation acceptance in Safari and Companion is pending. Beta.8 is published after explicit owner approval. VT control and VT logo acceptance are not implemented.
 
 
 ## Beta.8 sidebar and documentation cleanup
 
-Automatic SLM velgertest sidebar registration is removed at the owner's request. The setup logo picker is still hidden and available only through the opt-in flow. README follows a concise project presentation inspired by merkens/ha-xcomfort-bridge, with a support/limitations section and links to both guides. CI [40534718962](https://github.com/ojm88/smart-load-manager/actions/runs/40534718962) passed all four jobs for prototype commit a5734306062045d29fb21f73d54f7733671289e0. This revision changes sidebar registration/documentation only; new CI is required. Beta.8 is still unpublished, with physical charging and Safari/Companion flow-return validation pending.
+Automatic SLM velgertest sidebar registration is removed at the owner's request. The setup logo picker is still hidden and available only through the opt-in flow. README follows a concise project presentation inspired by merkens/ha-xcomfort-bridge, with a support/limitations section and links to both guides. CI [40534718962](https://github.com/ojm88/smart-load-manager/actions/runs/40534718962) passed all four jobs for prototype commit a5734306062045d29fb21f73d54f7733671289e0. This revision changes sidebar registration/documentation only; new CI is required. Beta.8 is published; physical charging and Safari/Companion flow-return validation remain pending.
 
 
 README review: remove the frontend experiment paragraph from the project introduction. Restore explicit Settings → Tools → Actions dashboard generation, a sensor meaning table, the required EnergyTariff dependency, Norwegian grid/capacity context with Glitre Nett/NVE source links, and guidance on realistic whole-home hourly targets. No control behavior changes in this revision.
@@ -83,3 +83,8 @@ README review: remove the frontend experiment paragraph from the project introdu
 ## Presentation baseline and stable release direction
 
 Owner accepts the README structure and requests a documentation/structure freeze except for agreed features and necessary fixes. Clarified when generated dashboard YAML must be replaced, and added ROADMAP.md. Stable 2.0.0 is planned after successful two-charger charging tests, including retained one-charger behavior and no blocking setup/control faults. No physical acceptance, publication date or stable release approval is implied.
+
+
+## Approved beta.8 publication
+
+Published 0.1.1-beta.8 from merge commit 8b5a88821fc2955d915d9003b07bde1c3c0128da after owner approval. All 110 distinct automated tests pass (56 pure, 53 HA runtime and one Node test); runtime suites run against HA 2026.2.3 and 2026.10.4. Release is a prerelease. Physical charging and actual external-step navigation/return in Safari/Companion remain unconfirmed. Stable 2.0.0 remains conditional on acceptance; the agreed presentation baseline stays frozen except for agreed features, required fixes and release/validation status.
