@@ -11,6 +11,7 @@ async def async_migrate_entry(hass, entry):
     """Consolidate beta.4 chargers without recreating entity/load identities."""
     from homeassistant.helpers import entity_registry as er, device_registry as dr
     from homeassistant.util import slugify
+    from .device_info import get_device
 
     lock = hass.data.setdefault(DOMAIN, {}).setdefault("migration_lock", asyncio.Lock())
     async with lock:
@@ -25,7 +26,7 @@ async def async_migrate_entry(hass, entry):
             suffixes = set()
             for old in [parent] + [e for e in entries if e.entry_id != parent.entry_id]:
                 data = dict(old.data)
-                device = dr.async_get(hass).devices.get(data["charger_device"])
+                device = get_device(dr.async_get(hass), data["charger_device"])
                 name = (
                     (device.name_by_user or device.name)
                     if device
@@ -87,24 +88,36 @@ async def async_migrate_entry(hass, entry):
                 config_subentry_id=group_id(parent, kind),
             )
             if entity.device_id:
-                devices.async_update_device(
-                    entity.device_id,
-                    add_config_entry_id=parent.entry_id,
-                    add_config_subentry_id=group_id(parent, kind),
-                )
-        for device in list(devices.devices.values()):
-            bindings = device.config_entries_subentries.get(parent.entry_id, set())
-            if None in bindings and len(bindings) > 1:
-                devices.async_update_device(
-                    device.id,
-                    remove_config_entry_id=parent.entry_id,
-                    remove_config_subentry_id=None,
-                )
+                if hasattr(dr, "async_setup"):
+                    devices.async_update_device(
+                        entity.device_id,
+                        new_config_entry_id=parent.entry_id,
+                        new_config_subentry_id=group_id(parent, kind),
+                    )
+                else:
+                    devices.async_update_device(
+                        entity.device_id,
+                        add_config_entry_id=parent.entry_id,
+                        add_config_subentry_id=group_id(parent, kind),
+                    )
+        if not hasattr(dr, "async_setup"):
+            for device in list(
+                dr.async_entries_for_config_entry(devices, parent.entry_id)
+            ):
+                bindings = device.config_entries_subentries.get(parent.entry_id, set())
+                if None in bindings and len(bindings) > 1:
+                    devices.async_update_device(
+                        device.id,
+                        remove_config_entry_id=parent.entry_id,
+                        remove_config_subentry_id=None,
+                    )
         # Entity ownership is moved before removing redundant config entries.
         # All their settings/identities are already durably saved in parent.
         for old in entries:
             if old.entry_id != parent.entry_id and old.entry_id in ids:
-                for device in list(devices.devices.values()):
+                for device in list(
+                    dr.async_entries_for_config_entry(devices, old.entry_id)
+                ):
                     if old.entry_id in device.config_entries:
                         devices.async_update_device(
                             device.id, remove_config_entry_id=old.entry_id
@@ -150,8 +163,14 @@ async def async_setup_entry(hass, entry):
             await controllers[load.entry_id].async_config_entry_first_refresh()
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except Exception as err:
-        for key in controllers:
-            get_site(hass).controllers.pop(key, None)
+        site = get_site(hass)
+        for key, controller in controllers.items():
+            await controller.async_shutdown()
+            if site.controllers.get(key) is controller:
+                site.controllers.pop(key, None)
+            site.pending_reductions.pop(key, None)
+            site.manual_requests.pop(key, None)
+            site.latest_samples.pop(key, None)
         raise ConfigEntryNotReady(str(err)) from err
     from .dashboard import async_register_dashboard_service
 
@@ -160,14 +179,19 @@ async def async_setup_entry(hass, entry):
 
 
 async def async_unload_entry(hass, entry):
+    runtime = getattr(entry, "runtime_data", None)
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         from .site import get_site
 
         site = get_site(hass)
-        for load in platform_loads(entry):
-            site.controllers.pop(load.entry_id, None)
-            site.pending_reductions.pop(load.entry_id, None)
-            site.manual_requests.pop(load.entry_id, None)
-            site.latest_samples.pop(load.entry_id, None)
+        # entry.data already contains the new membership at reload time.
+        # Tear down the actual old runtime, including any removed load.
+        for key, controller in getattr(runtime, "controllers", {}).items():
+            await controller.async_shutdown()
+            if site.controllers.get(key) is controller:
+                site.controllers.pop(key, None)
+            site.pending_reductions.pop(key, None)
+            site.manual_requests.pop(key, None)
+            site.latest_samples.pop(key, None)
     return unloaded

@@ -25,10 +25,10 @@ From HA 2026.11, **Settings → Marketplace** also supports adding this reposito
 
 1. **Settings → Devices & services → Add integration → Smart Load Manager OJM.**
 2. Select the household HAN power, EnergyTariff **used this hour**, and safety margin.
-3. Choose **EV charging**, then select one or two Easee chargers.
+3. Choose **EV charging**, select the first Easee charger, then finish or add a second.
 4. Set **Forbruksgrense** on the household device. Ensure only one controller regulates each charger, then enable SLM automatic control deliberately on each charger.
 
-The integration has two native groups: **Boligen / Household** for shared measurements and the budget; **Lading / Charging** for the chargers. Under **Configure**, edit shared sources or add/remove a charger. Changing the charger selection reloads SLM and automatic control starts off again.
+The integration has two native groups: **Boligen / Household** for shared measurements and the budget; **Lading / Charging** for the chargers. Under **Configure**, edit shared sources or choose **Add charger** / **Remove charger**. Adding a charger keeps the existing charger and lists only unused Easee devices. Changing the charger selection reloads SLM and automatic control starts off again.
 
 ## How it works
 

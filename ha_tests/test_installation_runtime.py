@@ -27,8 +27,13 @@ class InstallationTests(IsolatedAsyncioTestCase):
         self.hass = HomeAssistant(self.tmp.name)
         self.hass.config_entries = ConfigEntries(self.hass, {})
         self.hass.config.language = "nb"
-        await er.async_load(self.hass)
+        from homeassistant.helpers import frame
+
+        frame.async_setup(self.hass)
+        if hasattr(dr, "async_setup"):
+            dr.async_setup(self.hass)
         await dr.async_load(self.hass)
+        await er.async_load(self.hass)
         self.registry = er.async_get(self.hass)
         self.devices = dr.async_get(self.hass)
 
@@ -278,7 +283,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
         self.assertEqual(
             self.hass.config_entries.async_entries("smart_load_manager"), []
         )
-        invalid = await flow.async_step_charging({"chargers": ["same", "same"]})
+        invalid = await flow.async_step_charging({"charger_device": None})
         self.assertEqual(invalid["errors"], {"base": "invalid_setup"})
         self.assertEqual(
             self.hass.config_entries.async_entries("smart_load_manager"), []
@@ -287,7 +292,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
             "smart_load_manager.config_flow.resolve_easee_entities",
             side_effect=ValueError("Enable sensor.garage_voltage"),
         ):
-            result = await flow.async_step_charging({"chargers": ["garage"]})
+            result = await flow.async_step_charging({"charger_device": "garage"})
         self.assertIn(
             "Enable sensor.garage_voltage",
             result["description_placeholders"]["validation_error"],

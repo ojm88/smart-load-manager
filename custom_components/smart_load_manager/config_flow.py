@@ -1,8 +1,10 @@
 """UI setup flow for Smart Load Manager."""
 
 from __future__ import annotations
+from .device_info import get_device
 
 import math
+from collections import Counter
 
 import voluptuous as vol
 
@@ -114,34 +116,62 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="planned", data_schema=vol.Schema({}))
 
     async def async_step_charging(self, user_input=None):
+        """Select the first charger; commit only after the optional second step."""
         errors = {}
         detail = ""
         if user_input is not None:
             try:
-                records = _make_loads(self.hass, user_input.get("chargers", []))
+                self._draft_loads = _make_loads(
+                    self.hass, [user_input.get(CONF_CHARGER_DEVICE)]
+                )
             except ValueError as err:
                 errors["base"] = "invalid_setup"
                 detail = str(err)
             else:
-                await self.async_set_unique_id("installation")
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title="Smart Load Manager OJM",
-                    data={"household": self._household, "loads": records},
-                )
+                return await self.async_step_charging_next()
         return self.async_show_form(
             step_id="charging",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("chargers"): selector.DeviceSelector(
-                        selector.DeviceSelectorConfig(
-                            integration="easee", multiple=True
-                        )
-                    )
-                }
-            ),
+            data_schema=_charger_schema(self.hass),
             errors=errors,
             description_placeholders={"validation_error": detail},
+        )
+
+    async def async_step_charging_next(self, user_input=None):
+        return self.async_show_menu(
+            step_id="charging_next", menu_options=["finish_charging", "second_charger"]
+        )
+
+    async def async_step_second_charger(self, user_input=None):
+        errors = {}
+        detail = ""
+        excluded = {r["data"][CONF_CHARGER_DEVICE] for r in self._draft_loads}
+        if user_input is not None:
+            device_id = user_input.get(CONF_CHARGER_DEVICE)
+            try:
+                if device_id in excluded:
+                    raise ValueError(
+                        "Laderen er allerede valgt / Charger already selected"
+                    )
+                second = _make_loads(self.hass, [device_id], self._draft_loads)
+            except ValueError as err:
+                errors["base"] = "invalid_setup"
+                detail = str(err)
+            else:
+                self._draft_loads += second
+                return await self.async_step_finish_charging()
+        return self.async_show_form(
+            step_id="second_charger",
+            data_schema=_charger_schema(self.hass, exclude=excluded),
+            errors=errors,
+            description_placeholders={"validation_error": detail},
+        )
+
+    async def async_step_finish_charging(self, user_input=None):
+        await self.async_set_unique_id("installation")
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title="Smart Load Manager OJM",
+            data={"household": self._household, "loads": self._draft_loads},
         )
 
     @staticmethod
@@ -185,69 +215,167 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
         )
 
     async def async_step_chargers(self, user_input=None):
+        """Membership actions are explicit; an add never replaces current loads."""
         parent = self.config_entry
+        menu = []
+        if len(parent.data["loads"]) < 2:
+            menu.append("add_charger")
+        if len(parent.data["loads"]) > 1:
+            menu.append("remove_charger")
+        return self.async_show_menu(step_id="chargers", menu_options=menu)
+
+    async def async_step_add_charger(self, user_input=None):
+        parent = self.config_entry
+        active = list(parent.data["loads"])
+        if len(active) >= 2:
+            return self.async_abort(reason="two_chargers")
+        excluded = {r["data"][CONF_CHARGER_DEVICE] for r in active}
         errors = {}
         detail = ""
         if user_input is not None:
+            device_id = user_input.get(CONF_CHARGER_DEVICE)
             try:
-                records = _make_loads(
+                choices = {
+                    option["value"] for option in _charger_options(self.hass, excluded)
+                }
+                if device_id not in choices:
+                    raise ValueError(
+                        "Velg en ledig Easee-lader / Select an unused Easee charger"
+                    )
+                new = _make_loads(
                     self.hass,
-                    user_input.get("chargers", []),
-                    list(parent.data["loads"])
-                    + list(parent.data.get("retired_loads", [])),
+                    [device_id],
+                    active + list(parent.data.get("retired_loads", [])),
                 )
             except ValueError as err:
                 errors["base"] = "invalid_setup"
                 detail = str(err)
             else:
-                # Do not drop an actively controlling load. Reload only after
-                # its existing actuator has acknowledged 0 A.
-                retained = {r["id"] for r in records}
-                runtime = getattr(parent, "runtime_data", None)
-                for key, controller in getattr(runtime, "controllers", {}).items():
-                    if key not in retained:
-                        await controller._async_send_current(0)
-                retired = {
-                    r["data"][CONF_CHARGER_DEVICE]: r
-                    for r in list(parent.data.get("retired_loads", []))
-                    + list(parent.data["loads"])
-                    if r["id"] not in retained
-                }
-                self.hass.config_entries.async_update_entry(
-                    parent,
-                    data={
-                        **parent.data,
-                        "loads": records,
-                        "retired_loads": list(retired.values()),
-                    },
-                )
-                # Reload refreshes the pair-only entities and groups. Automatic
-                # control remains opt-in after this configuration change.
-                self.hass.async_create_task(
-                    self.hass.config_entries.async_reload(parent.entry_id)
-                )
-                return self.async_create_entry(title="", data=dict(parent.options))
+                # Always keep every existing load and its saved identity/options.
+                records = active + new
+                retired = [
+                    r
+                    for r in parent.data.get("retired_loads", [])
+                    if r["data"][CONF_CHARGER_DEVICE] != device_id
+                ]
+                return await self._save_membership(records, retired)
         return self.async_show_form(
-            step_id="chargers",
-            data_schema=self.add_suggested_values_to_schema(
-                vol.Schema(
-                    {
-                        vol.Required("chargers"): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(
-                                integration="easee", multiple=True
-                            )
+            step_id="add_charger",
+            data_schema=_charger_schema(self.hass, exclude=excluded),
+            errors=errors,
+            description_placeholders={"validation_error": detail},
+        )
+
+    async def async_step_remove_charger(self, user_input=None):
+        parent = self.config_entry
+        active = list(parent.data["loads"])
+        if len(active) < 2:
+            return self.async_abort(reason="one_charger_required")
+        errors = {}
+        detail = ""
+        if user_input is not None:
+            device_id = user_input.get(CONF_CHARGER_DEVICE)
+            removed = next(
+                (r for r in active if r["data"][CONF_CHARGER_DEVICE] == device_id), None
+            )
+            if removed is None:
+                errors["base"] = "invalid_setup"
+                detail = "Velg en konfigurert lader / Select a configured charger"
+            else:
+                try:
+                    runtime = getattr(parent, "runtime_data", None)
+                    controller = getattr(runtime, "controllers", {}).get(removed["id"])
+                    if controller is None:
+                        raise ValueError(
+                            "Last inn integrasjonen før laderen fjernes / Load the integration before removing a charger"
                         )
-                    }
-                ),
-                {
-                    "chargers": [
-                        r["data"][CONF_CHARGER_DEVICE] for r in parent.data["loads"]
-                    ]
-                },
+                    # Command acknowledgement only; physical stop still requires telemetry.
+                    async with controller.site.lock:
+                        await controller._async_send_current(0)
+                        controller.auto_control = False
+                except Exception as err:
+                    errors["base"] = "invalid_setup"
+                    detail = str(err)
+                else:
+                    records = [r for r in active if r["id"] != removed["id"]]
+                    retired = [
+                        r
+                        for r in parent.data.get("retired_loads", [])
+                        if r["id"] != removed["id"]
+                    ] + [removed]
+                    return await self._save_membership(records, retired)
+        options = [
+            {
+                "value": r["data"][CONF_CHARGER_DEVICE],
+                "label": r["data"].get("charger_name", r["title"]),
+            }
+            for r in active
+        ]
+        return self.async_show_form(
+            step_id="remove_charger",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_CHARGER_DEVICE): _choice_selector(options)}
             ),
             errors=errors,
             description_placeholders={"validation_error": detail},
         )
+
+    async def _save_membership(self, records, retired):
+        parent = self.config_entry
+        self.hass.config_entries.async_update_entry(
+            parent, data={**parent.data, "loads": records, "retired_loads": retired}
+        )
+        # OptionsFlow must finish before reloading. The old runtime is cleaned
+        # by its own saved controller identities, not this edited membership.
+        self.hass.async_create_task(
+            self.hass.config_entries.async_reload(parent.entry_id)
+        )
+        return self.async_create_entry(title="", data=dict(parent.options))
+
+
+def _charger_options(hass, exclude=()):
+    """Resolve a compact list through Easee's registry index, without I/O."""
+    registry = dr.async_get(hass)
+    devices = {}
+    for config in hass.config_entries.async_entries("easee"):
+        for device in dr.async_entries_for_config_entry(registry, config.entry_id):
+            if device.id not in exclude and device.disabled_by is None:
+                devices[device.id] = device
+    labels = {
+        key: device.name_by_user or device.name or "Easee"
+        for key, device in devices.items()
+    }
+    counts = Counter(labels.values())
+    return [
+        {
+            "value": key,
+            "label": name if counts[name] == 1 else f"{name} ({key[:6]})",
+        }
+        for key, name in sorted(
+            labels.items(), key=lambda item: (item[1].casefold(), item[0])
+        )
+    ]
+
+
+def _choice_selector(options, *, multiple=False):
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=options,
+            multiple=multiple,
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
+
+
+def _charger_schema(hass, *, multiple=False, exclude=()):
+    key = "chargers" if multiple else CONF_CHARGER_DEVICE
+    return vol.Schema(
+        {
+            vol.Required(key): _choice_selector(
+                _charger_options(hass, exclude), multiple=multiple
+            )
+        }
+    )
 
 
 def _household_schema():
@@ -276,6 +404,7 @@ def _make_loads(hass, device_ids, existing=()):
         not isinstance(device_ids, list)
         or not 1 <= len(device_ids) <= 2
         or len(set(device_ids)) != len(device_ids)
+        or any(not isinstance(device, str) or not device for device in device_ids)
     ):
         raise ValueError(
             "Velg én eller to forskjellige Easee-ladere / Select one or two distinct Easee chargers"
@@ -288,7 +417,7 @@ def _make_loads(hass, device_ids, existing=()):
         if device_id in saved:
             records.append(saved[device_id])
             continue
-        device = dr.async_get(hass).devices.get(device_id)
+        device = get_device(dr.async_get(hass), device_id)
         if device is None:
             raise ValueError("Easee device no longer exists")
         name = device.name_by_user or device.name or "Charger"

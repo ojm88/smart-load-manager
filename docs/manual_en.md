@@ -12,7 +12,7 @@ Download a GitHub release, copy `custom_components/smart_load_manager` into `con
 
 1. Add **Smart Load Manager OJM** under Devices & services.
 2. Select household HAN power, EnergyTariff **used this hour**, and a safety margin.
-3. Choose EV charging and one or two distinct Easee chargers.
+3. Choose EV charging and the first Easee charger. Then finish with one or add a second; the second list excludes the first choice.
 4. Set **Consumption limit / Forbruksgrense** on the household device (4.5–20 kWh per hour, 0.5 steps).
 5. Disable older automation controlling these chargers, then deliberately enable SLM automatic control for each charger.
 
@@ -47,7 +47,7 @@ Run **Developer tools → Actions → `smart_load_manager.get_dashboard`**, then
 
 **Configure → Household sources and safety margin** validates all inputs before saving and retains load settings. Updated sources are read at the next regular refresh.
 
-**Configure → Add or remove charger** changes the one/two-charger selection and reloads SLM. Enable automatic control again afterwards. Before removal, SLM sends a 0 A command to the removed charger; a failed command aborts the change. Command success does not confirm a physical stop. Saved settings are retained if the device is added again.
+**Configure → Chargers → Add charger** lists only unused Easee devices and keeps the existing charger. **Remove charger** is a separate choice when two chargers are configured. Membership changes reload SLM. Enable automatic control again afterwards. Before removal, SLM sends a 0 A command to the removed charger; a failed command aborts the change. Command success does not confirm a physical stop. Saved settings are retained if the device is added again.
 
 ## Waiting or troubleshooting
 

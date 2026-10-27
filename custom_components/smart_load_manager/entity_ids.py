@@ -62,8 +62,11 @@ def suggested_entity_id(domain: str, translation_key: str, entry=None) -> str:
     if object_id is None:
         raise KeyError(f"No stable entity ID for {domain}.{translation_key}")
     shared = (domain, translation_key) in {
-        ("sensor", "household_status"), ("sensor", "measurement_status"),
-        ("select", "consumption_limit"), ("select", "allocation_mode"), ("select", "priority_charger"),
+        ("sensor", "household_status"),
+        ("sensor", "measurement_status"),
+        ("select", "consumption_limit"),
+        ("select", "allocation_mode"),
+        ("select", "priority_charger"),
     }
     suffix = "" if shared else getattr(entry, "data", {}).get("entity_suffix", "")
     return f"{object_id}_{suffix}" if suffix else object_id
@@ -74,8 +77,11 @@ def migrate_entity_ids(hass, entry) -> None:
     from homeassistant.helpers import entity_registry as er
 
     registry = er.async_get(hass)
-    for entity in list(registry.entities.values()):
-        if entity.platform != DOMAIN or entity.config_entry_id != getattr(getattr(entry, "parent", None), "entry_id", entry.entry_id):
+    parent_id = getattr(getattr(entry, "parent", None), "entry_id", entry.entry_id)
+    for entity in er.async_entries_for_config_entry(registry, parent_id):
+        if entity.platform != DOMAIN or entity.config_entry_id != getattr(
+            getattr(entry, "parent", None), "entry_id", entry.entry_id
+        ):
             continue
         unique_prefix = f"{entry.entry_id}_"
         if not entity.unique_id.startswith(unique_prefix):
@@ -100,10 +106,14 @@ def migrate_entity_ids(hass, entry) -> None:
         if collision is not None and collision.unique_id != entity.unique_id:
             # Never take over an entity belonging to the user's existing setup.
             continue
-        mapping = hass.data.setdefault(DOMAIN, {}).setdefault("entity_id_migrations", {})
+        mapping = hass.data.setdefault(DOMAIN, {}).setdefault(
+            "entity_id_migrations", {}
+        )
         mapping[entity.entity_id] = target_entity_id
         parent = getattr(entry, "parent", None)
         if parent is not None:
             saved = {**parent.options.get("entity_id_migrations", {}), **mapping}
-            hass.config_entries.async_update_entry(parent, options={**parent.options, "entity_id_migrations": saved})
+            hass.config_entries.async_update_entry(
+                parent, options={**parent.options, "entity_id_migrations": saved}
+            )
         registry.async_update_entity(entity.entity_id, new_entity_id=target_entity_id)

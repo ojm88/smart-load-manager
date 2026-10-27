@@ -1,7 +1,7 @@
 """Opt-in automatic control. It starts disabled after every HA restart."""
 
 from __future__ import annotations
-from .device_info import charger_device_info, name_charger_entity
+from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -20,7 +20,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         add_grouped(hass, entry, async_add_entities, entities, "charging")
 
 
-class AutomaticLoadControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity):
+class AutomaticLoadControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SwitchEntity):
     """Enable/disable recommended current updates; disabled by default."""
 
     _attr_icon = "mdi:robot"
@@ -51,7 +51,7 @@ class AutomaticLoadControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
         self.async_write_ha_state()
 
 
-class ChargingScheduleControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity):
+class ChargingScheduleControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SwitchEntity):
     from homeassistant.const import EntityCategory
     _attr_entity_category = EntityCategory.CONFIG
     """Enable the integration-owned daily charging time window."""
@@ -80,7 +80,7 @@ class ChargingScheduleControl(CoordinatorEntity[ChargingCoordinator], SwitchEnti
         self.async_write_ha_state()
 
 
-class ChargingPauseControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity):
+class ChargingPauseControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SwitchEntity):
     """Pause/resume charging through the configured Easee charger."""
 
     _attr_icon = "mdi:ev-station"
@@ -107,7 +107,7 @@ class ChargingPauseControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity)
         self.async_write_ha_state()
 
 
-class ChargingPriorityControl(CoordinatorEntity, SwitchEntity):
+class ChargingPriorityControl(ChargerNameMixin, CoordinatorEntity, SwitchEntity):
     """Two complementary views of one persisted software priority."""
     _attr_icon = "mdi:priority-high"
     _attr_has_entity_name = True

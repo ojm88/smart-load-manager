@@ -1,7 +1,8 @@
 """Integration-owned controls for the hourly household energy budget."""
 
 from __future__ import annotations
-from .device_info import charger_device_info, name_charger_entity
+from .device_info import get_device
+from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 from .installation import charger_entries, update_load, shared_identity
 
 from homeassistant.components.select import SelectEntity
@@ -50,7 +51,7 @@ async def async_setup_entry(
 
 
 class ConsumptionLimitSelect(
-    CoordinatorEntity[ChargingCoordinator], SelectEntity
+    ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SelectEntity
 ):
     """The maximum desired household energy consumption per clock hour."""
 
@@ -82,7 +83,7 @@ class ConsumptionLimitSelect(
         await self.coordinator.async_request_refresh()
 
 
-class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
+class ChargerPhaseModeSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SelectEntity):
     _attr_entity_category = EntityCategory.CONFIG
     """Configure Easee's phase mode through its supported integration service."""
 
@@ -119,7 +120,7 @@ class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntit
         await self.coordinator.async_request_refresh()
 
 
-class SiteChoiceSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
+class SiteChoiceSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SelectEntity):
     """Persistent household allocation choices; labels come from charger names."""
     _attr_has_entity_name = True
     _attr_icon = "mdi:ev-station"
@@ -141,7 +142,7 @@ class SiteChoiceSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
         devices = dr.async_get(self.hass)
         names = {}
         for entry in entries:
-            device = devices.devices.get(entry.data["charger_device"])
+            device = get_device(devices, entry.data["charger_device"])
             name = (device.name_by_user or device.name) if device else entry.title
             names[entry.entry_id] = name or entry.title
         # Duplicate names must still allow an unambiguous selection.
