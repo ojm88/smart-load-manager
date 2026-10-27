@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1-beta.5
+
+- Separate native household and charging groups, with both chargers in the charging group. Upgrade existing entries while retaining per-load settings and unique sensor identities.
+- Household-first wizard with one/two Easee selection and clear planned thermal categories.
+- Complementary first-priority switches; distribution/role controls only with two chargers.
+- Restore voltage measurements. Consistent function-first names and charger suffixes from the first charger; preserve custom names/IDs and expose an old/new ID mapping. Update external YAML references and regenerate the dashboard card.
+- Add/remove chargers centrally, retaining independent settings. Configuration reload keeps automatic control off.
+- Shorten README and align both manuals/dashboard templates. Require HA 2026.2 or newer.
+- Retain beta.4 control behavior and calculations. Back up before upgrade; restoring beta.4 requires restoring the backup after config-schema migration. Live beta.5 charging remains untested.
+
 ## 0.1.1-beta.4
 
 Prepared features are released in this beta. The household-first initial wizard,

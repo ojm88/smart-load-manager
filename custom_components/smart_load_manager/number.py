@@ -1,17 +1,15 @@
 """User current-limit control, routed through the installed Easee integration."""
 
 from __future__ import annotations
+from .device_info import charger_device_info, name_charger_entity
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.const import UnitOfElectricCurrent
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ChargingCoordinator
-from .const import DOMAIN
 from .control import manual_control_is_available
 from .entity_ids import suggested_entity_id
 
@@ -21,9 +19,11 @@ def _message(hass: HomeAssistant, norwegian: str, english: str) -> str:
     return norwegian if str(hass.config.language or "").startswith("nb") else english
 
 
-async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities: AddEntitiesCallback) -> None:
-    coordinator: ChargingCoordinator = entry.runtime_data
-    async_add_entities([ChargingCurrentLimit(coordinator, entry)])
+async def async_setup_entry(hass, entry, async_add_entities):
+    from .installation import platform_loads, add_grouped
+    for load in platform_loads(entry):
+        coordinator = load.runtime_data
+        add_grouped(hass, entry, async_add_entities, [ChargingCurrentLimit(coordinator, load)], "charging")
 
 
 class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity):
@@ -40,13 +40,9 @@ class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity)
         self._attr_unique_id = f"{entry.entry_id}_manual_current_limit"
         self._attr_has_entity_name = True
         self._attr_translation_key = "manual_current_limit"
+        name_charger_entity(self, entry, "number", "manual_current_limit")
         self.entity_id = f"number.{suggested_entity_id('number', 'manual_current_limit', entry)}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            manufacturer="Smart Load Manager",
-            model="Easee charging control",
-            name=entry.title,
-        )
+        self._attr_device_info = charger_device_info(entry)
         # When Easee has no usable limit, expose a zero-range control rather
         # than implying that an arbitrary positive current is available.
         self._attr_native_max_value = 0.0

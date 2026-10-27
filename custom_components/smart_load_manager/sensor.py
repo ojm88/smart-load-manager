@@ -1,13 +1,14 @@
 """Diagnostic sensors for Smart Load Manager."""
 
 from __future__ import annotations
+from .device_info import charger_device_info, name_charger_entity
+from .installation import charger_entries
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.helpers import entity_registry as er
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -19,10 +20,11 @@ from .entity_ids import suggested_entity_id
 # Charger measurements only. All user-facing explanations live on the household.
 CHARGER_SENSOR_KEYS = (
     "status", "charger_power", "charger_current", "recommended_current",
-    "active_phases",
+    "active_phases", "line_voltage",
 )
 
 SENSORS = {
+    "charging_role": (None, SensorDeviceClass.ENUM, "mdi:priority-high"),
     "household_status": (None, SensorDeviceClass.ENUM, "mdi:home-lightning-bolt"),    "measurement_status": (None, SensorDeviceClass.ENUM, "mdi:clipboard-check-outline"),
     "phase_advice": (None, None, "mdi:lightbulb-outline"),
     "status": (None, None, "mdi:ev-station"),
@@ -55,6 +57,7 @@ SENSORS = {
 
 
 SENSOR_EXPLANATIONS = {
+    "charging_role": ("Førsteprioritet i SLM, ikke Easees tekniske masterrolle.", "Software priority in SLM, not the Easee hardware master role."),
     "household_status": (
         "Samlet forklaring på hva laststyringen gjør, hvorfor laster lader eller venter, og eventuelle råd. Brukes av Markdown-kortet.",
         "Shared explanation of load control, why loads are charging or waiting, and any advice. Used by the Markdown card.",
@@ -174,20 +177,23 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up read-only sensors for one configured charger."""
-    coordinator: ChargingCoordinator = entry.runtime_data
+    from .installation import platform_loads, add_grouped
     from .site import site_entry
     registry = er.async_get(hass)
-    keys = list(CHARGER_SENSOR_KEYS)
-    if site_entry(hass).entry_id == entry.entry_id:
-        keys.extend(["household_status", "measurement_status"])
-    # Keep previously registered entities functional for old dashboards and
-    # automations. Do not create these duplicates for a newly added charger.
-    legacy = [key for key in SENSORS if key not in keys and key not in {"measurement_status", "household_status"}
-              and registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{key}")]
-    async_add_entities([
-        ChargingDiagnosticSensor(coordinator, entry, key, *SENSORS[key], legacy=key in legacy)
-        for key in keys + legacy
-    ])
+    for load in platform_loads(entry):
+        coordinator = load.runtime_data
+        keys = list(CHARGER_SENSOR_KEYS)
+        if len(charger_entries(hass)) == 2:
+            keys.append("charging_role")
+        legacy = [key for key in SENSORS if key not in keys and key not in {"measurement_status", "household_status", "charging_role"}
+                  and registry.async_get_entity_id("sensor", DOMAIN, f"{load.entry_id}_{key}")]
+        add_grouped(hass, entry, async_add_entities, [
+            ChargingDiagnosticSensor(coordinator, load, key, *SENSORS[key], legacy=key in legacy)
+            for key in keys + legacy], "charging")
+        if site_entry(hass).entry_id == load.entry_id:
+            add_grouped(hass, entry, async_add_entities, [
+                ChargingDiagnosticSensor(coordinator, load, key, *SENSORS[key])
+                for key in ("household_status", "measurement_status")], "household")
 
 
 class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEntity):
@@ -199,25 +205,26 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
     def __init__(self, coordinator, entry, key, unit, device_class, icon, *, legacy=False):
         super().__init__(coordinator)
         self._key = key
-        self._attr_unique_id = f"{entry.entry_id}_{key}"
+        from .installation import shared_identity
+        identity = shared_identity(entry) if key in {"household_status", "measurement_status"} else entry.entry_id
+        self._attr_unique_id = f"{identity}_{key}"
         self._attr_translation_key = key
+        name_charger_entity(self, entry, "sensor", key)
         self.entity_id = f"sensor.{suggested_entity_id('sensor', key, entry)}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            manufacturer="Smart Load Manager",
-            model="Easee charging control",
-            name=entry.title,
-        )
+        self._attr_device_info = charger_device_info(entry)
         if key in {"household_status", "measurement_status"}:
             from .device_info import household_device_info
             self._attr_device_info = household_device_info()
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
         self._attr_icon = icon
-        if legacy or key == "measurement_status":
+        if legacy or key in {"measurement_status", "charging_role"}:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
         if legacy:
             self._attr_entity_registry_enabled_default = False
+        if key == "charging_role":
+            self._attr_options = ["primary", "secondary"]
+            self._attr_state_class = None
         if key == "measurement_status":
             self._attr_options = ["ready", "waiting"]
         if key == "household_status":
@@ -268,6 +275,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
                 han_sensor=data.get("han_entity", entry_data.get("han_power_entity")),
                 energy_used_sensor=entry_data.get("tariff_used_entity"),
                 han_age_seconds=data.get("han_age_seconds"),
+                entity_id_migrations=getattr(getattr(self.coordinator.entry, "parent", None), "options", {}).get("entity_id_migrations", {}),
                 han_valid=data.get("han_fresh", False),
                 inputs_valid=data.get("inputs_valid", False),
                 allocation_ready=data.get("site_control_ready", data.get("inputs_valid", False)),
@@ -299,7 +307,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         # Include configured peers that are still starting up, so a household
         # overview never silently omits a temporarily unavailable load.
         if hasattr(self.hass, "config_entries"):
-            for entry in self.hass.config_entries.async_entries(DOMAIN):
+            for entry in charger_entries(self.hass):
                 if entry.entry_id not in controllers:
                     name = entry.title.removeprefix("Smart Load Manager OJM – ")
                     device = devices.get(entry.data.get("charger_device")) if devices is not None else None
@@ -320,6 +328,14 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         )})
         return state, payload
 
+    def _priority_id(self):
+        from .site import site_entry
+        if not hasattr(self.hass, "config_entries"):
+            return getattr(self.coordinator.entry, "entry_id", None)
+        owner = site_entry(self.hass)
+        priority = owner.options.get("priority_charger", owner.entry_id)
+        return priority if priority in {e.entry_id for e in charger_entries(self.hass)} else owner.entry_id
+
     @property
     def native_value(self):
         if self._key == "household_status":
@@ -328,6 +344,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         electrical = data.get("electrical", {})
         norwegian = str(self.hass.config.language or "").startswith("nb")
         values = {
+            "charging_role": ("primary" if getattr(self.coordinator.entry, "entry_id", None) == ChargingDiagnosticSensor._priority_id(self) else "secondary") if self._key == "charging_role" else None,
             "measurement_status": "ready" if (data.get("inputs_valid") and data.get("han_fresh")
                                                     and data.get("site_control_ready", True)) else "waiting",
             "phase_advice": data.get("phase_advice", "Ingen anbefaling om fasebytte nå."),

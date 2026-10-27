@@ -1,20 +1,39 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "Konfigurer Smart Load Manager OJM",
-        "description": "Før du fortsetter: Aktiver Spenning-sensoren på hver Easee-lader under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter ved behov. Vent til sensoren viser en målt verdi. Velg Easee-lader og målekilder. EnergyTariff må være installert og konfigurert først. Etter oppsett får du én Forbruksgrense for installasjonen, brukt som felles mål i beregningen. {validation_error}",
+      "household": {
+        "title": "Boligens målinger",
+        "description": "Velg felles HAN-effekt og EnergyTariff timeforbruk én gang for boligen. Forbruksgrensen endres senere fra boligenheten. {validation_error}",
         "data": {
-          "charger_device": "Lader – Easee-enhet",
           "han_power_entity": "Husmåling – HAN-effektmåler",
           "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
           "safety_margin_kwh": "Sikkerhetsmargin – kWh"
         },
         "data_description": {
-          "charger_device": "Velg Easee-enheten som skal styres. Integrasjonen finner status, strøm, spenning, faseinformasjon og strømgrenser fra enhetens sensorer.",
           "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
           "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
           "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+        }
+      },
+      "load_type": {
+        "title": "Hva vil du styre?",
+        "menu_options": {
+          "charging": "Elbillading – Easee",
+          "planned": "Varmtvann og gulvvarme – planlagt"
+        }
+      },
+      "planned": {
+        "title": "Planlagte funksjoner",
+        "description": "Varmtvannsberedere og gulvvarme er ikke støttet ennå. Gulvvarme er planlagt via Versatile Thermostat. Det opprettes ingen styring her. Trykk videre for å gå tilbake."
+      },
+      "charging": {
+        "title": "Elbillading",
+        "description": "Velg én eller to Easee-ladere. Aktiver Spenning-sensoren på hver Easee-enhet først og vent på en målt verdi. To ladere deler samme forbruksgrense. Velg senere Lad begge eller Én om gangen, og førsteprioritet. Hver lader har egen tidsstyring. Automatisk laststyring starter avslått. {validation_error}",
+        "data": {
+          "chargers": "Easee-ladere (én eller to)"
+        },
+        "data_description": {
+          "chargers": "Velg én eller to ulike Easee-enheter med aktiv spenningssensor."
         }
       }
     },
@@ -47,7 +66,7 @@
         "name": "Spenningstype"
       },
       "line_voltage": {
-        "name": "Spenning mellom faser"
+        "name": "Volt"
       },
       "ln_voltage": {
         "name": "Spenning fase til nøytral"
@@ -127,6 +146,13 @@
           "completed": "Lading avsluttet",
           "mixed": "Ulik status på laderne"
         }
+      },
+      "charging_role": {
+        "name": "Ladeprioritet",
+        "state": {
+          "primary": "Førsteprioritet",
+          "secondary": "Andreprioritet"
+        }
       }
     },
     "switch": {
@@ -138,6 +164,9 @@
       },
       "schedule_control": {
         "name": "Tidsstyring"
+      },
+      "charging_priority": {
+        "name": "Førsteprioritet"
       }
     },
     "number": {
@@ -177,22 +206,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "Konfigurer Smart Load Manager",
+        "title": "Innstillinger",
         "menu_options": {
           "household": "Boligens målekilder og sikkerhetsmargin",
-          "add_charger": "Legg til lader"
-        }
-      },
-      "add_charger": {
-        "title": "Legg til lader",
-        "description": "Før du fortsetter: Aktiver Spenning-sensoren på hver Easee-lader under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter ved behov. Vent til sensoren viser en målt verdi. Velg en ny Easee-lader. Forbruksgrense og målekilder deles med den første laderen. {validation_error}",
-        "data": {
-          "charger_device": "Easee-lader"
+          "chargers": "Legg til eller fjern lader"
         }
       },
       "household": {
-        "title": "Boligens målekilder",
-        "description": "Disse målekildene og sikkerhetsmarginen gjelder hele SLM-installasjonen og deles av begge laderne. Lagrede ladeinnstillinger beholdes. {validation_error}",
+        "title": "Boligens målinger",
+        "description": "Velg felles HAN-effekt og EnergyTariff timeforbruk én gang for boligen. Forbruksgrensen endres senere fra boligenheten. {validation_error}",
         "data": {
           "han_power_entity": "Husmåling – HAN-effektmåler",
           "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
@@ -203,14 +225,17 @@
           "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
           "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
         }
+      },
+      "chargers": {
+        "title": "Ladere",
+        "description": "Velg laderne som skal være med (én eller to). Eksisterende innstillinger beholdes. Ved endring lastes integrasjonen på nytt, og automatisk laststyring må slås på igjen. Aktiver Easees Spenning-sensor før en ny lader velges. {validation_error}",
+        "data": {
+          "chargers": "Easee-ladere (én eller to)"
+        }
       }
     },
     "error": {
-      "invalid_setup": "Laderen kunne ikke legges til. Kontroller målinger og at den ikke allerede er lagt til."
-    },
-    "abort": {
-      "two_chargers": "To ladere er allerede lagt til.",
-      "already_configured": "Denne laderen er allerede lagt til."
+      "invalid_setup": "Kontroller lader og målekilder."
     }
   }
 }

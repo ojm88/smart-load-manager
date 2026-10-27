@@ -1,26 +1,25 @@
 """Integration-owned charging schedule start-time control."""
 
 from __future__ import annotations
+from .device_info import charger_device_info, name_charger_entity
+from .installation import update_load
 
 from datetime import time
 
 from homeassistant.components.time import TimeEntity
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_SCHEDULE_START_TIME, DEFAULT_SCHEDULE_START_TIME, DOMAIN
+from .const import CONF_SCHEDULE_START_TIME, DEFAULT_SCHEDULE_START_TIME
 from .coordinator import ChargingCoordinator
 from .entity_ids import suggested_entity_id
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry, async_add_entities: AddEntitiesCallback
-) -> None:
-    """Set up the start-time entity for the selected charger."""
-    async_add_entities([ChargingScheduleStartTime(entry.runtime_data, entry)])
+async def async_setup_entry(hass, entry, async_add_entities):
+    from .installation import platform_loads, add_grouped
+    for load in platform_loads(entry):
+        coordinator = load.runtime_data
+        add_grouped(hass, entry, async_add_entities, [ChargingScheduleStartTime(coordinator, load)], "charging")
 
 
 class ChargingScheduleStartTime(CoordinatorEntity[ChargingCoordinator], TimeEntity):
@@ -35,12 +34,8 @@ class ChargingScheduleStartTime(CoordinatorEntity[ChargingCoordinator], TimeEnti
         self._attr_unique_id = f"{entry.entry_id}_schedule_start_time"
         self._attr_has_entity_name = True
         self._attr_translation_key = "schedule_start_time"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            manufacturer="Smart Load Manager",
-            model="Easee charging control",
-            name=entry.title,
-        )
+        name_charger_entity(self, entry, "time", "schedule_start_time")
+        self._attr_device_info = charger_device_info(entry)
 
     @property
     def native_value(self) -> time:
@@ -60,8 +55,6 @@ class ChargingScheduleStartTime(CoordinatorEntity[ChargingCoordinator], TimeEnti
         """Persist the selected start time in this integration's config entry."""
         options = dict(self.coordinator.entry.options)
         options[CONF_SCHEDULE_START_TIME] = value.isoformat(timespec="seconds")
-        self.hass.config_entries.async_update_entry(
-            self.coordinator.entry, options=options
-        )
+        update_load(self.hass, self.coordinator.entry, options=options)
         await self.coordinator.async_request_refresh()
         self.async_write_ha_state()

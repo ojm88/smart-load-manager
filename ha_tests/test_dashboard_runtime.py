@@ -44,7 +44,7 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
         self.assertNotIn('SLM_HAN_POWER_SOURCE',text)
         self.assertNotIn('sensor.slm_min_current',text)
         self.assertNotIn('sensor.slm_max_current',text)
-        self.assertNotIn('sensor.slm_line_voltage',text)
+        self.assertIn('sensor.slm_line_voltage',text)
         self.assertEqual(text.count('name: Målegrunnlag'),1)
         markdown=parsed['cards'][0]['content']
         self.assertNotIn('sensor.slm_charger_status',markdown)

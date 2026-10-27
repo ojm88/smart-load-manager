@@ -4,9 +4,7 @@
 
 Forbruksgrense is a household limit. The **SLM – Boligen** Home Assistant device
 holds shared configuration and information, not one charger's priority role.
-Current configuration storage still uses the primary entry; a standalone
-heating-only setup and the household-first wizard are future work. This device
-boundary must not be misrepresented as already implementing thermal controls.
+One installation config entry owns household sources, site options and saved load records. Native household and charging subentries group devices. LoadEntry adapters retain the original load IDs and per-load settings; a charger priority never owns the budget. A standalone heating-only installation and thermal control remain future work.
 
 ## Responsibilities
 
@@ -46,13 +44,12 @@ payload directly. The presenter does not infer any additional control decision.
 
 ## Diagnostics and compatibility
 
-The five main charger measurements are status, power, measured current,
-recommended current and active phases. Current limits and electrical details
+The six main charger measurements are status, power, measured current,
+recommended current, active phases and voltage. Current limits and electrical details
 are attached to their owning measurement. Household explanations and advice
 belong only on the household sensor in new installations. Previously registered
 sensors are retained as compatibility diagnostics with their identities intact.
 
 Both YAML examples and packaged templates use the same household sensor. The
 Get dashboard action resolves registry IDs and source entity names; no data is
-copied from EnergyTariff solely for graphs. The user's request for charger names
-in all generated IDs is still a separate migration task.
+copied from EnergyTariff solely for graphs. Generated IDs include saved charger-name identities from the first load. Registry migration preserves unique IDs and user customizations, records old/new mappings, and leaves external YAML edits to the owner.
