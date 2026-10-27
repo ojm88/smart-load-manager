@@ -11,10 +11,16 @@ class LoadEntry:
     def __init__(self, parent, identity):
         self.parent = parent
         self.entry_id = identity
+        self._saved_record = next(
+            r for r in parent.data["loads"] if r["id"] == identity
+        )
 
     @property
     def record(self):
-        return next(r for r in self.parent.data["loads"] if r["id"] == self.entry_id)
+        return next(
+            (r for r in self.parent.data["loads"] if r["id"] == self.entry_id),
+            self._saved_record,
+        )
 
     @property
     def data(self):
@@ -132,7 +138,7 @@ def reconcile_pair_entities(hass, parent):
     )
     retained = {r["id"] for r in parent.data["loads"]}
     disabled = set(parent.options.get("lifecycle_disabled", []))
-    for entity in list(registry.entities.values()):
+    for entity in er.async_entries_for_config_entry(registry, parent.entry_id):
         if entity.platform != DOMAIN or entity.config_entry_id != parent.entry_id:
             continue
         shared = entity.unique_id.endswith(

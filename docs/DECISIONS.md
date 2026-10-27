@@ -350,3 +350,13 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Owner approves publishing beta.5.
 - README and user guides describe the current integration, setup and behavior. Do not add upgrade histories, sensor-renaming instructions or explanations of the former HACS name. Use Marketplace directly, with its applicable minimum version. Keep technical migration details and validation records in developer documentation.
 - The project is in development; avoid presenting it as a launched product with public upgrade obligations.
+
+
+## 2026-10-27 — Beta.6 setup and reload corrections
+
+- An add action is additive, never replacement of the configured list. Use explicit add/remove actions and single-choice steps. First setup selects one charger then offers finish/add-second; the second list excludes the first. Cancellation creates no partial installation.
+- Build compact SelectSelector options from Easee's config-entry device index. Opening the dropdown does not run sensor probes, fetches, budget calculations or commands. Preserve device IDs as values and disambiguate duplicate labels. Phone frontend latency still requires owner testing.
+- Unload controllers from the actual saved runtime rather than the already edited membership. Shut down coordinators and clear their snapshots/manual requests/pending reductions. Detached adapters retain their saved record until unload completes. Register a coordinator only after successful resolution/construction.
+- Preserve the household and charging groups, original per-load identities/settings, user disabled preferences and opt-in automatic control. Re-adding a saved retired load restores its integration-disabled entities and previous settings; intentional removal is not silently undone.
+- Use current indexed device-registry access and current single-owner migration on HA 2026.10 while keeping HA 2026.2 compatibility. Preserve deliberate full function-first names on HA's newer friendly-name builder without overwriting user-supplied names.
+- CI now runs the full runtime tests against HA 2026.2.3/Python 3.13 and HA 2026.10.4/Python 3.14. Beta.5's original tests did not exercise the actual add/reload sequence sufficiently. No physical beta.6 validation has occurred; release approval remains separate.

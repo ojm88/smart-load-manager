@@ -28,12 +28,23 @@
       },
       "charging": {
         "title": "EV charging",
-        "description": "Select one or two Easee chargers. Enable the Voltage sensor on each Easee device first and wait for a measured value. Two chargers share one household limit. Afterwards choose Charge both or One at a time and first priority. Each charger has its own schedule. Automatic control starts off. {validation_error}",
+        "description": "Select the first Easee charger. First enable its Voltage sensor and wait for a measured value. You can then finish with one charger or add a second. Both share the household limit and retain independent schedules. Automatic control starts off. {validation_error}",
         "data": {
-          "chargers": "Easee chargers (one or two)"
-        },
-        "data_description": {
-          "chargers": "Choose one or two distinct Easee devices with an enabled voltage sensor."
+          "charger_device": "First Easee charger"
+        }
+      },
+      "charging_next": {
+        "title": "Add a second charger?",
+        "menu_options": {
+          "finish_charging": "Finish with one charger",
+          "second_charger": "Add a second charger"
+        }
+      },
+      "second_charger": {
+        "title": "Second Easee charger",
+        "description": "Choose the charger to add. The charger already selected is excluded. Enable its Easee Voltage sensor before continuing. {validation_error}",
+        "data": {
+          "charger_device": "Second Easee charger"
         }
       }
     },
@@ -227,15 +238,33 @@
         }
       },
       "chargers": {
-        "title": "Chargers",
-        "description": "Select the chargers to include (one or two). Existing settings are retained. Changes reload the integration and automatic control must be enabled again. Enable the Easee Voltage sensor before selecting a new charger. {validation_error}",
+        "title": "Manage chargers",
+        "menu_options": {
+          "add_charger": "Add charger",
+          "remove_charger": "Remove charger"
+        }
+      },
+      "add_charger": {
+        "title": "Add charger",
+        "description": "Choose the charger to add. Only Easee devices not already configured are shown. Your existing charger and its settings are kept. Enable its Easee Voltage sensor before continuing. The integration reloads and automatic control starts off. {validation_error}",
         "data": {
-          "chargers": "Easee chargers (one or two)"
+          "charger_device": "Easee charger"
+        }
+      },
+      "remove_charger": {
+        "title": "Remove charger",
+        "description": "Choose the charger to remove. The other charger and household settings are kept. SLM first sends 0 A to the removed charger. Its settings are saved if you add it again later. {validation_error}",
+        "data": {
+          "charger_device": "Charger to remove"
         }
       }
     },
     "error": {
       "invalid_setup": "Check charger and meter sources."
+    },
+    "abort": {
+      "two_chargers": "Two chargers are already configured.",
+      "one_charger_required": "At least one charger must remain configured."
     }
   }
 }

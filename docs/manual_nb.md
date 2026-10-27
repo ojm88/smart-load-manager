@@ -17,7 +17,7 @@ Fra HA 2026.11 kan du også legge til `https://github.com/ojm88/smart-load-manag
 
 1. Legg til **Smart Load Manager OJM** under Enheter og tjenester.
 2. Velg boligens HAN-effekt, EnergyTariff **brukt denne timen**, og sikkerhetsmargin.
-3. Velg elbillading og én eller to forskjellige Easee-ladere.
+3. Velg elbillading og første Easee-lader. Velg deretter å fullføre med én eller legge til en til. Listen for lader to viser bare enheter du ikke allerede har valgt.
 4. Velg **Forbruksgrense** på **SLM – Boligen** (4,5–20 kWh per time, trinn på 0,5).
 5. Slå av eventuell tidligere automasjon som regulerer de samme laderne. Slå deretter på automatisk laststyring for laderne du vil styre.
 
@@ -56,7 +56,7 @@ De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](
 
 **Konfigurer → Boligens målekilder og sikkerhetsmargin** validerer alt før lagring og påvirker ikke ladeinnstillingene. Nye kilder leses ved neste ordinære oppdatering.
 
-**Konfigurer → Legg til eller fjern lader** endrer hvilke én eller to ladere som er med. Integrasjonen lastes på nytt, og automatisk styring må aktiveres igjen. En lader som fjernes, får en 0 A-kommando før oppsettet endres; feil ved denne kommandoen avbryter endringen. Dette er ikke en målt bekreftelse på at fysisk lading har stoppet. Innstillinger beholdes ved senere gjeninnlegging.
+**Konfigurer → Ladere → Legg til lader** viser bare ledige Easee-enheter og beholder den eksisterende laderen. **Fjern lader** er et eget valg når to ladere er konfigurert. Integrasjonen lastes på nytt, og automatisk styring må aktiveres igjen. En lader som fjernes, får en 0 A-kommando før oppsettet endres; feil ved denne kommandoen avbryter endringen. Dette er ikke en målt bekreftelse på at fysisk lading har stoppet. Innstillinger beholdes ved senere gjeninnlegging.
 
 ## Hvis lading venter
 

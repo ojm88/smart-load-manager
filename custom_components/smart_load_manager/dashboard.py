@@ -1,4 +1,5 @@
 """Return a native Manual-card YAML using actual registered entity IDs."""
+from .device_info import get_device
 
 from .installation import charger_entries, shared_identity
 from pathlib import Path
@@ -52,7 +53,7 @@ async def async_register_dashboard_service(hass):
                     if actual:
                         replacements[source] = actual
             if entry:
-                device = dr.async_get(hass).devices.get(entry.data["charger_device"])
+                device = get_device(dr.async_get(hass), entry.data["charger_device"])
                 name = (device.name_by_user or device.name) if device else entry.title
                 label = "ny lader" if second else "første lader"
                 # Avoid injecting device names into YAML source unescaped.

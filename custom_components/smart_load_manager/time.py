@@ -1,7 +1,7 @@
 """Integration-owned charging schedule start-time control."""
 
 from __future__ import annotations
-from .device_info import charger_device_info, name_charger_entity
+from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 from .installation import update_load
 
 from datetime import time
@@ -22,7 +22,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         add_grouped(hass, entry, async_add_entities, [ChargingScheduleStartTime(coordinator, load)], "charging")
 
 
-class ChargingScheduleStartTime(CoordinatorEntity[ChargingCoordinator], TimeEntity):
+class ChargingScheduleStartTime(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], TimeEntity):
     """A native HA time entity; users do not need to create an input_datetime."""
 
     _attr_entity_category = EntityCategory.CONFIG

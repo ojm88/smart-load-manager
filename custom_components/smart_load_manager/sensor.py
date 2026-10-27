@@ -1,7 +1,8 @@
 """Diagnostic sensors for Smart Load Manager."""
 
 from __future__ import annotations
-from .device_info import charger_device_info, name_charger_entity
+from .device_info import get_device
+from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 from .installation import charger_entries
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
@@ -196,7 +197,7 @@ async def async_setup_entry(
                 for key in ("household_status", "measurement_status")], "household")
 
 
-class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEntity):
+class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SensorEntity):
     """Read-only diagnostic entity sourced from coordinator data."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -294,11 +295,11 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
         devices = None
         if hasattr(self.hass, "data"):
             from homeassistant.helpers import device_registry as dr
-            devices = dr.async_get(self.hass).devices
+            devices = dr.async_get(self.hass)
         for key, controller in controllers.items():
             entry = controller.entry
             name = str(getattr(entry, "title", key)).removeprefix("Smart Load Manager OJM – ")
-            device = devices.get(entry.data.get("charger_device")) if devices is not None else None
+            device = get_device(devices, entry.data.get("charger_device")) if devices is not None else None
             if device:
                 name = device.name_by_user or device.name or name
             data = snapshots.get(key, getattr(controller, "data", None))
@@ -310,7 +311,7 @@ class ChargingDiagnosticSensor(CoordinatorEntity[ChargingCoordinator], SensorEnt
             for entry in charger_entries(self.hass):
                 if entry.entry_id not in controllers:
                     name = entry.title.removeprefix("Smart Load Manager OJM – ")
-                    device = devices.get(entry.data.get("charger_device")) if devices is not None else None
+                    device = get_device(devices, entry.data.get("charger_device")) if devices is not None else None
                     if device:
                         name = device.name_by_user or device.name or name
                     loads.append({"id": entry.entry_id, "name": name, "data": None, "available": False})

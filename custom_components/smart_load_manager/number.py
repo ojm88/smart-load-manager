@@ -1,7 +1,7 @@
 """User current-limit control, routed through the installed Easee integration."""
 
 from __future__ import annotations
-from .device_info import charger_device_info, name_charger_entity
+from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.const import UnitOfElectricCurrent
@@ -26,7 +26,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         add_grouped(hass, entry, async_add_entities, [ChargingCurrentLimit(coordinator, load)], "charging")
 
 
-class ChargingCurrentLimit(CoordinatorEntity[ChargingCoordinator], NumberEntity):
+class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], NumberEntity):
     """Dynamic current cap for this charger; 0 means pause charging."""
 
     _attr_native_min_value = 0

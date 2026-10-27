@@ -19,7 +19,10 @@ def site_entry(hass):
 
 
 def get_site(hass):
-    return hass.data.setdefault(DOMAIN, {}).setdefault("site", SiteController(hass))
+    data = hass.data.setdefault(DOMAIN, {})
+    if "site" not in data:
+        data["site"] = SiteController(hass)
+    return data["site"]
 
 
 class SiteController:

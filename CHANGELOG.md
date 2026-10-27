@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1-beta.6 (prepared)
+
+- Add a charger without removing or disabling the existing one. Explicit add/remove actions and filtered first/second-charger lists.
+- Compact dropdown options resolved through Easee registry indexes, avoiding the global frontend device picker.
+- Cleanly shut down the actual old controllers on reload and clear stale allocator state; preserve detached records until unload completes.
+- Keep household status, saved identities/settings and user-disabled preferences through membership changes and re-addition.
+- Current Home Assistant registry access and full function-first display names; runtime CI on HA 2026.2.3 and 2026.10.4.
+
 ## 0.1.1-beta.5
 
 - Separate native household and charging groups, with both chargers in the charging group. Upgrade existing entries while retaining per-load settings and unique sensor identities.

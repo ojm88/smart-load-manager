@@ -76,7 +76,6 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.entry = entry
         from .site import get_site
         self.site = get_site(hass)
-        self.site.controllers[entry.entry_id] = self
         self.easee = resolve_easee_entities(
             hass, str(entry.data["charger_device"])
         )
@@ -93,6 +92,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self._last_known_voltage_type: str | None = None
         self._last_known_grid_type_code: int | None = None
         self._last_known_electrical = None
+        self.site.controllers[entry.entry_id] = self
 
     async def _async_update_data(self) -> dict[str, object]:
         if len(charger_entries(self.hass)) > 1:
