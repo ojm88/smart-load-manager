@@ -1,6 +1,4 @@
-# One Manual card inside an existing section. Generate resolved YAML with
-# smart_load_manager.get_dashboard, or replace sensor.SLM_HAN_POWER_SOURCE.
-# Replace CHARGER_SUFFIX with card_suffix from the second charger Ladestatus.
+# Manual card. Run smart_load_manager.get_dashboard for your registered entity IDs.
 type: vertical-stack
 cards:
 - type: markdown
@@ -67,38 +65,40 @@ cards:
     name: Forbruksgrense for hele huset
   - entity: select.slm_charging_mode
     name: Lademåte
-  - entity: select.slm_priority_charger
-    name: Førsteprioritet
 - type: entities
   title: Styring – første lader
   show_header_toggle: false
   entities:
-  - entity: switch.slm_auto_control
+  - entity: switch.slm_auto_control_FIRST_CHARGER_SUFFIX
     name: Automatisk laststyring
-  - entity: switch.slm_charging_pause
+  - entity: switch.slm_charging_pause_FIRST_CHARGER_SUFFIX
     name: Ladepause
-  - entity: select.slm_phase_mode
+  - entity: select.slm_phase_mode_FIRST_CHARGER_SUFFIX
     name: Fasevalg
-  - entity: number.slm_manual_current
+  - entity: number.slm_manual_current_FIRST_CHARGER_SUFFIX
     name: Manuell ladestrøm (brukes når automatisk styring er av)
-  - entity: switch.slm_schedule
+  - entity: switch.slm_schedule_FIRST_CHARGER_SUFFIX
     name: Tidsstyring
-  - entity: time.slm_charge_start
+  - entity: time.slm_charge_start_FIRST_CHARGER_SUFFIX
     name: Starttid
+  - entity: switch.slm_priority_FIRST_CHARGER_SUFFIX
+    name: Førsteprioritet
 - type: entities
   title: Målinger – første lader
   show_header_toggle: false
   entities:
-  - entity: sensor.slm_charger_status
+  - entity: sensor.slm_charger_status_FIRST_CHARGER_SUFFIX
     name: Ladestatus
-  - entity: sensor.slm_charger_current
+  - entity: sensor.slm_charger_current_FIRST_CHARGER_SUFFIX
     name: Strøm til bilen
-  - entity: sensor.slm_charger_power
+  - entity: sensor.slm_charger_power_FIRST_CHARGER_SUFFIX
     name: Ladeeffekt
-  - entity: sensor.slm_recommended_current
+  - entity: sensor.slm_recommended_current_FIRST_CHARGER_SUFFIX
     name: Anbefalt ladestrøm
-  - entity: sensor.slm_active_phases
+  - entity: sensor.slm_active_phases_FIRST_CHARGER_SUFFIX
     name: Faser i bruk
+  - entity: sensor.slm_line_voltage_FIRST_CHARGER_SUFFIX
+    name: Volt
 - type: entities
   title: Styring – ny lader
   show_header_toggle: false
@@ -115,6 +115,8 @@ cards:
     name: Tidsstyring
   - entity: time.slm_charge_start_CHARGER_SUFFIX
     name: Starttid
+  - entity: switch.slm_priority_CHARGER_SUFFIX
+    name: Førsteprioritet
 - type: entities
   title: Målinger – ny lader
   show_header_toggle: false
@@ -129,6 +131,8 @@ cards:
     name: Anbefalt ladestrøm
   - entity: sensor.slm_active_phases_CHARGER_SUFFIX
     name: Faser i bruk
+  - entity: sensor.slm_line_voltage_CHARGER_SUFFIX
+    name: Volt
 - type: entities
   title: Boligens målinger
   show_header_toggle: false
@@ -145,11 +149,11 @@ cards:
   title: Lading og strømforbruk – siste 12 timer
   hours_to_show: 12
   entities:
-  - entity: sensor.slm_recommended_current
+  - entity: sensor.slm_recommended_current_FIRST_CHARGER_SUFFIX
     name: Anbefalt strøm
   - entity: sensor.energy_used_this_hour
     name: Brukt
-  - entity: sensor.slm_charger_current
+  - entity: sensor.slm_charger_current_FIRST_CHARGER_SUFFIX
     name: Målt ladestrøm
   - entity: sensor.energy_estimate_this_hour
     name: Timeestimat

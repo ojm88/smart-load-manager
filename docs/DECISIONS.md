@@ -332,3 +332,14 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Publish complete site snapshots before peer updates so household presentation
   does not mix sampling cycles. Presentation does not allocate or send commands.
 - The previous seven-main-sensor arrangement is superseded. See ARCHITECTURE.md.
+
+
+## 2026-10-27 — Beta.5 implementation and upgrade contract
+
+- Consolidate charger config entries into one installation with native household and charging subentries. Preserve original load IDs as stable adapter identities, move registry ownership before removing obsolete entries, and retain per-load options. Shared sources/budget/priority are installation-owned, independent of first charger or priority.
+- Household-first setup supports one/two Easee devices in one validated completion. Thermal categories remain explanatory only; no thermal policy is implemented.
+- Use complementary first-priority switches and role diagnostics only with two chargers. Keep a previously registered priority select as a diagnostic compatibility control. Pair-only entities are lifecycle-disabled at one charger and restored without overriding user-disabled states.
+- Restore voltage as a main measurement. Apply function-first display names ending in the source charger name and consistent generated IDs from the first load. Save suffixes so upstream renames never silently regenerate identity. Migrate exact known generated IDs only, preserve customizations, collision safety and unique IDs, and expose a persisted old/new map. External YAML is not automatically rewritten.
+- Keep electrical/control/allocation math unchanged. Configuration changes affecting charger membership reload the installation with automatic control off. A removed charger must acknowledge a zero-current command before settings change; this is not measured physical-stop confirmation. Retain removed load records/options for re-addition.
+- Declare HA 2026.2 as minimum; native subentry lifecycle and registry behavior are validated in HA 2026.2.3. Downgrade after schema migration requires backup restore. Physical beta.5 acceptance remains separate from software tests.
+- Prepare the beta.5 branch and reviewable pull request; publishing a beta still follows the owner's request to approve releases first.

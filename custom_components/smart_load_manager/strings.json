@@ -1,20 +1,39 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "Configure Smart Load Manager OJM",
-        "description": "Before continuing: enable the Voltage sensor for each Easee charger under Settings → Devices & services → Easee → the charger → Entities. Include disabled entities if needed. Wait until the sensor shows a measured value. Select the Easee charger and meter sources. EnergyTariff must be installed and configured first. After setup, one Forbruksgrense setting is shared by the installation and used as the calculation target. {validation_error}",
+      "household": {
+        "title": "Household measurements",
+        "description": "Select the shared HAN power and EnergyTariff energy used this hour once for the home. Set the consumption limit on the household device after setup. {validation_error}",
         "data": {
-          "charger_device": "Charger – Easee device",
           "han_power_entity": "Home measurement – HAN power meter",
           "tariff_used_entity": "Hourly energy – EnergyTariff used this hour",
           "safety_margin_kwh": "Safety margin – kWh"
         },
         "data_description": {
-          "charger_device": "Select the Easee device to control. Status, current, voltage, phase data, and current limits are discovered from its entities.",
           "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
           "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
           "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
+        }
+      },
+      "load_type": {
+        "title": "What would you like to control?",
+        "menu_options": {
+          "charging": "EV charging – Easee",
+          "planned": "Hot water and floor heating – planned"
+        }
+      },
+      "planned": {
+        "title": "Planned features",
+        "description": "Hot-water tanks and floor heating are not supported yet. Floor heating is planned through Versatile Thermostat. No control is created here. Continue to return."
+      },
+      "charging": {
+        "title": "EV charging",
+        "description": "Select one or two Easee chargers. Enable the Voltage sensor on each Easee device first and wait for a measured value. Two chargers share one household limit. Afterwards choose Charge both or One at a time and first priority. Each charger has its own schedule. Automatic control starts off. {validation_error}",
+        "data": {
+          "chargers": "Easee chargers (one or two)"
+        },
+        "data_description": {
+          "chargers": "Choose one or two distinct Easee devices with an enabled voltage sensor."
         }
       }
     },
@@ -47,7 +66,7 @@
         "name": "Voltage type"
       },
       "line_voltage": {
-        "name": "Voltage between phases"
+        "name": "Voltage"
       },
       "ln_voltage": {
         "name": "Phase to neutral voltage"
@@ -127,6 +146,13 @@
           "completed": "Charging ended",
           "mixed": "Different charger states"
         }
+      },
+      "charging_role": {
+        "name": "Charging priority",
+        "state": {
+          "primary": "First priority",
+          "secondary": "Second priority"
+        }
       }
     },
     "switch": {
@@ -138,6 +164,9 @@
       },
       "schedule_control": {
         "name": "Charging schedule"
+      },
+      "charging_priority": {
+        "name": "First priority"
       }
     },
     "number": {
@@ -177,22 +206,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "Configure Smart Load Manager",
+        "title": "Settings",
         "menu_options": {
           "household": "Household sources and safety margin",
-          "add_charger": "Add charger"
-        }
-      },
-      "add_charger": {
-        "title": "Add charger",
-        "description": "Before continuing: enable the Voltage sensor for each Easee charger under Settings → Devices & services → Easee → the charger → Entities. Include disabled entities if needed. Wait until the sensor shows a measured value. Choose another Easee charger. The household limit and meter sources are shared. {validation_error}",
-        "data": {
-          "charger_device": "Easee charger"
+          "chargers": "Add or remove charger"
         }
       },
       "household": {
-        "title": "Household measurement sources",
-        "description": "These sources and the safety margin apply to the whole SLM installation and are shared by both chargers. Existing charging settings are retained. {validation_error}",
+        "title": "Household measurements",
+        "description": "Select the shared HAN power and EnergyTariff energy used this hour once for the home. Set the consumption limit on the household device after setup. {validation_error}",
         "data": {
           "han_power_entity": "Home measurement – HAN power meter",
           "tariff_used_entity": "Hourly energy – EnergyTariff used this hour",
@@ -203,14 +225,17 @@
           "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
           "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
         }
+      },
+      "chargers": {
+        "title": "Chargers",
+        "description": "Select the chargers to include (one or two). Existing settings are retained. Changes reload the integration and automatic control must be enabled again. Enable the Easee Voltage sensor before selecting a new charger. {validation_error}",
+        "data": {
+          "chargers": "Easee chargers (one or two)"
+        }
       }
     },
     "error": {
-      "invalid_setup": "Could not add charger. Check readings and whether it is already configured."
-    },
-    "abort": {
-      "two_chargers": "Two chargers are already configured.",
-      "already_configured": "This charger is already configured."
+      "invalid_setup": "Check charger and meter sources."
     }
   }
 }

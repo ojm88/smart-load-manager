@@ -115,15 +115,15 @@ class SensorConsolidationTests(unittest.IsolatedAsyncioTestCase):
         coordinator.entry=entry
         hass=NS(config_entries=NS(async_entries=lambda domain:[first,other]))
         registry=NS(async_get_entity_id=lambda domain,platform,unique:
-                    ('sensor.custom_name' if legacy and unique==entry.entry_id+'_line_voltage' else None))
+                    ('sensor.custom_name' if legacy and unique==entry.entry_id+'_ln_voltage' else None))
         sensors=[]
         with patch('smart_load_manager.sensor.er.async_get',return_value=registry):
             await async_setup_entry(hass,entry,sensors.extend)
         return sensors
 
-    async def test_new_first_charger_has_five_sensors_and_two_shared_status_entities(self):
+    async def test_new_first_charger_has_six_sensors_and_two_shared_status_entities(self):
         sensors=await self.configured_sensors()
-        self.assertEqual(len(sensors),7)
+        self.assertEqual(len(sensors),9)
         shared=[s for s in sensors if s._key=='measurement_status']
         self.assertEqual(len(shared),1)
         household=next(s for s in sensors if s._key=='household_status')
@@ -131,16 +131,16 @@ class SensorConsolidationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(shared[0].device_info['identifiers'],household.device_info['identifiers'])
         self.assertEqual(shared[0].entity_category.value,'diagnostic')
 
-    async def test_new_second_charger_has_same_five_and_no_household_copies(self):
+    async def test_new_second_charger_has_same_six_and_no_household_copies(self):
         from smart_load_manager.sensor import CHARGER_SENSOR_KEYS
         sensors=await self.configured_sensors(second=True)
-        self.assertEqual({s._key for s in sensors},set(CHARGER_SENSOR_KEYS))
+        self.assertEqual({s._key for s in sensors},set(CHARGER_SENSOR_KEYS) | {"charging_role"})
         self.assertTrue(all(s.entity_id.endswith('_garage_123') for s in sensors))
 
     async def test_registered_legacy_sensor_is_retained_as_diagnostic(self):
         sensors=await self.configured_sensors(legacy=True)
-        old=next(s for s in sensors if s._key=='line_voltage')
-        self.assertEqual(old.unique_id,'a_line_voltage')
+        old=next(s for s in sensors if s._key=='ln_voltage')
+        self.assertEqual(old.unique_id,'a_ln_voltage')
         self.assertEqual(old.entity_category.value,'diagnostic')
         self.assertNotIn('han_power',{s._key for s in sensors})
 

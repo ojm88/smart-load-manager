@@ -1,147 +1,67 @@
-# Smart Load Manager OJM – enkel brukerveiledning
+# Smart Load Manager OJM – brukerveiledning
 
-Installasjon via Marketplace, Marketplace eller manuelt er beskrevet i [README](../README.md#installation). Se også [sensoroversikten](../README.md#sensors-and-controls).
-
-## Hva hjelper integrasjonen med?
-
-Den passer på at huset holder seg innenfor **Forbruksgrense** i løpet av timen. Den leser strømmen fra HAN-måleren og hvor mye energi som allerede er brukt. Deretter justerer den hvor raskt Easee-laderen lader, slik at det blir plass til resten av huset.
-
-Høye forbrukstopper kan gi dyrere effektledd på strømregningen. Ved å unngå slike topper kan noen husholdninger spare flere tusen kroner i året. Hvor mye det betyr, kommer an på strømavtalen og forbruket hjemme. Besparelse er ikke garantert.
-
-### Bakgrunnen
-
-I Norge kan nettleien bli høyere når boligen bruker mye strøm samtidig. Smart Load Manager prøver derfor å flytte ladingen av elbilen til timer der huset har bedre plass innenfor grensen du har valgt. Målet er å unngå unødvendige forbrukstopper – ikke å love en bestemt besparelse. Nettleie og trinn er forskjellige fra nettselskap til nettselskap. [Glitre Nett forklarer sine priser og trinn her](https://www.glitrenett.no/kunde/nettleie-og-priser/nettleiepriser-privatkunde).
-
-Vi har valgt styrbare laster som kan vente litt. Varmtvann og varmekabler kan være aktuelle å støtte senere fordi de kan lagre varme. Integrasjonen styrer foreløpig bare Easee-lading. Den prøver ikke å styre lys, matlaging, tørketrommel eller varmepumpe – slike ting må kunne brukes når familien trenger dem.
-
-Integrasjonen prøver ikke å finne den billigste spotpristimen. Tidsstyring kan likevel legge ladingen til natten, når nettleien hos mange nettselskaper er lavere. Norgespris og strømpris er egne deler av regningen; hovedmålet her er å holde forbruket under ønsket effekttrinn.
-
-Smart Load Manager bygger på åpen kildekode og fellesskapets arbeid. Home Assistants Easee-integrasjon gir tilgang til laderen, og EnergyTariff av Erling Paulsen leverer timeforbruket som brukes i beregningen. Takk til dem og alle som deler løsninger med Home Assistant-fellesskapet. Varmestyring med [Versatile Thermostat (VTherm)](https://github.com/jmcollin78/versatile_thermostat) er mulig inspirasjon for framtidig arbeid; den er ikke en del av integrasjonen nå.
+SLM tilpasser ladingen til boligens valgte timebudsjett. Målet er å redusere unødvendige effekttopper og dermed kunne holde nettleien på et lavere kapasitetstrinn. Det er ingen garanti for besparelse og ingen spotprisoptimalisering.
 
 ## Før du begynner
 
-> **Viktig: Aktiver Spenning på hver Easee-lader før SLM-oppsettet.**
-> Åpne **Innstillinger → Enheter og tjenester → Easee → den aktuelle laderen → Entiteter**.
-> Vis også deaktiverte entiteter, åpne **Spenning** og aktiver sensoren.
-> Vent til den viser en målt verdi før du legger laderen til i SLM.
-> Dette gjelder også lader nummer to. At laderen virker i Easee er ikke nok;
-> spenningssensoren må også være aktivert.
+- Home Assistant 2026.2 eller nyere.
+- Easee-integrasjonen og EnergyTariff må være satt opp.
+- Bruk HAN-sensoren som EnergyTariff benytter (W eller kW).
+- Aktiver **Spenning/Voltage på hver Easee-lader**, også lader nummer to: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter og vent på en målt verdi.
 
+## Installasjon og oppsett
 
-Home Assistant-integrasjonene for **Easee** og **EnergyTariff** må være installert og satt opp først. Du trenger en HAN-sensor for øyeblikkelig effekt i W eller kW, og EnergyTariff-sensoren som viser forbruk hittil denne timen. Bruk samme HAN-sensor som EnergyTariff.
+Last ned ønsket GitHub-utgivelse. Kopier `custom_components/smart_load_manager` til `config/custom_components/`, og start Home Assistant på nytt.
 
-I oppsettet velger du laderen, HAN-måleren, EnergyTariff-sensoren og en sikkerhetsmargin. Etterpå velger du **Forbruksgrense** på Smart Load Manager-enheten. Dette er timegrensen som Smart Load Manager styrer etter.
+Fra HA 2026.11 kan du også legge til `https://github.com/ojm88/smart-load-manager` som egendefinert integrasjonsrepo i **Innstillinger → Marketplace**. Egendefinerte repoer krever GitHub-tilkobling. Menyen finnes ikke i HA 2026.10.
 
-Du trenger ikke å lage egne hjelpere eller automasjoner i YAML.
+1. Legg til **Smart Load Manager OJM** under Enheter og tjenester.
+2. Velg boligens HAN-effekt, EnergyTariff **brukt denne timen**, og sikkerhetsmargin.
+3. Velg elbillading og én eller to forskjellige Easee-ladere.
+4. Velg **Forbruksgrense** på **SLM – Boligen** (4,5–20 kWh per time, trinn på 0,5).
+5. Slå av eventuell tidligere automasjon som regulerer de samme laderne. Slå deretter på automatisk laststyring for laderne du vil styre.
 
-## Slik styrer du ladingen
+Ingen egne hjelpere eller YAML-automasjoner trengs. Varmtvann og gulvvarme vises bare som planlagte funksjoner.
 
-- **Automatisk laststyring:** Slå på når du vil at integrasjonen skal regulere Easee etter timegrensen. Den er avslått etter installasjon og omstart.
-- **Forbruksgrense:** Velg ønsket energimengde for hele huset denne timen. Valgene går fra 4,5 til 20 kWh.
-- **Fasevalg:** Velg én fase, tre faser eller la Easee velge automatisk.
-- **Manuell ladestrøm:** Brukes når automatisk laststyring er av. Skyveren er da en enkel måte å sette Easee-grensen på. 0 A betyr pause.
-- **Ladepause:** Slår ladingen av og på via Easee. Pause sender 0 A. Når du slår av pausen, regner automatisk styring ut en ny grense. I manuell modus forsøker integrasjonen å sette tilbake forrige grense, men bare hvis målingene og Easee-grensene fortsatt tillater det.
-- **Tidsstyring:** Valgfri plan som åpner for lading i 12 timer fra valgt starttid.
+## Boligen og lading
 
-Easee beholder sist sendte dynamiske grense når automatisk laststyring slås av. Den gamle automasjonen må derfor være avslått mens du tester automatisk styring, så de to ikke sender ulike grenser samtidig.
+**Boligen** har felles forbruksgrense, samlet status og målegrunnlag. Med to ladere ligger også **Lademåte** her. **Lading** samler begge laderne med hver sine innstillinger og målinger.
 
-## Hva betyr minste strøm?
+| Betjening | Funksjon |
+| --- | --- |
+| Automatisk laststyring | Lar SLM regulere laderen. Starter avslått etter omstart. |
+| Ladepause | Sender 0 A. Ved gjenopptak beregnes ny strøm automatisk, eller tidligere manuell grense gjenopprettes når målinger og grenser tillater det. |
+| Manuell ladestrøm | Tilgjengelig når automatikk og ladepause er av. Easees rapporterte øvre grense gjelder. |
+| Fasevalg | Endrer Easees faseinnstilling. SLM bytter ikke automatisk mellom én og tre faser. |
+| Tidsstyring og starttid | Eget daglig 12-timers ladevindu per lader. Åpent vindu gir bare tillatelse til lading. |
+| Førsteprioritet | Vises med to ladere. Bryterne er koblet sammen, slik at nøyaktig én har førsteprioritet. Dette endrer ikke Easees tekniske master/slave-oppsett. |
 
-Minste ladestrøm følger den avtalte faste regelen: **11 A** ved målt 230 V trefaselading, ellers **6 A**. Integrasjonen lærer ikke bilens oppførsel.
+**Lad begge** fordeler ledig effekt likt innenfor hver laders strømgrenser. Når bare én får plass, prioriteres den valgte laderen. **Én om gangen** gir den prioriterte, tilgjengelige laderen tur først. Frakobling, pause, avsluttet lading og stengt tidsvindu kan gi den andre laderen tur.
 
-Hvis HAN-målingen, EnergyTariff-dataene eller Easee-grensene mangler eller ikke er gyldige, holder automatisk styring laderen på 0 A. Kortet viser hvorfor den venter eller begrenser ladingen.
+Minste strøm er 11 A ved målt 230 V trefaselading, ellers 6 A. SLM henter øvre strømgrense fra Easee; den skal ikke tastes inn i SLM. Bilen identifiseres ikke, og «Completed» bekrefter ikke batteriprosent.
 
-Sensoren **Ladeforklaring** bruker vanlige ord for å fortelle hvorfor bilen lader, venter eller får mindre strøm.
+## Målinger og navn
 
-## Kort på dashboardet
+Seks hovedsensorer per lader: **Ladestatus**, **Effekt til bilen**, **Strøm til bilen**, **Anbefalt ladestrøm**, **Faser i bruk** og **Volt**. Funksjonen kommer først og ladernavnet sist, også for første lader. Volt viser målt eller utledet spenning mellom fasene; fase–nøytral og øvrige elektriske detaljer finnes på Ladestatus.
 
-For en eksisterende dashboard-seksjon: velg **Legg til kort → Manuelt**, åpne YAML-editoren og lim inn hele `examples/lovelace/charging_card.yaml`. Dette er ett kort.
+**Anbefalt ladestrøm** har minimum og Easees maksimum som attributter. **Status for laststyring** på boligen forklarer hvorfor hver lader lader eller venter, med eventuelle faseråd. **Målegrunnlag** viser målekilder, HAN-alder og eventuell mapping fra gamle til nye entitets-ID-er. Ladeprioritet er en diagnostikksensor ved to ladere.
 
-Grafen bruker disse verdiene:
+## Dashboard
 
-- `sensor.slm_recommended_current` – Anbefalt strøm
-- `sensor.energy_used_this_hour` – Brukt
-- `sensor.slm_charger_current` – Målt ladestrøm
-- `sensor.energy_estimate_this_hour` – Timeestimat
-- `sensor.average_peak_hour_energy` – Snitt 3-timer
+Kjør `smart_load_manager.get_dashboard` under **Utviklerverktøy → Handlinger**. Kopier `yaml` til et **Manuelt kort i en eksisterende seksjon**. Generatoren bruker de faktiske entitets-ID-ene, også når du har gitt dem egne navn. Grafen leser EnergyTariff direkte.
 
-Brukt, Timeestimat og Snitt 3-timer hentes direkte fra EnergyTariff. Smart Load Manager lager ikke ekstra kopier for grafen.
+De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](../examples/lovelace/two_chargers_card.yaml)-kortene er maler. Generer helst kortet for din installasjon.
 
-## To ladere
+## Endringer og oppgradering
 
-Legg til den andre Easee-laderen via **Innstillinger → Enheter og tjenester → Smart Load Manager → Konfigurer → Legg til lader**. Laderens navn hentes fra Easee. Målekilder, sikkerhetsmargin og Forbruksgrense er felles; hver lader får egne styringer og sensorer. Slå på automatisk laststyring for hver lader som skal delta.
+**Konfigurer → Boligens målekilder og sikkerhetsmargin** validerer alt før lagring og påvirker ikke ladeinnstillingene. Nye kilder leses ved neste ordinære oppdatering.
 
-- **Lad begge:** Ledig effekt deles likt. Når det bare er plass til én, får laderen valgt under **Førsteprioritet** lade. Hvis kapasiteten ikke rekker til minimumslading, venter ladingen.
-- **Én om gangen:** Prioritert lader får lade til bilen avslutter. Den andre kan også lade hvis prioritert lader er frakoblet, manuelt pauset eller utenfor sin ladetid.
-- **Råd om fasevalg:** Foreslår enfase når dette kan gi plass til begge. Fasevalg endrer du selv for hver lader. Ikke alle biler støtter alle ladeformer.
+**Konfigurer → Legg til eller fjern lader** endrer hvilke én eller to ladere som er med. Integrasjonen lastes på nytt, og automatisk styring må aktiveres igjen. En lader som fjernes, får en 0 A-kommando før oppsettet endres; feil ved denne kommandoen avbryter endringen. Dette er ikke en målt bekreftelse på at fysisk lading har stoppet. Innstillinger beholdes ved senere gjeninnlegging.
 
-«Bilen har avsluttet ladingen» er laderens tilbakemelding; integrasjonen kjenner ikke batteriprosenten. En manuelt pauset lader skal forbli pauset. Manuell strøm når automatisk styring er av inngår som øvrig husforbruk, ikke i den automatiske fordelingen.
+Ta sikkerhetskopi før beta 5. Gamle laderoppføringer samles automatisk med de samme unike sensoridentitetene og innstillingene. Automatisk genererte ID-er får konsekvente ladernavn; egne ID-er og navn overskrives ikke. Ved navnekollisjon brukes en stabil identifikator, og en eksisterende ID tas aldri over. **Ekstern YAML og automasjoner oppdateres ikke automatisk.** Kontroller mapping på Målegrunnlag og generer nytt kort. Gjenopprett sikkerhetskopien for å gå tilbake til beta 4.
 
-Bytt det gamle kortet med **examples/lovelace/two_chargers_card.yaml**. For YAML med riktige sensor-ID-er: åpne **Utviklerverktøy → Handlinger**, kjør `smart_load_manager.get_dashboard`, kopier innholdet i `yaml`-svaret og lim inn som ett manuelt kort i en eksisterende seksjon. Alternativt erstattes `CHARGER_SUFFIX` i eksempelfilen med `card_suffix` fra den nye laderens Ladestatus-sensor. Felles Markdown forklarer lademåte, prioritet og hvorfor hver lader lader eller venter. Ingen full view-mal brukes.
+## Hvis lading venter
 
-## Trygg test
+Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv Easee-spenningssensor, rapportert strømgrense, pause og tidsvindu. HAN må være gyldig og høyst 60 sekunder gammel. En uendret, tilgjengelig Easee-effektverdi er gyldig selv med gammelt tidsstempel. Fordeling venter på nye målinger som bekrefter en reduksjon før mer strøm gis til den andre laderen.
 
-1. Ta en sikkerhetskopi og noter hvordan du slår på den gamle automasjonen igjen.
-2. Slå av den gamle automasjonen, men ikke slett eller endre den.
-3. Installer integrasjonen og start Home Assistant på nytt. La automatisk laststyring være av.
-4. Kontroller at måler, forbruk hittil, fase/spenning, anbefalt strøm og Easee-grenser ser riktige ut.
-5. Når du er til stede og klar til å følge laderen, slå på automatisk laststyring. Bekreft at anbefalingen og Easee-grensen følger hverandre.
-6. Ved feil: slå av automatisk styring og slå på den gamle automasjonen igjen. Ikke la begge styre laderen samtidig.
-
-Automatiske tester dekker beregning og tjenestekall. De kan ikke bekrefte oppførselen i ditt elektriske anlegg; det må kontrolleres i Home Assistant og med Easee-laderen.
-
-Ved test med to ladere: kontroller begge fordelingsvalg, bytte av førsteprioritet, pause, frakobling og at den andre overtar når bilen avslutter. Nye funksjoner er automatisk testet; fysisk tolader-test må gjennomføres.
-
-## Laderen kan ikke legges til
-
-Hvis oppsettet mangler spenningsdata: åpne **Innstillinger → Enheter og tjenester → Easee → den aktuelle laderen → Entiteter**. Vis også deaktiverte entiteter, åpne **Spenning**, aktiver sensoren og vent til den har oppdaterte verdier før du prøver igjen. En aktiv lader betyr ikke at alle diagnosesensorene er aktivert. SLM trenger målte spenningsdata; Easees master-/slaverolle avgjør ikke hvilken lader som kan legges til først.
-
-## Når laststyringen venter på målinger
-
-Easee rapporterer ladeeffekten når verdien endres. Beta.4 forkaster derfor ikke
-en tilgjengelig effektverdi bare fordi tidsstempelet er gammelt. Beta.3 har et
-feilaktig krav om oppdatering innen 120 sekunder ved bruk av to ladere.
-
-Hvis nødvendige målinger faktisk mangler eller er utilgjengelige, venter den
-automatiske fordelingen på 0 A. Tilgjengelige målinger vises fortsatt, og
-Ladeforklaring oppgir kilden det ventes på. HAN-måleren må fortsatt rapportere
-ferske målinger. Redusert strøm må bekreftes av etterfølgende strøm-/effektdata
-før kapasiteten kan flyttes til den andre laderen. Endringen er ikke publisert.
-
-## Felles status på SLM – Boligen
-
-**Status for laststyring** (`sensor.slm_status`) samler forklaringene for hele
-boligen: hva som skjer, hvorfor en lader venter, hvem som får lade først, og
-om et annet fasevalg kan hjelpe. Markdown-kortet bruker bare denne sensoren.
-Forklaringene er vanlige setninger; tekniske underlag ligger som attributter.
-Hver konfigurert lader har én oppføring under `controlled_loads`, også når data
-fra den mangler. På samme enhet ligger Forbruksgrense og diagnosesensoren
-**Målegrunnlag**, med kilder, alder på HAN-målingen og gyldighet.
-
-Hver lader har nå fem hovedsensorer: **Ladestatus, Ladeeffekt, Strøm til bilen,
-Anbefalt ladestrøm og Faser i bruk**. Strømgrenser er attributter på Anbefalt
-ladestrøm. Fase-/spenningsdetaljer er attributter på Ladestatus. Separate nye
-Ladeforklaring- og Råd om fasevalg-sensorer er erstattet av felles status.
-
-Gamle registrerte sensorer beholdes under Diagnostikk for eksisterende kort og
-automasjoner. Ingen slettes eller deaktiveres automatisk. Oppdater kortet med
-`smart_load_manager.get_dashboard`. I statiske maler erstattes
-`sensor.SLM_HAN_POWER_SOURCE` med HAN-sensoren og `CHARGER_SUFFIX` med
-`card_suffix` fra den andre laderens **Ladestatus**. Grafene leser EnergyTariff
-direkte. Opplysninger om avsluttet lading sier ikke at batteriet er fullt.
-
-Dette er klargjort lokalt til beta 4, ikke publisert. Ny førstegangsveiviser,
-master-togglene og navnemigreringen er fortsatt egne oppgaver som gjenstår.
-
-## Endre målekilder etter oppsett
-
-I arbeidsversjonen til beta 4 åpner **Konfigurer** en meny. Velg **Boligens
-målekilder og sikkerhetsmargin** for å endre HAN-sensor, EnergyTariff-sensoren
-for forbruk hittil denne timen eller sikkerhetsmargin. Dette er tilgjengelig
-også når to ladere er satt opp, uansett hvilken lader du åpner konfigurasjonen
-fra. Målekildene kontrolleres før lagring og gjelder begge laderne. Forbruksgrense,
-prioritet og ladernes egne tidsinnstillinger beholdes. Nye kilder leses ved neste
-vanlige oppdatering, uten omstart av integrasjonen.
-
-**Legg til lader** er et separat menyvalg som bare vises når det er plass til
-en lader til. Endringen er ennå ikke publisert.
+SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automatikk av betyr at SLM slutter å regulere; Easee beholder siste dynamiske grense. Bruk Ladepause for en uttrykkelig 0 A-kommando.

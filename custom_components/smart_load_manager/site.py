@@ -1,9 +1,9 @@
 """One serialized allocator for the household; charger adapters retain telemetry."""
 from __future__ import annotations
+from .installation import charger_entries
 import asyncio
 import math
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from homeassistant.util import dt as dt_util
 from .allocation import Demand, allocate, available_charging_kw
 from .budget import consumption_limit_value
 from .const import DOMAIN
@@ -14,8 +14,8 @@ class MeasurementPending(ValueError):
 
 
 def site_entry(hass):
-    entries = hass.config_entries.async_entries(DOMAIN)
-    return next((e for e in entries if not e.data.get("entity_suffix")), entries[0])
+    entries = charger_entries(hass)
+    return entries[0]
 
 
 def get_site(hass):
@@ -35,7 +35,7 @@ class SiteController:
         async with self.lock:
             samples = {}
             try:
-                configured = self.hass.config_entries.async_entries(DOMAIN)
+                configured = charger_entries(self.hass)
                 if any(e.entry_id not in self.controllers for e in configured):
                     data = await requester._async_sample()
                     data["recommended_current_a"] = 0
@@ -96,6 +96,8 @@ class SiteController:
                         demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], d["max_current_a"]))
                         eligible.append(key)
                 priority = owner.options.get("priority_charger", owner.entry_id)
+                if priority not in {e.entry_id for e in configured}:
+                    priority = owner.entry_id
                 mode = owner.options.get("allocation_mode", "both")
                 targets = allocate(demands, capacity, mode, priority)
                 targets = {key: targets.get(key, 0) for key, c in self.controllers.items()

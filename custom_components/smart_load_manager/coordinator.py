@@ -1,6 +1,7 @@
 """Coordinate selected Easee, HAN, and EnergyTariff entities and control."""
 
 from __future__ import annotations
+from .installation import charger_entries, update_load
 
 import logging
 import math
@@ -22,7 +23,6 @@ from .calculations import (
 )
 from .const import (
     CONF_HAN_POWER_ENTITY,
-    CONF_HOURLY_LIMIT_KWH,
     CONF_SAFETY_MARGIN_KWH,
     CONF_SCHEDULE_START_TIME,
     CONF_SCHEDULE_ENABLED,
@@ -95,7 +95,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self._last_known_electrical = None
 
     async def _async_update_data(self) -> dict[str, object]:
-        if len(self.hass.config_entries.async_entries("smart_load_manager")) > 1:
+        if len(charger_entries(self.hass)) > 1:
             return await self.site.refresh(self)
         return await self._async_sample(apply=True)
 
@@ -363,7 +363,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             raise UpdateFailed(str(err)) from err
 
     async def async_set_current(self, current: int) -> None:
-        multiple = len(self.hass.config_entries.async_entries("smart_load_manager")) > 1
+        multiple = len(charger_entries(self.hass)) > 1
         if multiple and current > 0 and not self.auto_control:
             async with self.site.lock:
                 self.site.manual_requests[self.entry.entry_id] = int(current)
@@ -388,7 +388,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.schedule_enabled = bool(enabled)
         options = dict(self.entry.options)
         options[CONF_SCHEDULE_ENABLED] = self.schedule_enabled
-        self.hass.config_entries.async_update_entry(self.entry, options=options)
+        update_load(self.hass, self.entry, options=options)
         await self.async_request_refresh()
 
     async def async_set_charging_paused(self, paused: bool) -> None:
@@ -403,7 +403,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         options["charging_paused"] = self.charging_paused
         if paused and resume_current is not None:
             options["resume_current"] = int(resume_current)
-        self.hass.config_entries.async_update_entry(self.entry, options=options)
+        update_load(self.hass, self.entry, options=options)
         if self.charging_paused:
             await self.async_set_current(0)
         await self.async_request_refresh()

@@ -1,4 +1,6 @@
-# Beta 4 — agreed setup and documentation scope
+# Beta 4 — archived workshop requirements
+
+> Historical requirements and superseded draft statuses. For implementation and validation, see [PROJECT_STATUS.md](PROJECT_STATUS.md). The remaining setup/grouping/naming work is implemented in the prepared beta.5 branch.
 
 Status: requirements recorded on 2026-10-26; not implemented or released.
 Published version remains 0.1.1-beta.3.

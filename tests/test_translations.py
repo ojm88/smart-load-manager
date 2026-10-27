@@ -15,7 +15,7 @@ class TranslationCoverageTests(unittest.TestCase):
         sensor_keys = set(re.findall(r'^\s+"([a-z_]+)": \(', sensor_source, re.MULTILINE))
         expected = {
             "sensor": sensor_keys,
-            "switch": {"automatic_control", "schedule_control", "charging_pause"},
+            "switch": {"automatic_control", "schedule_control", "charging_pause", "charging_priority"},
             "number": {"manual_current_limit"},
             "select": {"consumption_limit", "phase_mode_control", "allocation_mode", "priority_charger"},
             "time": {"schedule_start_time"},
@@ -33,7 +33,7 @@ class TranslationCoverageTests(unittest.TestCase):
     def test_every_setup_field_has_an_explanation_in_both_languages(self):
         for language in ("nb", "en"):
             with self.subTest(language=language):
-                flow = json.loads((INTEGRATION / "translations" / f"{language}.json").read_text())["config"]["step"]["user"]
+                flow = json.loads((INTEGRATION / "translations" / f"{language}.json").read_text())["config"]["step"]["household"]
                 self.assertEqual(set(flow["data"]), set(flow["data_description"]))
 
     def test_control_reason_has_plain_language_name(self):

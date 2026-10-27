@@ -5,6 +5,7 @@ from __future__ import annotations
 from .const import DOMAIN
 
 SENSOR_OBJECT_IDS = {
+    "charging_role": "slm_charging_role",
     "household_status": "slm_status",
     "measurement_status": "slm_measurement_status",
     "phase_advice": "slm_phase_advice",
@@ -40,6 +41,7 @@ ENTITY_OBJECT_IDS = {
     "sensor": SENSOR_OBJECT_IDS,
     "number": {"manual_current_limit": "slm_manual_current"},
     "switch": {
+        "charging_priority": "slm_priority",
         "automatic_control": "slm_auto_control",
         "charging_pause": "slm_charging_pause",
         "schedule_control": "slm_schedule",
@@ -73,7 +75,7 @@ def migrate_entity_ids(hass, entry) -> None:
 
     registry = er.async_get(hass)
     for entity in list(registry.entities.values()):
-        if entity.platform != DOMAIN or entity.config_entry_id != entry.entry_id:
+        if entity.platform != DOMAIN or entity.config_entry_id != getattr(getattr(entry, "parent", None), "entry_id", entry.entry_id):
             continue
         unique_prefix = f"{entry.entry_id}_"
         if not entity.unique_id.startswith(unique_prefix):
@@ -85,14 +87,23 @@ def migrate_entity_ids(hass, entry) -> None:
         target_entity_id = f"{entity.domain}.{suggested_entity_id(entity.domain, translation_key, entry)}"
         if entity.entity_id == target_entity_id:
             continue
-        # Migrate only the historical generated long IDs. Preserve user
-        # renames and all current short IDs across subsequent reloads.
-        if not entity.entity_id.split(".", 1)[-1].startswith("smart_load_manager_"):
+        # Exact old generated IDs only. A user rename is never inferred from
+        # a broad prefix; unique IDs/history stay unchanged.
+        previous = entry.data.get("previous_entity_suffix", "")
+        old_object = f"{object_id}_{previous}" if previous else object_id
+        generated = {f"{entity.domain}.{old_object}"}
+        if entity.entity_id not in generated:
+            continue
+        if entity.name is not None:
             continue
         collision = registry.entities.get(target_entity_id)
         if collision is not None and collision.unique_id != entity.unique_id:
             # Never take over an entity belonging to the user's existing setup.
             continue
-        registry.async_update_entity(
-            entity.entity_id, new_entity_id=target_entity_id
-        )
+        mapping = hass.data.setdefault(DOMAIN, {}).setdefault("entity_id_migrations", {})
+        mapping[entity.entity_id] = target_entity_id
+        parent = getattr(entry, "parent", None)
+        if parent is not None:
+            saved = {**parent.options.get("entity_id_migrations", {}), **mapping}
+            hass.config_entries.async_update_entry(parent, options={**parent.options, "entity_id_migrations": saved})
+        registry.async_update_entity(entity.entity_id, new_entity_id=target_entity_id)

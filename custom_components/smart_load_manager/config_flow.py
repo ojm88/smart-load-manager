@@ -40,7 +40,10 @@ def _validate_meter_sources(hass, user_input):
     if han_state is None or han_state.state in {"unknown", "unavailable"}:
         raise ValueError("HAN-effektsensoren er utilgjengelig")
     try:
-        power = power_to_watts(float(han_state.state), str(han_state.attributes.get("unit_of_measurement", "")))
+        power = power_to_watts(
+            float(han_state.state),
+            str(han_state.attributes.get("unit_of_measurement", "")),
+        )
         if not math.isfinite(power) or power <= 0:
             raise ValueError("HAN-effekten må være et positivt, gyldig tall")
     except (TypeError, ValueError) as err:
@@ -55,9 +58,13 @@ def _validate_meter_sources(hass, user_input):
     try:
         used = float(state.state)
         if not math.isfinite(used) or used < 0:
-            raise ValueError("EnergyTariff-forbruk må være et gyldig, ikke-negativt tall")
+            raise ValueError(
+                "EnergyTariff-forbruk må være et gyldig, ikke-negativt tall"
+            )
     except (TypeError, ValueError) as err:
-        raise ValueError("EnergyTariff-sensoren er ikke numerisk: " + used_entity) from err
+        raise ValueError(
+            "EnergyTariff-sensoren er ikke numerisk: " + used_entity
+        ) from err
     if str(state.attributes.get("unit_of_measurement", "")).lower() != "kwh":
         raise ValueError("EnergyTariff-sensoren må være i kWh: " + used_entity)
 
@@ -69,62 +76,73 @@ def _validate_meter_sources(hass, user_input):
 class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configure the first supported controllable load and meter source."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input=None):
-        existing = self._async_current_entries()
-        if len(existing) >= 2:
-            return self.async_abort(reason="two_chargers")
-        from .site import site_entry
-        owner = site_entry(self.hass) if existing else None
-        errors: dict[str, str] = {}
-        self._error_detail = ""
+        # Preserve direct old-client calls for adding a single charger.
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
+        return await self.async_step_household(user_input)
+
+    async def async_step_household(self, user_input=None):
+        errors = {}
+        detail = ""
         if user_input is not None:
-            user_input = dict(user_input)
-            if owner:
-                for field in (CONF_HAN_POWER_ENTITY, CONF_TARIFF_USED_ENTITY, CONF_SAFETY_MARGIN_KWH):
-                    user_input[field] = owner.data[field]
             try:
-                device_id, _ = _validate_sources(self.hass, user_input)
+                _validate_meter_sources(self.hass, user_input)
+            except (ValueError, TypeError) as err:
+                errors["base"] = "invalid_setup"
+                detail = str(err)
+            else:
+                self._household = dict(user_input)
+                return await self.async_step_load_type()
+        return self.async_show_form(
+            step_id="household",
+            data_schema=_household_schema(),
+            errors=errors,
+            description_placeholders={"validation_error": detail},
+        )
+
+    async def async_step_load_type(self, user_input=None):
+        return self.async_show_menu(
+            step_id="load_type", menu_options=["charging", "planned"]
+        )
+
+    async def async_step_planned(self, user_input=None):
+        if user_input is not None:
+            return await self.async_step_load_type()
+        return self.async_show_form(step_id="planned", data_schema=vol.Schema({}))
+
+    async def async_step_charging(self, user_input=None):
+        errors = {}
+        detail = ""
+        if user_input is not None:
+            try:
+                records = _make_loads(self.hass, user_input.get("chargers", []))
             except ValueError as err:
                 errors["base"] = "invalid_setup"
-                self._error_detail = str(err)
+                detail = str(err)
             else:
-                await self.async_set_unique_id(device_id)
+                await self.async_set_unique_id("installation")
                 self._abort_if_unique_id_configured()
-                charger = dr.async_get(self.hass).devices.get(device_id)
-                charger_name = (charger.name_by_user or charger.name) if charger else device_id[:8]
-                title = f"Smart Load Manager OJM – {charger_name}"
-                if owner:
-                    from homeassistant.util import slugify
-                    user_input["entity_suffix"] = f"{slugify(charger_name) or 'charger'}_{device_id[:6]}"
-                return self.async_create_entry(title=title, data=user_input)
-
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_CHARGER_DEVICE): selector.DeviceSelector(
-                    selector.DeviceSelectorConfig(integration="easee")
-                ),
-                vol.Required(CONF_HAN_POWER_ENTITY): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_TARIFF_USED_ENTITY, default=TARIFF_USED_ENTITY): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_SAFETY_MARGIN_KWH, default=0.3): selector.NumberSelector(
-                    selector.NumberSelectorConfig(min=0, max=3, step=0.1, unit_of_measurement="kWh", mode="box")
-                ),
-            }
-        )
-        if owner:
-            schema = vol.Schema({vol.Required(CONF_CHARGER_DEVICE): selector.DeviceSelector(
-                selector.DeviceSelectorConfig(integration="easee"))})
+                return self.async_create_entry(
+                    title="Smart Load Manager OJM",
+                    data={"household": self._household, "loads": records},
+                )
         return self.async_show_form(
-            step_id="user", data_schema=schema, errors=errors,
-            description_placeholders={"validation_error": getattr(self, "_error_detail", "")},
+            step_id="charging",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("chargers"): selector.DeviceSelector(
+                        selector.DeviceSelectorConfig(
+                            integration="easee", multiple=True
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders={"validation_error": detail},
         )
-
-
 
     @staticmethod
     @callback
@@ -136,21 +154,15 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
     """Edit household sources or add a charger without rebuilding the site."""
 
     async def async_step_init(self, user_input=None):
-        # Retain direct add-charger calls used by older clients/tests.
-        if user_input is not None and CONF_CHARGER_DEVICE in user_input:
-            return await self.async_step_add_charger(user_input)
-        menu = ["household"]
-        if len(self.hass.config_entries.async_entries(DOMAIN)) < 2:
-            menu.append("add_charger")
-        return self.async_show_menu(step_id="init", menu_options=menu)
+        return self.async_show_menu(
+            step_id="init", menu_options=["household", "chargers"]
+        )
 
     async def async_step_household(self, user_input=None):
-        from .site import site_entry
-        owner = site_entry(self.hass)
-        fields = (CONF_HAN_POWER_ENTITY, CONF_TARIFF_USED_ENTITY, CONF_SAFETY_MARGIN_KWH)
-        values = {field: owner.data.get(field) for field in fields}
-        detail = ""
+        parent = self.config_entry
+        values = dict(parent.data["household"])
         errors = {}
+        detail = ""
         if user_input is not None:
             values.update(user_input)
             try:
@@ -159,44 +171,143 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                 errors["base"] = "invalid_setup"
                 detail = str(err)
             else:
-                shared = {field: values[field] for field in fields}
-                # Validate everything before changing entries. Existing limits,
-                # priorities, charger IDs and per-charger schedules are retained.
-                for entry in self.hass.config_entries.async_entries(DOMAIN):
-                    self.hass.config_entries.async_update_entry(entry, data={**entry.data, **shared})
-                return self.async_create_entry(title="", data=dict(self.config_entry.options))
-        schema = vol.Schema({
-            vol.Required(CONF_HAN_POWER_ENTITY): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
-            vol.Required(CONF_TARIFF_USED_ENTITY): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
-            vol.Required(CONF_SAFETY_MARGIN_KWH): selector.NumberSelector(selector.NumberSelectorConfig(
-                min=0, max=3, step=0.1, unit_of_measurement="kWh", mode="box")),
-        })
-        return self.async_show_form(step_id="household",
-            data_schema=self.add_suggested_values_to_schema(schema, values),
-            errors=errors, description_placeholders={"validation_error": detail})
-
-    async def async_step_add_charger(self, user_input=None):
-        entries = self.hass.config_entries.async_entries(DOMAIN)
-        if len(entries) >= 2:
-            return self.async_abort(reason="two_chargers")
-        detail = ""
-        errors = {}
-        if user_input is not None:
-            result = await self.hass.config_entries.flow.async_init(
-                DOMAIN, context={"source": "user"}, data=user_input)
-            if result["type"] == "create_entry":
-                return self.async_create_entry(title="", data=dict(self.config_entry.options))
-            detail = result.get("description_placeholders", {}).get("validation_error", "")
-            if result.get("type") == "abort":
-                return self.async_abort(reason=result["reason"])
-            # A failed nested flow is replaced by this form, not left running.
-            if result.get("flow_id"):
-                self.hass.config_entries.flow.async_abort(result["flow_id"])
-            errors["base"] = "invalid_setup"
+                self.hass.config_entries.async_update_entry(
+                    parent, data={**parent.data, "household": values}
+                )
+                return self.async_create_entry(title="", data=dict(parent.options))
         return self.async_show_form(
-            step_id="add_charger", data_schema=self.add_suggested_values_to_schema(self._schema(), user_input),
-            errors=errors, description_placeholders={"validation_error": detail})
+            step_id="household",
+            data_schema=self.add_suggested_values_to_schema(
+                _household_schema(), values
+            ),
+            errors=errors,
+            description_placeholders={"validation_error": detail},
+        )
 
-    def _schema(self):
-        return vol.Schema({vol.Required(CONF_CHARGER_DEVICE): selector.DeviceSelector(
-            selector.DeviceSelectorConfig(integration="easee"))})
+    async def async_step_chargers(self, user_input=None):
+        parent = self.config_entry
+        errors = {}
+        detail = ""
+        if user_input is not None:
+            try:
+                records = _make_loads(
+                    self.hass,
+                    user_input.get("chargers", []),
+                    list(parent.data["loads"])
+                    + list(parent.data.get("retired_loads", [])),
+                )
+            except ValueError as err:
+                errors["base"] = "invalid_setup"
+                detail = str(err)
+            else:
+                # Do not drop an actively controlling load. Reload only after
+                # its existing actuator has acknowledged 0 A.
+                retained = {r["id"] for r in records}
+                runtime = getattr(parent, "runtime_data", None)
+                for key, controller in getattr(runtime, "controllers", {}).items():
+                    if key not in retained:
+                        await controller._async_send_current(0)
+                retired = {
+                    r["data"][CONF_CHARGER_DEVICE]: r
+                    for r in list(parent.data.get("retired_loads", []))
+                    + list(parent.data["loads"])
+                    if r["id"] not in retained
+                }
+                self.hass.config_entries.async_update_entry(
+                    parent,
+                    data={
+                        **parent.data,
+                        "loads": records,
+                        "retired_loads": list(retired.values()),
+                    },
+                )
+                # Reload refreshes the pair-only entities and groups. Automatic
+                # control remains opt-in after this configuration change.
+                self.hass.async_create_task(
+                    self.hass.config_entries.async_reload(parent.entry_id)
+                )
+                return self.async_create_entry(title="", data=dict(parent.options))
+        return self.async_show_form(
+            step_id="chargers",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required("chargers"): selector.DeviceSelector(
+                            selector.DeviceSelectorConfig(
+                                integration="easee", multiple=True
+                            )
+                        )
+                    }
+                ),
+                {
+                    "chargers": [
+                        r["data"][CONF_CHARGER_DEVICE] for r in parent.data["loads"]
+                    ]
+                },
+            ),
+            errors=errors,
+            description_placeholders={"validation_error": detail},
+        )
+
+
+def _household_schema():
+    return vol.Schema(
+        {
+            vol.Required(CONF_HAN_POWER_ENTITY): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
+            vol.Required(
+                CONF_TARIFF_USED_ENTITY, default=TARIFF_USED_ENTITY
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Required(CONF_SAFETY_MARGIN_KWH, default=0.3): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0, max=3, step=0.1, unit_of_measurement="kWh", mode="box"
+                )
+            ),
+        }
+    )
+
+
+def _make_loads(hass, device_ids, existing=()):
+    from homeassistant.util import slugify
+    from uuid import uuid4
+
+    if (
+        not isinstance(device_ids, list)
+        or not 1 <= len(device_ids) <= 2
+        or len(set(device_ids)) != len(device_ids)
+    ):
+        raise ValueError(
+            "Velg én eller to forskjellige Easee-ladere / Select one or two distinct Easee chargers"
+        )
+    saved = {r["data"][CONF_CHARGER_DEVICE]: r for r in existing}
+    suffixes = {r["data"]["entity_suffix"] for r in existing}
+    records = []
+    for device_id in device_ids:
+        resolve_easee_entities(hass, device_id)
+        if device_id in saved:
+            records.append(saved[device_id])
+            continue
+        device = dr.async_get(hass).devices.get(device_id)
+        if device is None:
+            raise ValueError("Easee device no longer exists")
+        name = device.name_by_user or device.name or "Charger"
+        suffix = slugify(name) or "charger"
+        if suffix in suffixes:
+            suffix += "_" + device_id[:6]
+        if suffix in suffixes:
+            raise ValueError("Charger identity collision; choose distinct device names")
+        suffixes.add(suffix)
+        records.append(
+            {
+                "id": uuid4().hex,
+                "title": f"Smart Load Manager OJM – {name}",
+                "data": {
+                    CONF_CHARGER_DEVICE: device_id,
+                    "charger_name": name,
+                    "entity_suffix": suffix,
+                },
+            }
+        )
+    order = {r["id"]: i for i, r in enumerate(existing)}
+    return sorted(records, key=lambda r: order.get(r["id"], len(order)))

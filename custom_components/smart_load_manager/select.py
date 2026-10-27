@@ -1,12 +1,13 @@
 """Integration-owned controls for the hourly household energy budget."""
 
 from __future__ import annotations
+from .device_info import charger_device_info, name_charger_entity
+from .installation import charger_entries, update_load, shared_identity
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from .device_info import household_device_info
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -28,12 +29,23 @@ async def async_setup_entry(
 ) -> None:
     """Set up the per-charger consumption budget selector."""
     from .site import site_entry
-    entities = [ChargerPhaseModeSelect(entry.runtime_data, entry)]
-    if entry.entry_id == site_entry(hass).entry_id:
-        entities += [ConsumptionLimitSelect(entry.runtime_data, entry),
-                     SiteChoiceSelect(entry.runtime_data, entry, "allocation_mode"),
-                     SiteChoiceSelect(entry.runtime_data, entry, "priority_charger")]
-    async_add_entities(entities)
+    from .installation import platform_loads, add_grouped
+    from homeassistant.helpers import entity_registry as er
+    registry = er.async_get(hass)
+    for load in platform_loads(entry):
+        add_grouped(hass, entry, async_add_entities, [ChargerPhaseModeSelect(load.runtime_data, load)], "charging")
+        if load.entry_id == site_entry(hass).entry_id:
+            entities = [ConsumptionLimitSelect(load.runtime_data, load)]
+            if len(charger_entries(hass)) == 2:
+                entities.append(SiteChoiceSelect(load.runtime_data, load, "allocation_mode"))
+            # Retain a previously registered priority selector for external YAML,
+            # hidden from the normal UI; toggles are the preferred controls.
+            old = registry.async_get_entity_id("select", DOMAIN, f"{shared_identity(load)}_priority_charger")
+            if old and len(charger_entries(hass)) == 2:
+                entity = SiteChoiceSelect(load.runtime_data, load, "priority_charger")
+                entity._attr_entity_category = EntityCategory.DIAGNOSTIC
+                entities.append(entity)
+            add_grouped(hass, entry, async_add_entities, entities, "household")
 
 
 
@@ -51,7 +63,7 @@ class ConsumptionLimitSelect(
         super().__init__(coordinator)
         self.entity_id = f"select.{suggested_entity_id('select', 'consumption_limit', entry)}"
         self._entry = entry
-        self._attr_unique_id = f"{entry.entry_id}_consumption_limit"
+        self._attr_unique_id = f"{shared_identity(entry)}_consumption_limit"
         self._attr_device_info = household_device_info()
         self._attr_entity_category = EntityCategory.CONFIG
 
@@ -66,11 +78,12 @@ class ConsumptionLimitSelect(
             raise ValueError(f"Unsupported consumption limit: {option}")
         options = dict(self._entry.options)
         options[CONF_CONSUMPTION_LIMIT_KWH] = float(option)
-        self.hass.config_entries.async_update_entry(self._entry, options=options)
+        update_load(self.hass, self._entry, options=options)
         await self.coordinator.async_request_refresh()
 
 
 class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
+    _attr_entity_category = EntityCategory.CONFIG
     """Configure Easee's phase mode through its supported integration service."""
 
     _attr_options = PHASE_MODE_OPTIONS
@@ -82,12 +95,7 @@ class ChargerPhaseModeSelect(CoordinatorEntity[ChargingCoordinator], SelectEntit
         super().__init__(coordinator)
         self.entity_id = f"select.{suggested_entity_id('select', 'phase_mode_control', entry)}"
         self._attr_unique_id = f"{entry.entry_id}_phase_mode_control"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            manufacturer="Smart Load Manager OJM",
-            model="Easee charging control",
-            name=entry.title,
-        )
+        self._attr_device_info = charger_device_info(entry)
 
     @property
     def current_option(self) -> str | None:
@@ -121,14 +129,15 @@ class SiteChoiceSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
         self._entry = entry
         self._key = key
         self._attr_translation_key = key
-        self._attr_unique_id = f"{entry.entry_id}_{key}"
+        name_charger_entity(self, entry, "select", key)
+        self._attr_unique_id = f"{shared_identity(entry)}_{key}"
         self.entity_id = f"select.{suggested_entity_id('select', key)}"
         self._attr_device_info = household_device_info()
         self._attr_entity_category = EntityCategory.CONFIG
 
     def _names(self):
         from homeassistant.helpers import device_registry as dr
-        entries = self.hass.config_entries.async_entries(DOMAIN)
+        entries = charger_entries(self.hass)
         devices = dr.async_get(self.hass)
         names = {}
         for entry in entries:
@@ -156,5 +165,5 @@ class SiteChoiceSelect(CoordinatorEntity[ChargingCoordinator], SelectEntity):
         value = option if self._key == "allocation_mode" else next(key for key, name in self._names().items() if name == option)
         options = dict(self._entry.options)
         options[self._key] = value
-        self.hass.config_entries.async_update_entry(self._entry, options=options)
+        update_load(self.hass, self._entry, options=options)
         await self.coordinator.async_request_refresh()
