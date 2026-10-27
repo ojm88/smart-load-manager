@@ -58,3 +58,7 @@ SLM does not replace installation protection. Turning automatic control off stop
 ## Logo picker during setup
 
 Choose **EV charging – logo picker (test)** to open a separate HA page with Easee logos. Pick one or two chargers, confirm and return to the original setup dialog to finish. Configure → Chargers also offers **Add charger with logo (test)**, excluding the existing charger and preserving it when the new charger is saved. Compact selection remains available. Cancel aborts the current flow; selecting devices alone creates no installation. Safari and Companion navigation still requires acceptance testing.
+
+### When to regenerate the dashboard card
+
+Run `smart_load_manager.get_dashboard` and replace the existing Manual card YAML after adding/removing/replacing a charger, changing the HAN source or referenced entity IDs, changing charger names used in headings, or adopting a feature that changes the card layout. YAML is not automatically regenerated. Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection and pause update through existing entity references and require no new card. Preserve manual customizations before replacing the YAML.

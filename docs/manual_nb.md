@@ -67,3 +67,7 @@ SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automati
 ## Logovelger i oppsettet
 
 Velg **Elbillading – logovelger (test)** for å åpne en egen HA-side med Easee-logoer. Velg én lader og eventuelt en til, trykk **Bruk valgene**, og gå tilbake til den opprinnelige oppsettsdialogen for å fullføre. Ved senere tillegging finnes **Legg til lader med logo (test)** under Konfigurer → Ladere. Eksisterende lader er utelatt fra denne listen og beholdes ved lagring. Den vanlige, kompakte velgeren er også tilgjengelig. Avbryt lukker den aktuelle oppsettsflyten; valgene på siden alene lagrer ikke installasjonen. Retur mellom sidene må fortsatt prøves i Safari og Companion.
+
+### Når må dashboardkortet genereres på nytt?
+
+Kjør `smart_load_manager.get_dashboard` og erstatt YAML-en i det eksisterende manuelle kortet når du legger til, fjerner eller bytter lader, endrer HAN-kilde eller entitets-ID-er som kortet bruker, endrer ladernavn som står i kortoverskriftene, eller tar i bruk en funksjon med endret kortoppsett. Kortets YAML oppdateres ikke automatisk. Vanlige endringer i forbruksgrense, sikkerhetsmargin, prioritet, lademåte, tidsplan, fasevalg og pause krever ikke nytt kort; verdiene oppdateres i visningen. Ta vare på egne manuelle korttilpasninger før du erstatter YAML-en.

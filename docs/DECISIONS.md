@@ -394,3 +394,10 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 
 - Keep experiment/navigation implementation details out of README. Explain the required EnergyTariff input, sensor meanings and ready-made YAML generation via Settings → Tools → Actions.
 - Explain Norwegian household capacity-step use using current primary Glitre Nett/NVE sources without hard-coded prices. A whole-home hourly target must be realistic: insufficient budget for minimum charging current causes waiting, and two chargers share the remaining capacity. Distinguish kWh per clock hour from instantaneous kW or fuse protection.
+
+
+## 2026-10-27 — Freeze project presentation and target stable version 2
+
+- Owner accepts the GitHub presentation as the baseline. Do not routinely rewrite documentation or rearrange the repository. Update for agreed new functionality, required bug/accuracy fixes, or release/validation status; this is not an instruction to archive, restrict access to, or disable the repository.
+- Document dashboard regeneration for membership/source/ID/embedded-name/layout changes; runtime control values need no new YAML. Generated Manual cards are snapshots and replacing them can overwrite user customizations.
+- Target stable 2.0.0 after successful physical two-charger acceptance and resolution of blocking faults. This is a conditional roadmap milestone, not a release approval or a claim that physical testing is complete.

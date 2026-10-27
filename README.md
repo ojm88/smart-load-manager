@@ -94,6 +94,17 @@ Generate a complete card for your configured charger or chargers:
 
 The generator uses your actual registered entity IDs, including custom names. The card combines household explanations, charger measurements and controls. Ready-made [one-charger](examples/lovelace/charging_card.yaml) and [two-charger](examples/lovelace/two_chargers_card.yaml) YAML templates are also available; generating the card avoids manually adapting their entity IDs.
 
+### When to generate the card again
+
+The YAML card is a saved snapshot of the configured layout, entity references and charger labels. It is **not automatically regenerated** when setup changes. Run `smart_load_manager.get_dashboard` again and replace the existing Manual card YAML after:
+
+- Adding, removing or replacing a charger.
+- Changing the HAN source or entity IDs referenced by the card.
+- Renaming chargers when their names are used in the card's headings or labels.
+- Installing a feature that changes the generated card layout or entities.
+
+Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection or pause do **not** require new YAML. Their states and measurements update through the existing entity references. Regenerating the card replaces the generated layout; keep a copy of any manual customizations first.
+
 ## Limitations and testing
 
 This project is under development. Physical charging validation of the current version, including two-charger operation, is pending. Automated tests cover calculations, allocation and Home Assistant setup; see [validation status](docs/PROJECT_STATUS.md).
@@ -110,6 +121,8 @@ This project is under development. Physical charging validation of the current v
 [Releases](https://github.com/ojm88/smart-load-manager/releases) · [Changelog](CHANGELOG.md) · [Norwegian guide](docs/manual_nb.md) · [English guide](docs/manual_en.md)
 
 ## Planned
+
+See the [roadmap](docs/ROADMAP.md) for the two-charger acceptance milestone and planned stable **2.0.0** release.
 
 More chargers, hot-water tanks and floor-heating zones sharing the household budget. Floor heating is planned through [Versatile Thermostat](https://github.com/jmcollin78/versatile_thermostat). A voluntary coffee-support link will be added when the account is ready.
 
