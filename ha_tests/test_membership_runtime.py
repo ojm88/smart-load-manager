@@ -355,10 +355,13 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
                 "safety_margin_kwh": 0.3,
             },
         )
+        self.assertEqual(result["menu_options"], ["charging", "planned"])
+        if mode in {"charging_logo", "logo_default"}:
+            self.hass.config.external_url = "https://ha.example.test"
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"next_step_id": mode}
+            fid, {"next_step_id": "charging" if mode == "logo_default" else mode}
         )
-        if mode == "charging_logo":
+        if mode in {"charging_logo", "logo_default"}:
             return fid, result
         self.assertEqual(result["step_id"], "charging")
         field = next(iter(result["data_schema"].schema.values()))
@@ -450,8 +453,13 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
                 return request.payload
 
         with patch.object(native_bridge, "register", new=AsyncMock()), patch.object(bridge, "register", new=AsyncMock()):
-            fid, result = await self.begin_fresh_wizard("charging_logo")
+            fid, result = await self.begin_fresh_wizard("logo_default")
         self.assertEqual(result["type"], "external")
+        self.assertEqual(result["step_id"], "charging")
+        self.assertTrue(result["url"].startswith("https://ha.example.test/"))
+        # Re-fetching an external step must not invalidate the open picker.
+        repeated = await self.hass.config_entries.flow.async_configure(fid)
+        self.assertEqual(repeated["url"], result["url"])
         token = parse_qs(urlparse(result["url"]).query)["session"][0]
         view = bridge.PickerView(self.hass)
         request = Request(hass_user=SimpleNamespace(is_admin=True))
@@ -476,7 +484,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         from urllib.parse import urlparse, parse_qs
         import custom_components.smart_load_manager.picker_bridge as bridge
         with patch.object(bridge, "register", new=AsyncMock()), patch("smart_load_manager.picker_bridge.register", new=AsyncMock()):
-            fid, result = await self.begin_fresh_wizard("charging_logo")
+            fid, result = await self.begin_fresh_wizard("logo_default")
         token = parse_qs(urlparse(result["url"]).query)["session"][0]
         self.assertIn(token, bridge._state(self.hass)["sessions"])
         self.hass.config_entries.flow.async_abort(fid)
@@ -497,9 +505,13 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         manager = self.hass.config_entries.options
         result = await manager.async_init(self.parent.entry_id)
         fid = result['flow_id']
-        await manager.async_configure(fid, {'next_step_id': 'chargers'})
+        menu = await manager.async_configure(fid, {'next_step_id': 'chargers'})
+        self.assertEqual(menu['menu_options'], ['add_charger'])
+        self.hass.config.external_url = "https://ha.example.test"
         with patch.object(bridge, 'register', new=AsyncMock()), patch('smart_load_manager.picker_bridge.register', new=AsyncMock()):
-            result = await manager.async_configure(fid, {'next_step_id': 'add_charger_logo'})
+            result = await manager.async_configure(fid, {'next_step_id': 'add_charger'})
+        self.assertEqual(result['step_id'], 'add_charger')
+        self.assertTrue(result['url'].startswith('https://ha.example.test/'))
         token = parse_qs(urlparse(result['url']).query)['session'][0]
         view = bridge.PickerView(self.hass)
         request = Request(hass_user=SimpleNamespace(is_admin=False))

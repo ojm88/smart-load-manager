@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Use one EV charging menu item for logo selection; remove duplicate test choices.
+- Provide absolute HA URLs so the external-step open button is visible; retain sessions when the dialog refreshes and compact setup when no URL is available.
+- Display integration branding in a lightweight filtered list without depending on lazy-loaded HA form/device-picker components. Charging calculations and saved membership rules are unchanged.
+
 ## 0.1.1-beta.8
 
 - Remove automatic comparison-test sidebar entry; setup logo selection remains available through its hidden panel.

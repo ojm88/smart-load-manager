@@ -88,3 +88,12 @@ Owner accepts the README structure and requests a documentation/structure freeze
 ## Approved beta.8 publication
 
 Published 0.1.1-beta.8 from merge commit 8b5a88821fc2955d915d9003b07bde1c3c0128da after owner approval. All 110 distinct automated tests pass (56 pure, 53 HA runtime and one Node test); runtime suites run against HA 2026.2.3 and 2026.10.4. Release is a prerelease. Physical charging and actual external-step navigation/return in Safari/Companion remain unconfirmed. Stable 2.0.0 remains conditional on acceptance; the agreed presentation baseline stays frozen except for agreed features, required fixes and release/validation status.
+
+
+## Beta.8 setup correction (not released)
+
+Owner reports a blank third menu choice and an external-step message with no open button. The bridge supplied a relative URL, which HA's frontend URL sanitizer rejects. The extra choice is removed: normal charging/add actions now open the branded picker. Absolute URLs are resolved with HA's current-request helper, falling back to configured external/Cloud URLs; missing URLs retain compact setup. External refresh retains the existing session. Existing translation step IDs are reused, avoiding dependence on a new menu translation cached by the client.
+
+The setup page now renders a small filtered list with authenticated HA integration brand images, falling back to the brands CDN on older HA versions. It does not depend on cold-loading ha-form/ha-device-picker in a separate tab. Candidate eligibility, additive saves, cancellation and server-side validation remain unchanged. Calculation/control/budget/allocation files are untouched.
+
+Validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4, and six Node tests (including five DOM interaction regressions). Actual Safari/Companion rendering/navigation and physical charging remain unverified. Browser installation was unavailable in this environment; DOM tests are not visual browser acceptance. This correction is prepared for review, not published or installed on the owner's HA.

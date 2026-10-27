@@ -19,8 +19,7 @@
         "title": "Hva vil du styre?",
         "menu_options": {
           "charging": "Elbillading – Easee",
-          "planned": "Varmtvann og gulvvarme – planlagt",
-          "charging_logo": "Elbillading – logovelger (test)"
+          "planned": "Varmtvann og gulvvarme – planlagt"
         }
       },
       "planned": {
@@ -29,7 +28,7 @@
       },
       "charging": {
         "title": "Elbillading",
-        "description": "Velg første Easee-lader. Aktiver Spenning-sensoren på laderen først og vent på en målt verdi. Deretter kan du fullføre med én lader eller legge til en til. Begge deler boligens forbruksgrense, med egen tidsstyring per lader. Automatisk laststyring starter avslått. {validation_error}",
+        "description": "Åpne ladervelgeren med knappen nedenfor. Velg ladere, trykk Bruk valgene og gå tilbake hit for å fullføre. Hvis en enkel liste vises her, velger du laderen direkte. Velg første Easee-lader. Aktiver Spenning-sensoren på laderen først og vent på en målt verdi. Deretter kan du fullføre med én lader eller legge til en til. Begge deler boligens forbruksgrense, med egen tidsstyring per lader. Automatisk laststyring starter avslått. {validation_error}",
         "data": {
           "charger_device": "Første Easee-lader"
         }
@@ -246,13 +245,12 @@
         "title": "Administrer ladere",
         "menu_options": {
           "add_charger": "Legg til lader",
-          "remove_charger": "Fjern lader",
-          "add_charger_logo": "Legg til lader med logo (test)"
+          "remove_charger": "Fjern lader"
         }
       },
       "add_charger": {
         "title": "Legg til lader",
-        "description": "Velg laderen du vil legge til. Bare Easee-enheter som ikke allerede er konfigurert, vises. Den eksisterende laderen og dens innstillinger beholdes. Aktiver Easees Spenning-sensor før du fortsetter. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
+        "description": "Åpne ladervelgeren med knappen nedenfor. Velg ladere, trykk Bruk valgene og gå tilbake hit for å fullføre. Hvis en enkel liste vises her, velger du laderen direkte. Velg laderen du vil legge til. Bare Easee-enheter som ikke allerede er konfigurert, vises. Den eksisterende laderen og dens innstillinger beholdes. Aktiver Easees Spenning-sensor før du fortsetter. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
         "data": {
           "charger_device": "Easee-lader"
         }

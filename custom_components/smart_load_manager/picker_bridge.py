@@ -8,6 +8,7 @@ from pathlib import Path
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.components.panel_custom import async_register_panel
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from .const import DOMAIN
 
@@ -65,6 +66,12 @@ async def register(hass):
 
 
 async def begin(flow, manager, excluded=(), maximum=2):
+    # External flow links must be absolute; HA hides the open button otherwise.
+    # Prefer the URL matching this request (including Cloud), never a raw Host header.
+    try:
+        base_url = get_url(flow.hass, require_current_request=True)
+    except NoURLAvailableError:
+        base_url = get_url(flow.hass, prefer_external=True, prefer_cloud=True)
     await register(flow.hass)
     if old := getattr(flow, "_logo_token", None):
         _state(flow.hass).setdefault("sessions", {}).pop(old, None)
@@ -74,7 +81,7 @@ async def begin(flow, manager, excluded=(), maximum=2):
         "flow": flow, "manager": manager, "excluded": tuple(excluded),
         "maximum": maximum, "expires": time.monotonic() + TTL,
     }
-    return "/" + PANEL + "?session=" + token
+    return base_url.rstrip("/") + "/" + PANEL + "?session=" + token
 
 
 def take(flow, user_input):
@@ -116,7 +123,8 @@ class PickerView(HomeAssistantView):
 
     async def get(self, request, token):
         session = self.session(request, token)
-        return self.json({"options": choices(session["flow"], session["excluded"]),
+        return self.json({"options": [dict(option, integration="easee")
+                                      for option in choices(session["flow"], session["excluded"])],
                           "maximum": session["maximum"]})
 
     async def post(self, request, token):
