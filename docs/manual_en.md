@@ -55,9 +55,11 @@ Read household status and Measurement status first. Check HAN freshness, EnergyT
 
 SLM does not replace installation protection. Turning automatic control off stops further automatic writes and leaves Easee's last dynamic limit in place. Use Charging pause to explicitly send 0 A.
 
-## Logo picker during setup
+## Charger selection
 
-Choose **EV charging – Easee**, then open the picker using the dialog button. The list shows names and logos from Home Assistant integration branding. Pick one or two chargers, confirm and return to the original dialog to finish. Configure → Chargers → **Add charger** excludes the existing charger and preserves it when saving. If Home Assistant has no usable URL, the compact list is shown directly in the dialog. Cancel aborts the current flow; selecting devices alone creates no installation.
+Complete setup in Home Assistant's normal dialog, including in the Companion app. Choose **EV charging – Easee**, select the first charger, then finish or add a second. The second list excludes the first choice. The list shows charger names without logos.
+
+For later additions, use Configure → Chargers → **Add charger**. Only unused Easee chargers appear, and the existing charger and settings are preserved. Cancelling initial setup before completion creates no partial installation.
 
 ### When to regenerate the dashboard card
 

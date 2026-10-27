@@ -2,7 +2,7 @@
 
 ## Current focus: finish and test the charging integration
 
-- Complete the beta 8 setup test: logo selection, return to the original dialog, cancellation, and adding a second charger in Safari and Companion.
+- Confirm initial setup, cancellation and adding a second charger entirely in the native Home Assistant dialog, including Companion. Keep the fast filtered name list.
 - Confirm physical charging with one charger and with two sharing the household budget.
 - Test both allocation modes, first priority, independent schedules, pause and recovery when required measurements are missing. Confirm that the selected household target leaves useful charging capacity.
 - Fix blocking faults before moving to a stable release. Software tests supplement physical acceptance; they do not replace it.

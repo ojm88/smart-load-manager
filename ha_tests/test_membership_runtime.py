@@ -335,7 +335,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(dict(self.parent.data), original)
         self.assert_visible(self.record)
 
-    async def begin_fresh_wizard(self, mode="charging"):
+    async def begin_fresh_wizard(self):
         self.assertTrue(
             await self.hass.config_entries.async_unload(self.parent.entry_id)
         )
@@ -356,13 +356,9 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             },
         )
         self.assertEqual(result["menu_options"], ["charging", "planned"])
-        if mode in {"charging_logo", "logo_default"}:
-            self.hass.config.external_url = "https://ha.example.test"
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"next_step_id": "charging" if mode == "logo_default" else mode}
+            fid, {"next_step_id": "charging"}
         )
-        if mode in {"charging_logo", "logo_default"}:
-            return fid, result
         self.assertEqual(result["step_id"], "charging")
         field = next(iter(result["data_schema"].schema.values()))
         self.assertEqual(
@@ -439,96 +435,38 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(len(self.parent.data["loads"]), 1)
         self.assert_visible(self.parent.data["loads"][0])
 
-
-    async def test_logo_bridge_validates_then_returns_to_native_finish(self):
-        import json
-        from types import SimpleNamespace
-        from urllib.parse import urlparse, parse_qs
-        from smart_load_manager import picker_bridge as bridge
-        # Flow's canonical package namespace is custom_components.
-        import custom_components.smart_load_manager.picker_bridge as native_bridge
-
-        class Request(dict):
-            async def json(request):
-                return request.payload
-
-        with patch.object(native_bridge, "register", new=AsyncMock()), patch.object(bridge, "register", new=AsyncMock()):
-            fid, result = await self.begin_fresh_wizard("logo_default")
-        self.assertEqual(result["type"], "external")
-        self.assertEqual(result["step_id"], "charging")
-        self.assertTrue(result["url"].startswith("https://ha.example.test/"))
-        # Re-fetching an external step must not invalidate the open picker.
-        repeated = await self.hass.config_entries.flow.async_configure(fid)
-        self.assertEqual(repeated["url"], result["url"])
-        token = parse_qs(urlparse(result["url"]).query)["session"][0]
-        view = bridge.PickerView(self.hass)
-        request = Request(hass_user=SimpleNamespace(is_admin=True))
-        request.payload = {"devices": [self.a.id, self.a.id]}
-        response = await view.post(request, token)
-        self.assertEqual(response.status, 400)
-        self.assertEqual(self.hass.config_entries.async_entries("smart_load_manager"), [])
-        request.payload = {"devices": [self.a.id, self.b.id]}
-        response = await view.post(request, token)
-        self.assertEqual(response.status, 200, response.text)
-        self.assertEqual(json.loads(response.text)["type"], "external_done")
-        self.assertEqual(self.hass.config_entries.async_entries("smart_load_manager"), [])
-        result = await self.hass.config_entries.flow.async_configure(fid)
-        self.assertEqual(result["type"], "create_entry")
-        self.parent = result["result"]
+    async def test_cloud_url_setup_stays_in_native_dialog_and_keeps_both_choices(self):
+        self.hass.config.external_url = "https://cloud.example.test"
+        with patch.object(self.flow_module.SmartLoadManagerConfigFlow, 'async_external_step', side_effect=AssertionError('Setup must stay in-app')):
+            fid = await self.begin_fresh_wizard()
+            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': self.a.id})
+            self.assertEqual(result['type'], 'menu')
+            self.assertNotIn('url', result)
+            result = await self.hass.config_entries.flow.async_configure(fid, {'next_step_id': 'second_charger'})
+            self.assertEqual(result['type'], 'form')
+            field = next(iter(result['data_schema'].schema.values()))
+            self.assertEqual([o['value'] for o in field.config['options']], [self.b.id])
+            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': self.b.id})
+        self.parent = result['result']
         await self.hass.async_block_till_done()
-        self.assertEqual(len(self.parent.data["loads"]), 2)
-        for record in self.parent.data["loads"]:
+        self.assertEqual([r['data']['charger_device'] for r in self.parent.data['loads']], [self.a.id, self.b.id])
+        for record in self.parent.data['loads']:
             self.assert_visible(record)
 
-    async def test_logo_cancel_removes_session_without_creating_entry(self):
-        from urllib.parse import urlparse, parse_qs
-        import custom_components.smart_load_manager.picker_bridge as bridge
-        with patch.object(bridge, "register", new=AsyncMock()), patch("smart_load_manager.picker_bridge.register", new=AsyncMock()):
-            fid, result = await self.begin_fresh_wizard("logo_default")
-        token = parse_qs(urlparse(result["url"]).query)["session"][0]
-        self.assertIn(token, bridge._state(self.hass)["sessions"])
-        self.hass.config_entries.flow.async_abort(fid)
-        self.assertNotIn(token, bridge._state(self.hass)["sessions"])
-        self.assertEqual(self.hass.config_entries.async_entries("smart_load_manager"), [])
-
-    async def test_logo_add_excludes_existing_and_preserves_first_until_finish(self):
-        import json
-        from types import SimpleNamespace
-        from urllib.parse import urlparse, parse_qs
-        from aiohttp import web
-        import custom_components.smart_load_manager.picker_bridge as bridge
-
-        class Request(dict):
-            async def json(request):
-                return request.payload
-
+    async def test_cloud_url_add_stays_in_native_dialog_and_preserves_existing(self):
+        self.hass.config.external_url = "https://cloud.example.test"
         manager = self.hass.config_entries.options
         result = await manager.async_init(self.parent.entry_id)
         fid = result['flow_id']
-        menu = await manager.async_configure(fid, {'next_step_id': 'chargers'})
-        self.assertEqual(menu['menu_options'], ['add_charger'])
-        self.hass.config.external_url = "https://ha.example.test"
-        with patch.object(bridge, 'register', new=AsyncMock()), patch('smart_load_manager.picker_bridge.register', new=AsyncMock()):
+        result = await manager.async_configure(fid, {'next_step_id': 'chargers'})
+        self.assertEqual(result['menu_options'], ['add_charger'])
+        with patch.object(self.flow_module.ChargerOptionsFlow, 'async_external_step', side_effect=AssertionError('Add must stay in-app')):
             result = await manager.async_configure(fid, {'next_step_id': 'add_charger'})
-        self.assertEqual(result['step_id'], 'add_charger')
-        self.assertTrue(result['url'].startswith('https://ha.example.test/'))
-        token = parse_qs(urlparse(result['url']).query)['session'][0]
-        view = bridge.PickerView(self.hass)
-        request = Request(hass_user=SimpleNamespace(is_admin=False))
-        with self.assertRaises(web.HTTPForbidden):
-            await view.get(request, token)
-        request['hass_user'].is_admin = True
-        response = await view.get(request, token)
-        self.assertEqual([o['value'] for o in json.loads(response.text)['options']], [self.b.id])
-        request.payload = {'devices': [self.a.id]}
-        self.assertEqual((await view.post(request, token)).status, 400)
-        request.payload = {'devices': [self.b.id]}
-        response = await view.post(request, token)
-        self.assertEqual(response.status, 200, response.text)
-        self.assertEqual(len(self.parent.data['loads']), 1)
-        with self.assertRaises(web.HTTPNotFound):
-            await view.post(request, token)
-        await manager.async_configure(fid)
+            self.assertEqual(result['type'], 'form')
+            self.assertNotIn('url', result)
+            field = next(iter(result['data_schema'].schema.values()))
+            self.assertEqual([o['value'] for o in field.config['options']], [self.b.id])
+            await manager.async_configure(fid, {'charger_device': self.b.id})
         await self.hass.async_block_till_done()
         self.assertEqual(self.parent.data['loads'][0], self.record)
         self.assertEqual(len(self.parent.data['loads']), 2)

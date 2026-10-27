@@ -64,9 +64,11 @@ Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv
 
 SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automatikk av betyr at SLM slutter å regulere; Easee beholder siste dynamiske grense. Bruk Ladepause for en uttrykkelig 0 A-kommando.
 
-## Logovelger i oppsettet
+## Valg av ladere
 
-Velg **Elbillading – Easee**, og åpne ladervelgeren med knappen i dialogen. Listen viser navn og logo hentet fra Home Assistants integrasjonsbilder. Velg én lader og eventuelt en til, trykk **Bruk valgene**, og gå tilbake til den opprinnelige oppsettsdialogen for å fullføre. Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Eksisterende lader er utelatt og beholdes ved lagring. Hvis Home Assistant mangler en brukbar adresse, vises den kompakte listen direkte i dialogen. Avbryt lukker den aktuelle oppsettsflyten; valgene på siden alene lagrer ikke installasjonen.
+Hele oppsettet skjer i Home Assistants vanlige dialog, også i Companion-appen. Velg **Elbillading – Easee**, velg første lader i listen, og fullfør med én eller legg til en til. Den andre listen utelater laderen du allerede har valgt. Listen viser ladernavn uten logoer.
+
+Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Bare ledige Easee-ladere vises, og eksisterende lader og innstillinger beholdes. Avbryter du førstegangsoppsettet før fullføring, opprettes ingen delvis installasjon.
 
 ### Når må dashboardkortet genereres på nytt?
 

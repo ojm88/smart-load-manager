@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Keep initial setup and charger additions inside Home Assistant’s native dialog, including Companion. Use the fast filtered name list without logos.
+- Remove the external logo-picker bridge and hidden setup page. Retain first/second exclusion, additive saves, grouping and charging calculations.
+
 ## 0.1.1-beta.9
 
 - Use one EV charging menu item for logo selection; remove duplicate test choices.

@@ -12,13 +12,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install picker DOM test dependency
-        run: npm ci --prefix experiments/logo-picker
       - name: Validate packaged read-only picker experiment
         run: |
           node --check custom_components/smart_load_manager/frontend/logo-picker-probe.mjs
-          node --check custom_components/smart_load_manager/frontend/charger-picker.mjs
-          node --test experiments/logo-picker/test-probe.mjs experiments/logo-picker/test-setup-picker.mjs
+          node --test experiments/logo-picker/test-probe.mjs
           cmp experiments/logo-picker/logo-picker-probe.mjs custom_components/smart_load_manager/frontend/logo-picker-probe.mjs
   unit-tests:
     runs-on: ubuntu-latest

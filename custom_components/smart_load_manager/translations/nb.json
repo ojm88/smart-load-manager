@@ -28,7 +28,7 @@
       },
       "charging": {
         "title": "Elbillading",
-        "description": "Åpne ladervelgeren med knappen nedenfor. Velg ladere, trykk Bruk valgene og gå tilbake hit for å fullføre. Hvis en enkel liste vises her, velger du laderen direkte. Velg første Easee-lader. Aktiver Spenning-sensoren på laderen først og vent på en målt verdi. Deretter kan du fullføre med én lader eller legge til en til. Begge deler boligens forbruksgrense, med egen tidsstyring per lader. Automatisk laststyring starter avslått. {validation_error}",
+        "description": "Velg første Easee-lader. Aktiver Spenning-sensoren på laderen først og vent på en målt verdi. Deretter kan du fullføre med én lader eller legge til en til. Begge deler boligens forbruksgrense, med egen tidsstyring per lader. Automatisk laststyring starter avslått. {validation_error}",
         "data": {
           "charger_device": "Første Easee-lader"
         }
@@ -46,10 +46,6 @@
         "data": {
           "charger_device": "Andre Easee-lader"
         }
-      },
-      "charging_logo": {
-        "title": "Velg ladere med Easee-logo",
-        "description": "Åpne ladervelgeren og gå tilbake hit for å fullføre. Ingenting lagres før oppsettet er fullført."
       }
     },
     "abort": {
@@ -250,7 +246,7 @@
       },
       "add_charger": {
         "title": "Legg til lader",
-        "description": "Åpne ladervelgeren med knappen nedenfor. Velg ladere, trykk Bruk valgene og gå tilbake hit for å fullføre. Hvis en enkel liste vises her, velger du laderen direkte. Velg laderen du vil legge til. Bare Easee-enheter som ikke allerede er konfigurert, vises. Den eksisterende laderen og dens innstillinger beholdes. Aktiver Easees Spenning-sensor før du fortsetter. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
+        "description": "Velg laderen du vil legge til. Bare Easee-enheter som ikke allerede er konfigurert, vises. Den eksisterende laderen og dens innstillinger beholdes. Aktiver Easees Spenning-sensor før du fortsetter. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
         "data": {
           "charger_device": "Easee-lader"
         }
@@ -261,10 +257,6 @@
         "data": {
           "charger_device": "Lader som skal fjernes"
         }
-      },
-      "add_charger_logo": {
-        "title": "Legg til en lader med Easee-logo",
-        "description": "Åpne velgeren og gå tilbake for å fullføre. Eksisterende lader beholdes."
       }
     },
     "error": {

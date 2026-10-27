@@ -102,3 +102,12 @@ Validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4, and six Node tes
 ## Approved beta.9 publication
 
 Published 0.1.1-beta.9 from merge commit 8313556a0f81a23e546444863f72a2fcbdce54be after owner approval. Verified release draft=false, prerelease=true and tag points to the merge commit. All 117 distinct tests pass (56 pure, 55 runtime and six Node tests), with runtime suites on HA 2026.2.3 and 2026.10.4. Phone UI/navigation and physical charging acceptance remain pending. Stable 0.1.0 and all earlier tags remain unchanged.
+
+
+## Native in-app setup correction (not released)
+
+Owner tested beta.9 and confirms the external logo step leaves iOS Companion for Safari. This violates the requirement to keep the whole setup in the app; seeing the custom page and images does not constitute acceptance of that flow. HA renders external-step links with target=_blank. The fast SelectSelector schema supports value/label pairs, not image options; the supported DeviceSelector does not expose exact selected-device exclusions.
+
+Restore the native compact name dropdown for initial and additive setup, including when an external/Cloud URL is configured. Remove external-step handlers, the hidden setup panel/API bridge and its frontend module. No sidebar page is registered. Preserve indexed options, first/second exclusion, saved records/options, grouping and all calculation/control/allocation files. Keep the unregistered read-only comparison experiment separate from setup.
+
+Validation: 56 pure tests, 51 HA runtime tests on HA 2026.10.4, and one existing Node experiment test pass locally. New real FlowManager regressions configure a Cloud URL, fail on any external-step call, and complete initial two-charger setup and additive second-charger setup entirely with native forms/menus. Actual Companion acceptance and physical charging remain separate. No new release has been published or installed.
