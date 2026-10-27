@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1-beta.9
 
 - Use one EV charging menu item for logo selection; remove duplicate test choices.
 - Provide absolute HA URLs so the external-step open button is visible; retain sessions when the dialog refreshes and compact setup when no URL is available.

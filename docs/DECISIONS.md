@@ -409,3 +409,8 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - External-step URLs must be absolute HTTP(S) URLs from HA's trusted URL helper, with preference for the current connection and then configured external/Cloud URLs. If none is available, retain compact setup. Keep a session stable when the original dialog refreshes.
 - Render a lightweight first/second list using integration brand images and a brands access token obtained via HA websocket API. Never send that token to the public CDN. Keep image failures independent of selection. Do not depend on lazy HA form/device-selector bundles being loaded in a newly opened tab.
 - Validate frontend behavior with DOM tests and distinguish them from actual Safari/Companion acceptance. Prepare a reviewable correction without republishing beta.8 or claiming phone acceptance.
+
+
+## 2026-10-27 — Beta.9 publication approval
+
+- Owner explicitly approves publishing the reviewed beta.8 setup correction as 0.1.1-beta.9. Keep stable 0.1.0 and earlier tags unchanged. Phone UI and physical charging acceptance remain pending.
