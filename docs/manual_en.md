@@ -6,7 +6,7 @@ SLM adjusts charging to a shared hourly household energy target. It can help avo
 
 Use Home Assistant 2026.2 or newer, configured Easee devices, and EnergyTariff with a HAN power sensor in W or kW. **Enable the Voltage sensor on every Easee charger** under Settings → Devices & services → Easee → charger → Entities. Include disabled entities and wait for measured values.
 
-Download a GitHub release, copy `custom_components/smart_load_manager` into `config/custom_components/`, then restart Home Assistant. From HA 2026.11 you can also add `https://github.com/ojm88/smart-load-manager` as a custom Integration in **Settings → Marketplace**; custom repositories require a GitHub connection. This menu is not available on HA 2026.10.
+Download a GitHub release, copy `custom_components/smart_load_manager` into `config/custom_components/`, then restart Home Assistant. From HA 2026.11 you can also add `https://github.com/ojm88/smart-load-manager` as a custom Integration in **Settings → Marketplace**; custom repositories require a GitHub connection. 
 
 ## Setup
 
@@ -39,17 +39,15 @@ Minimum current is 11 A for measured 230 V three-phase charging, otherwise 6 A. 
 
 Each charger has six main measurements: status, charging power, measured current, recommended current, active phases and voltage. Names use function followed by the charger name, consistently from the first charger. Voltage is measured or inferred line-to-line voltage; phase-neutral voltage and electrical details remain status attributes. Recommended current includes minimum and maximum attributes. A diagnostic priority sensor appears with two chargers.
 
-The household status explains why each load runs or waits and provides phase advice. Measurement status contains shared source IDs, HAN age and the old/new entity-ID migration mapping.
+The household status explains why each load runs or waits and provides phase advice. Measurement status contains shared source IDs, HAN age and input validity.
 
 Run **Developer tools → Actions → `smart_load_manager.get_dashboard`**, then paste the returned `yaml` into a **Manual card inside an existing section**. The generator resolves actual registered IDs, including your own renames. The graph reads EnergyTariff directly. Static [one](../examples/lovelace/charging_card.yaml) and [two](../examples/lovelace/two_chargers_card.yaml) charger examples are templates; generating the card is recommended.
 
-## Configuration and upgrade
+## Configuration
 
 **Configure → Household sources and safety margin** validates all inputs before saving and retains load settings. Updated sources are read at the next regular refresh.
 
 **Configure → Add or remove charger** changes the one/two-charger selection and reloads SLM. Enable automatic control again afterwards. Before removal, SLM sends a 0 A command to the removed charger; a failed command aborts the change. Command success does not confirm a physical stop. Saved settings are retained if the device is added again.
-
-Back up before beta 5. Existing charger entries consolidate into one installation with household and charging groups. Unique sensor identities and settings are retained. Generated entity IDs gain a saved charger-name suffix; custom IDs and display names are respected. Name collisions use stable disambiguation and existing IDs are never taken over. **External YAML and automations are not rewritten.** Check the mapping on Measurement status and generate a new card. Returning to beta 4 requires restoring the backup.
 
 ## Waiting or troubleshooting
 

@@ -13,7 +13,7 @@ SLM tilpasser ladingen til boligens valgte timebudsjett. Målet er å redusere u
 
 Last ned ønsket GitHub-utgivelse. Kopier `custom_components/smart_load_manager` til `config/custom_components/`, og start Home Assistant på nytt.
 
-Fra HA 2026.11 kan du også legge til `https://github.com/ojm88/smart-load-manager` som egendefinert integrasjonsrepo i **Innstillinger → Marketplace**. Egendefinerte repoer krever GitHub-tilkobling. Menyen finnes ikke i HA 2026.10.
+Fra HA 2026.11 kan du også legge til `https://github.com/ojm88/smart-load-manager` som egendefinert integrasjonsrepo i **Innstillinger → Marketplace**. Egendefinerte repoer krever GitHub-tilkobling. 
 
 1. Legg til **Smart Load Manager OJM** under Enheter og tjenester.
 2. Velg boligens HAN-effekt, EnergyTariff **brukt denne timen**, og sikkerhetsmargin.
@@ -44,7 +44,7 @@ Minste strøm er 11 A ved målt 230 V trefaselading, ellers 6 A. SLM henter øvr
 
 Seks hovedsensorer per lader: **Ladestatus**, **Effekt til bilen**, **Strøm til bilen**, **Anbefalt ladestrøm**, **Faser i bruk** og **Volt**. Funksjonen kommer først og ladernavnet sist, også for første lader. Volt viser målt eller utledet spenning mellom fasene; fase–nøytral og øvrige elektriske detaljer finnes på Ladestatus.
 
-**Anbefalt ladestrøm** har minimum og Easees maksimum som attributter. **Status for laststyring** på boligen forklarer hvorfor hver lader lader eller venter, med eventuelle faseråd. **Målegrunnlag** viser målekilder, HAN-alder og eventuell mapping fra gamle til nye entitets-ID-er. Ladeprioritet er en diagnostikksensor ved to ladere.
+**Anbefalt ladestrøm** har minimum og Easees maksimum som attributter. **Status for laststyring** på boligen forklarer hvorfor hver lader lader eller venter, med eventuelle faseråd. **Målegrunnlag** viser målekilder, HAN-alder og målingenes gyldighet. Ladeprioritet er en diagnostikksensor ved to ladere.
 
 ## Dashboard
 
@@ -52,13 +52,11 @@ Kjør `smart_load_manager.get_dashboard` under **Utviklerverktøy → Handlinger
 
 De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](../examples/lovelace/two_chargers_card.yaml)-kortene er maler. Generer helst kortet for din installasjon.
 
-## Endringer og oppgradering
+## Konfigurasjon
 
 **Konfigurer → Boligens målekilder og sikkerhetsmargin** validerer alt før lagring og påvirker ikke ladeinnstillingene. Nye kilder leses ved neste ordinære oppdatering.
 
 **Konfigurer → Legg til eller fjern lader** endrer hvilke én eller to ladere som er med. Integrasjonen lastes på nytt, og automatisk styring må aktiveres igjen. En lader som fjernes, får en 0 A-kommando før oppsettet endres; feil ved denne kommandoen avbryter endringen. Dette er ikke en målt bekreftelse på at fysisk lading har stoppet. Innstillinger beholdes ved senere gjeninnlegging.
-
-Ta sikkerhetskopi før beta 5. Gamle laderoppføringer samles automatisk med de samme unike sensoridentitetene og innstillingene. Automatisk genererte ID-er får konsekvente ladernavn; egne ID-er og navn overskrives ikke. Ved navnekollisjon brukes en stabil identifikator, og en eksisterende ID tas aldri over. **Ekstern YAML og automasjoner oppdateres ikke automatisk.** Kontroller mapping på Målegrunnlag og generer nytt kort. Gjenopprett sikkerhetskopien for å gå tilbake til beta 4.
 
 ## Hvis lading venter
 

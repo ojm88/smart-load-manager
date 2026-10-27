@@ -6,7 +6,7 @@ Updated: 2026-10-27
 
 - Stable: **0.1.0**.
 - Published beta: **0.1.1-beta.4**, code `708e97e6f43c1a96270cfa70847e3be2798db0b5`.
-- Prepared: **0.1.1-beta.5**, awaiting owner release approval. No beta.5 tag/release has been published.
+- Prepared: **0.1.1-beta.5**, approved by owner for publication; publication is in progress.
 
 ## Implemented in beta 5
 

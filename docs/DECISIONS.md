@@ -343,3 +343,10 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Keep electrical/control/allocation math unchanged. Configuration changes affecting charger membership reload the installation with automatic control off. A removed charger must acknowledge a zero-current command before settings change; this is not measured physical-stop confirmation. Retain removed load records/options for re-addition.
 - Declare HA 2026.2 as minimum; native subentry lifecycle and registry behavior are validated in HA 2026.2.3. Downgrade after schema migration requires backup restore. Physical beta.5 acceptance remains separate from software tests.
 - Prepare the beta.5 branch and reviewable pull request; publishing a beta still follows the owner's request to approve releases first.
+
+
+## 2026-10-27 — Current-state documentation and beta.5 publication approval
+
+- Owner approves publishing beta.5.
+- README and user guides describe the current integration, setup and behavior. Do not add upgrade histories, sensor-renaming instructions or explanations of the former HACS name. Use Marketplace directly, with its applicable minimum version. Keep technical migration details and validation records in developer documentation.
+- The project is in development; avoid presenting it as a launched product with public upgrade obligations.

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1-beta.5 (prepared)
+## 0.1.1-beta.5
 
 - Separate native household and charging groups, with both chargers in the charging group. Upgrade existing entries while retaining per-load settings and unique sensor identities.
 - Household-first wizard with one/two Easee selection and clear planned thermal categories.

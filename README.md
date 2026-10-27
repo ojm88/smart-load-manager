@@ -19,14 +19,14 @@ Keep household consumption within a chosen hourly energy target by adjusting EV 
 
 Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy `custom_components/smart_load_manager` into your Home Assistant `config/custom_components/`, and restart.
 
-From HA 2026.11, **Settings → Marketplace** also supports adding this repository as a custom **Integration**: `https://github.com/ojm88/smart-load-manager`. A GitHub connection is required for custom repositories. See the [official guide](https://contributors.home-assistant.io/marketplace/how-it-works/). The Marketplace menu is not available on HA 2026.10.
+From HA 2026.11, **Settings → Marketplace** also supports adding this repository as a custom **Integration**: `https://github.com/ojm88/smart-load-manager`. A GitHub connection is required for custom repositories. See the [official guide](https://contributors.home-assistant.io/marketplace/how-it-works/). 
 
 ## Set up
 
 1. **Settings → Devices & services → Add integration → Smart Load Manager OJM.**
 2. Select the household HAN power, EnergyTariff **used this hour**, and safety margin.
 3. Choose **EV charging**, then select one or two Easee chargers.
-4. Set **Forbruksgrense** on the household device. Disable any older automation controlling these chargers, then enable SLM automatic control deliberately on each charger.
+4. Set **Forbruksgrense** on the household device. Ensure only one controller regulates each charger, then enable SLM automatic control deliberately on each charger.
 
 The integration has two native groups: **Boligen / Household** for shared measurements and the budget; **Lading / Charging** for the chargers. Under **Configure**, edit shared sources or add/remove a charger. Changing the charger selection reloads SLM and automatic control starts off again.
 
@@ -46,11 +46,7 @@ Each charger has six main measurements: status, power, current, recommended curr
 
 [Guide in Norwegian](docs/manual_nb.md) · [English guide](docs/manual_en.md) · [Changes](CHANGELOG.md)
 
-## Upgrading to beta 5
-
-Back up Home Assistant first. Existing charger entries are consolidated into one installation with household and charging groups. Settings and unique IDs are retained. Generated entity IDs are renamed to include each charger's saved name; custom IDs and custom display names are respected. **Update external YAML/automations that use renamed IDs** and generate a new dashboard card. The old/new ID mapping is available on **Measurement status**. Downgrading to beta 4 requires restoring the backup.
-
-Automatic control remains opt-in and off after restart. SLM does not replace electrical protection. Two-charger live testing is still required; see [project status](docs/PROJECT_STATUS.md) for software validation.
+Automatic control starts off after restart. Enable it deliberately on each charger. SLM does not replace electrical protection. This project is under development; see [project status](docs/PROJECT_STATUS.md) for validation.
 
 ## Next
 
