@@ -60,7 +60,7 @@ Choose a target that fits normal household demand, your grid tariff and how much
 | One or two chargers | Charge both or one at a time, with a selectable first priority. |
 | Per-charger controls | Independent schedule, pause, manual current and phase selection. |
 | Measurements | Live status, power, current, recommended current, active phases and voltage. |
-| Regulation | Recalculates on source changes. Normally adjusts limits every five minutes; forecast risks and invalid measurements can require earlier reductions. |
+| Regulation | Recalculates on source changes. Evaluates newly connected cars immediately when ready to charge. Otherwise adjusts limits every five minutes; forecast risks and invalid measurements can require earlier reductions. |
 | Explanations | Household status describes why charging runs, waits or is limited. |
 | Dashboard | `smart_load_manager.get_dashboard` returns a Manual card using actual registered entity IDs. |
 

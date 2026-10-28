@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1-beta.13
+
+- Fix a startup stop loop when Easee reports charging before terminal-current measurements rise from zero. Keep the minimum derived from confirmed wiring and measured voltage until measured phase use is available; never infer measured current or bypass missing/conflicting electrical inputs.
+
+- Evaluate charging immediately when Easee reports a newly connected car ready to charge. Respect automatic-control opt-in, schedule, pause, valid measurements and minimum/shared capacity; keep measured reduction confirmation before transferring capacity between two chargers. After the startup cycle completes, schedule the next ordinary regulation five minutes later. Normal ready/charging transitions do not restart this interval.
+
 ## 0.1.1-beta.12
 
 - Cover all documented Easee operation-state names, including authorization, scheduling, Equalizer pauses and specific faults. Only explicitly supported ready/charging states may receive positive automatic current; unknown states wait. Completed charging shows a completed explanation and zero recommendation without claiming battery SOC.

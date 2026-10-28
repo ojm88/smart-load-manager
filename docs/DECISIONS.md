@@ -489,3 +489,24 @@ Owner capture has raw status completed and a completed household explanation, al
 ## 2026-10-28 — Beta.12 publication approval
 
 Owner explicitly requests publication of beta.12 after the final review. Publish PR #8 as a prerelease with version/tag 0.1.1-beta.12, retaining stable 0.1.0 and all older tags. Code head d15239cecf1dce24c49bd2fb9131102823aa4fe3 passed all four CI jobs on push and PR (40744557348 / 40744567210). This preparation changes documentation only. Restart HA, generate new dashboard YAML using smart_load_manager.get_dashboard and deliberately enable automatic control after inspecting the measurements. Physical charging and phone acceptance of beta.12 remain pending.
+
+
+## 2026-10-28 — Immediate plug-in evaluation (beta.13 preparation)
+
+- Owner requests immediate evaluation/start on connection, rather than waiting for the next ordinary regulation. Remember observed disconnected status per charger, including through authorization/offline/unknown waits, and initiate one fresh shared cycle when that car reports an eligible ready/charging state. Do not treat ready-to-charging transitions or routine meter updates as new connections.
+- Preserve automatic opt-in, schedules, pause, measurement/electrical validation, shared allocation and minimum current. Missing data never starts charging; retain a pending connection evaluation while required inputs recover. No new external polls or nominal voltage fallback.
+- Apply through the existing paired reduction/measurement acknowledgement path. Keep a startup cycle pending until those reductions are confirmed; only then start a fresh five-minute interval. Ordinary live recommendations, forecast reductions and watchdog remain as beta.12. A second car may require reducing the first before it can start.
+- Clear connection state on runtime unload. No dashboard layout/entity changes; existing beta.12 YAML continues to work. Prepare separately from the published beta.12 tag; publication of beta.13 is not authorized by this proposal. Physical acceptance is pending.
+
+
+## 2026-10-28 — Charging status can precede current telemetry
+
+- Owner reports brief starts followed by 0 A while recommendation remains positive. Read-only HA inspection confirms installed version beta.12; PR #9 remains a draft and beta.13 is not published. Current readings alone do not prove the historical stop reason.
+- Reproduced the exact command sequence in a real HA source-event test: awaiting_start with valid confirmed TN wiring/voltage sends 16 A; charging arrives with the same zero-current terminal snapshot; _minimum_current selected active_phases=0 and returned None, causing an invalid-input stop and a held 0 A limit. The new test failed with [16, 0] before correction and passes with only the positive startup command afterward. Existing tests missed the asynchronous ordering.
+- Use active phase count only when nonzero; otherwise use the already validated effective configuration for the minimum. This is the same measured-voltage/confirmed-wiring path used before startup, not cached or nominal voltage and not invented measured current. Missing voltage still forces 0 A; inconsistent connection/output/current checks remain. Do not remove forecast-risk regulation on the assumption that it caused this observed stop loop.
+- Pure regression covers zero-current charging on TN/IT, one/three-phase settings and 210 V measurements; runtime regression includes later current/power arrival and genuine voltage loss. Local validation: 81 pure tests and 89 runtime tests on both supported HA/Python environments pass. No physical charger command, software installation or physical acceptance performed. Include correction in the beta.13 draft without altering beta.12.
+
+
+## 2026-10-28 — Beta.13 publication approval
+
+Owner explicitly authorizes publication of PR #9 as prerelease 0.1.1-beta.13. Include the reproduced charging-before-current startup correction and immediate new-connection evaluation while retaining beta.12 live calculation, five-minute cadence, forecast reductions and paired measured-reduction acknowledgement. Code head 46bbe57561742a8938f676fd5f76f5e29e421d12 passed all four jobs in CI runs 40751798978 and 40751788952. This preparation changes version and release records only. Restart HA and deliberately enable automatic control after inspecting measurements. Existing beta.12 dashboard YAML remains valid. Physical charging acceptance remains pending.
