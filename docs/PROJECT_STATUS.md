@@ -1,13 +1,13 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-27
+Updated: 2026-10-28
 
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.10** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.10)).
-- Release code: `7c85400f0bc19c5b53d613e703f75b69647cd584`; merged PR #6.
-- GitHub Actions [40576433464](https://github.com/ojm88/smart-load-manager/actions/runs/40576433464) passed all four jobs for release head 87de4a364c5604bddf0bdb88f3c6896d7318f902, including runtime tests on HA 2026.2.3 and 2026.10.4. Published after explicit owner approval.
+- Published beta: **0.1.1-beta.11** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.11)).
+- Release code: `e5951112d85a7eb257344aefeb8b393b1c1ef167`; merged PR #7.
+- GitHub Actions [40639534986](https://github.com/ojm88/smart-load-manager/actions/runs/40639534986) and [40639529486](https://github.com/ojm88/smart-load-manager/actions/runs/40639529486) passed all four jobs for release-preparation head 5dd6dd6bb3ce36591465fda6e27a433a6b21a2f8. Published as a prerelease after explicit owner approval.
 
 ## Published beta.6 corrections
 
@@ -129,15 +129,22 @@ Local validation: 56 pure tests, 55 HA runtime tests on HA 2026.10.4 and one Nod
 Published 0.1.1-beta.10 as a prerelease from merge commit 7c85400f0bc19c5b53d613e703f75b69647cd584 after the owner's explicit request. Verified tag/manifest version and draft=false, prerelease=true. All 112 distinct tests pass (56 pure, 55 runtime and one Node test); CI covers HA 2026.2.3 and 2026.10.4. Native branding appearance, responsiveness and actual Companion acceptance are for owner testing, as agreed; physical charging remains unconfirmed. Stable 0.1.0 and earlier tags are unchanged.
 
 
-## Beta.11 electrical connection correction (proposed, not published)
+## Beta.11 electrical connection correction (published)
 
 Owner confirms beta.10 installation works without slow setup on a third HA gateway. This is setup acceptance, not charging acceptance. The 230 V three-phase charger is incorrectly shown as 406 V because the old inference takes the average of 403/409 V on unrelated terminal pairs. Captures of a TN supply and two more 230 V chargers establish why neither voltage state, populated pair count nor configured phase mode proves physical wiring.
 
 Owner approves explicit physical wiring per charger with four choices. Native first/second/add forms now require it; Configure → Chargers → Charger connections allows existing installations to confirm/edit it. Single/unknown wiring hides phase control, including registry lifecycle and generated YAML; direct phase-selector writes are rejected. Electrical calculation uses relevant measured terminal pairs, preserves single/three-phase TN behavior, handles IT current on T2, and fails closed for missing/conflicting input without cached-factor recovery. Shared budget/allocation, logo picker, schedules and identity preservation remain intact.
 
-Local validation: **129 distinct tests pass** — 66 pure tests, 62 HA runtime tests (each run on HA 2026.2.3/Python 3.13 and HA 2026.10.4/Python 3.14), and one Node selector regression. Compilation, JSON, YAML and translation checks pass. Runtime regressions cover native initial/add/edit flows, single-phase selector hiding/restoration, preserved user disables/peer settings, failed-stop atomicity, generated cards and missing-connection calculation rejection. No beta.11 release, live charger command or phone acceptance has occurred. GitHub CI results are recorded on the proposed pull request; local results above do not establish physical acceptance. Required acceptance: choose actual wiring on every existing charger, regenerate YAML, verify volts against the selected path, test one-/three-phase TN and IT charging, single-phase control absence and two-charger distribution. Never present these software tests as physical acceptance.
+Local validation: **129 distinct tests pass** — 66 pure tests, 62 HA runtime tests (each run on HA 2026.2.3/Python 3.13 and HA 2026.10.4/Python 3.14), and one Node selector regression. Compilation, JSON, YAML and translation checks pass. Runtime regressions cover native initial/add/edit flows, single-phase selector hiding/restoration, preserved user disables/peer settings, failed-stop atomicity, generated cards and missing-connection calculation rejection. At that preparation stage no beta.11 release, live charger command or phone acceptance had occurred; publication is recorded below. GitHub CI results are recorded on the proposed pull request; local results above do not establish physical acceptance. Required acceptance: choose actual wiring on every existing charger, regenerate YAML, verify volts against the selected path, test one-/three-phase TN and IT charging, single-phase control absence and two-charger distribution. Never present these software tests as physical acceptance.
 
 
 ## Approved beta.11 publication preparation
 
 On 2026-10-28 the owner explicitly requests publication of beta.11. PR #7 code head 6a9323ece2b062f8723bae0dae24c0c37644b6d1 passed all four CI jobs in runs [40596346688](https://github.com/ojm88/smart-load-manager/actions/runs/40596346688) and [40596306879](https://github.com/ojm88/smart-load-manager/actions/runs/40596306879). This preparation changes release documentation only; version 0.1.1-beta.11 is already present in the tested manifest. Publication is recorded separately after the release and tag are verified. No physical charging or beta.11 phone acceptance is claimed.
+
+
+## Beta.11 publication verified
+
+Published 0.1.1-beta.11 on 2026-10-28 from merge commit e5951112d85a7eb257344aefeb8b393b1c1ef167 after explicit owner approval. Verified draft=false, prerelease=true, tag and target commit match, and manifest version is 0.1.1-beta.11. Release-preparation CI passed all four jobs on both push and PR; 129 distinct software tests cover pure calculations, both supported HA runtimes and the selector regression. Stable 0.1.0 and earlier tags remain unchanged.
+
+After installation, restart HA, confirm physical wiring separately for each existing charger under Configure → Chargers → Charger connections, regenerate dashboard YAML, inspect measured voltages and deliberately enable automatic control. No physical beta.11 charging or new phone setup acceptance is claimed.
