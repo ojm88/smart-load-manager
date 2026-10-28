@@ -5,7 +5,7 @@ from .installation import charger_entries, update_load
 
 import logging
 import math
-from dataclasses import asdict, replace
+from dataclasses import asdict
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -23,6 +23,7 @@ from .calculations import (
 )
 from .const import (
     CONF_HAN_POWER_ENTITY,
+    CONF_CONNECTION,
     CONF_SAFETY_MARGIN_KWH,
     CONF_SCHEDULE_START_TIME,
     CONF_SCHEDULE_ENABLED,
@@ -86,12 +87,6 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         )
         self.last_commanded_current: int | None = None
         self._last_command_at = 0.0
-        self.last_known_minimum_current: int | None = None
-        self.last_known_kw_per_amp: float | None = None
-        self._last_known_phase_mode: int | None = None
-        self._last_known_voltage_type: str | None = None
-        self._last_known_grid_type_code: int | None = None
-        self._last_known_electrical = None
         self.site.controllers[entry.entry_id] = self
 
     async def _async_update_data(self) -> dict[str, object]:
@@ -122,6 +117,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             no_current_reason = int(status_state.attributes.get("state_reasonForNoCurrent", -1) or -1)
             electrical = detect_electrical_setup(
                 ElectricalSnapshot(
+                    connection=self.entry.data.get(CONF_CONNECTION),
                     output_phase=phase_code,
                     phase_mode=phase_mode,
                     grid_type_code=grid_type,
@@ -212,34 +208,6 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             max_current = min(observed_limits) if observed_limits else 0.0
             current_minimum = electrical.minimum_current_a
             current_kw_per_amp = kw_per_ampere(electrical)
-            if current_minimum is not None and current_kw_per_amp is not None:
-                self.last_known_minimum_current = current_minimum
-                self.last_known_kw_per_amp = current_kw_per_amp
-                self._last_known_phase_mode = phase_mode
-                self._last_known_voltage_type = electrical.voltage_type
-                self._last_known_grid_type_code = grid_type
-                self._last_known_electrical = electrical
-            elif (
-                self.last_commanded_current == 0
-                and self._last_known_phase_mode == phase_mode
-                and self._last_known_grid_type_code == grid_type
-                and electrical.effective_phases == 0
-                and self._last_known_electrical is not None
-            ):
-                # Auto phase mode may report no output phase while paused. Keep
-                # the last measured topology so a self-issued 0 A can resume.
-                current_minimum = self.last_known_minimum_current
-                current_kw_per_amp = self.last_known_kw_per_amp
-                electrical = replace(
-                    self._last_known_electrical,
-                    active_phases=0,
-                    phase_mode_name=electrical.phase_mode_name,
-                    output_phase_name=electrical.output_phase_name,
-                    grid_type_name=electrical.grid_type_name,
-                    no_current_reason=electrical.no_current_reason,
-                    confidence="cached",
-                    reason="Sist målte fase-/spenningsoppsett beholdes mens ladingen er pauset",
-                )
             schedule_start_time = str(
                 self.entry.options.get(
                     CONF_SCHEDULE_START_TIME,
@@ -254,7 +222,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     local_now, schedule_start_time, SCHEDULE_WINDOW_HOURS
                 )
 
-            invalid_input_reason = han_error or tariff_error
+            electrical_error = electrical.reason if current_kw_per_amp is None or current_minimum is None else ""
+            invalid_input_reason = han_error or tariff_error or electrical_error
             if invalid_input_reason:
                 recommended = 0 if self.auto_control else None
             elif not schedule_allowed:
@@ -300,6 +269,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 control_reason = "Bilen er ikke koblet til laderen."
             elif self.charging_paused:
                 control_reason = "Ladingen er satt på pause. Easee-grensen er satt til 0 A."
+            elif electrical_error:
+                control_reason = electrical_error
             elif invalid_input_reason:
                 control_reason = "Laststyringen avventer gyldige og oppdaterte måledata."
             elif not schedule_allowed:
@@ -319,6 +290,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "status": status_state.state,
                 "kw_per_amp": current_kw_per_amp,
                 "inputs_valid": not bool(invalid_input_reason),
+                "electrical_ready": not bool(electrical_error),
+                "electrical_error": electrical_error,
                 "phase_code": phase_code,
                 "phase_mode_code": phase_mode,
                 "electrical": asdict(electrical),

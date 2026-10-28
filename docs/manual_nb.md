@@ -17,7 +17,7 @@ Fra HA 2026.11 kan du også legge til `https://github.com/ojm88/smart-load-manag
 
 1. Legg til **Smart Load Manager OJM** under Enheter og tjenester.
 2. Velg boligens HAN-effekt, EnergyTariff **brukt denne timen**, og sikkerhetsmargin.
-3. Velg elbillading og første Easee-lader. Velg deretter å fullføre med én eller legge til en til. Listen for lader to viser bare enheter du ikke allerede har valgt.
+3. Velg elbillading, første Easee-lader og laderens fysiske tilkobling. Velg deretter å fullføre med én eller legge til en til. Listen for lader to viser bare enheter du ikke allerede har valgt.
 4. Velg **Forbruksgrense** på **SLM – Boligen** (4,5–20 kWh per time, trinn på 0,5).
 5. Slå av eventuell tidligere automasjon som regulerer de samme laderne. Slå deretter på automatisk laststyring for laderne du vil styre.
 
@@ -40,9 +40,17 @@ Ingen egne hjelpere eller YAML-automasjoner trengs. Varmtvann og gulvvarme vises
 
 Minste strøm er 11 A ved målt 230 V trefaselading, ellers 6 A. SLM henter øvre strømgrense fra Easee; den skal ikke tastes inn i SLM. Bilen identifiseres ikke, og «Completed» bekrefter ikke batteriprosent.
 
+## Tilkobling og fasevalg
+
+Bekreft faktisk tilkobling per lader: **230 V IT/TT – énfase**, **230 V IT/TT – trefase**, **400/230 V TN – énfase** eller **400/230 V TN – trefase**. Dette er installasjonens tilkobling, ikke ønsket lademodus. Beregningen bruker relevante målte Easee-spenninger, også ved for eksempel 210 V, og setter ikke spenningen fast til 230/400 V. Ved IT/TT brukes den høyeste relevante målte spenningen når flere fasepar inngår, slik at strømgrensen ikke beregnes for høyt.
+
+Ved trefasetilkobling kan fasevalget brukes til énfase, automatisk eller trefaselading. Ved énfasetilkobling vises ikke fasevalget, og direkte forsøk på fasebytte avvises. Manglende nødvendige målinger eller motstridende Easee-opplysninger stanser positiv strømregulering.
+
+Eksisterende ladere må bekreftes under **Konfigurer → Ladere → Ladernes tilkobling**. Endring beholder innstillinger og identiteter, sender 0 A til den lastede laderen og laster SLM på nytt med automatisk styring av. Kvitteringen er ikke en målt bekreftelse på fysisk stopp. Generer YAML-kortet på nytt etter endringen; generatoren utelater fasevalg for énfasetilkoblinger.
+
 ## Målinger og navn
 
-Seks hovedsensorer per lader: **Ladestatus**, **Effekt til bilen**, **Strøm til bilen**, **Anbefalt ladestrøm**, **Faser i bruk** og **Volt**. Funksjonen kommer først og ladernavnet sist, også for første lader. Volt viser målt eller utledet spenning mellom fasene; fase–nøytral og øvrige elektriske detaljer finnes på Ladestatus.
+Seks hovedsensorer per lader: **Ladestatus**, **Effekt til bilen**, **Strøm til bilen**, **Anbefalt ladestrøm**, **Faser i bruk** og **Volt**. Funksjonen kommer først og ladernavnet sist, også for første lader. Volt viser spenning basert på de relevante terminalmålingene: fase–nøytral ved enfase TN, utledet linjespenning ved trefase TN, og målt fase–fase ved IT/TT. Ladestatus viser bekreftet tilkobling og øvrige elektriske detaljer. TN-forsyningen forblir registrert som 400/230 V selv om bilen lader på én fase.
 
 **Anbefalt ladestrøm** har minimum og Easees maksimum som attributter. **Status for laststyring** på boligen forklarer hvorfor hver lader lader eller venter, med eventuelle faseråd. **Målegrunnlag** viser målekilder, HAN-alder og målingenes gyldighet. Ladeprioritet er en diagnostikksensor ved to ladere.
 

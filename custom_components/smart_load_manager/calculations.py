@@ -51,6 +51,7 @@ class ElectricalSnapshot:
     status: str = "unknown"
     currents_a: Mapping[str, float] | None = None
     voltages_v: Mapping[str, float] | None = None
+    connection: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +71,8 @@ class ElectricalResult:
     grid_type_name: str
     no_current_reason: str
     minimum_current_a: int | None
+    charging_kw_per_amp: float | None = None
+    connection: str | None = None
 
 
 _OUTPUT_PHASES = {
@@ -156,133 +159,117 @@ def _valid_values(values: Mapping[str, float] | None) -> dict[str, float]:
 
 
 def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
-    """Infer phase count and nominal voltage without assuming a fixed supply.
+    """Use confirmed wiring to interpret terminal measurements, never their maximum.
 
-    Easee terminal measurements use T2 as neutral on TN installations and T3-T5
-    as phase conductors. Explicit phase-to-phase measurements are preferred;
-    on TN, line voltage can be inferred as sqrt(3) times measured L-N voltage.
+    Standard Easee wiring: TN T2=N and T3/T4/T5=L1/L2/L3;
+    IT/TT 230 V T2/T3/T4 are phase conductors (T5 is unused).
+    The configured connection is required; phase mode cannot establish wiring.
     """
-
+    connection = snapshot.connection
+    tn = connection in {"tn_1", "tn_3"}
+    supported = connection in {"it_1", "it_3", "tn_1", "tn_3"}
+    supply_phases = 3 if connection in {"it_3", "tn_3"} else 1
     currents = _valid_values(snapshot.currents_a)
     voltages = _valid_values(snapshot.voltages_v)
-    configured = _OUTPUT_PHASES.get(int(snapshot.output_phase), 0)
-    if configured == 0:
-        # When Easee has not assigned an output phase yet, use its reported
-        # grid topology or a fixed one-/three-phase mode if available.
-        configured = {
-            1: 1,
-            3: 3,
-        }.get(int(snapshot.phase_mode), {
-            1: 3, 2: 2, 3: 1, 4: 3, 5: 1
-        }.get(int(snapshot.grid_type_code), 0))
-
-    # T2 is neutral for the Easee attributes used in TN installations.
-    phase_currents = {
-        key: value
-        for key, value in currents.items()
-        if key in {"T3", "T4", "T5"} and value >= 1.0
-    }
-    active = len(phase_currents)
-    effective = (
-        active
-        if snapshot.status.lower() == "charging" and active
-        else configured
-    )
-
-    ll_values = [
-        value
-        for key, value in voltages.items()
-        if key in {"T3T4", "T3T5", "T4T5", "T1T3", "T1T4", "T1T5"}
-    ]
-    ln_values = [
-        value
-        for key, value in voltages.items()
-        if key in {"T2T3", "T2T4", "T2T5"}
-    ]
-
-    # Pair readings above 350 V identify a 400 V class supply directly.
-    high_ll = [value for value in ll_values if value >= 350]
-    low_ll = [value for value in ll_values if 180 <= value < 300]
-    if high_ll:
-        line_v = sum(high_ll) / len(high_ll)
-        ln_v = (sum(ln_values) / len(ln_values)) if ln_values else line_v / sqrt(3)
-        voltage_type = "400V"
-        confidence = "high"
-        reason = "Målt linjespenning mellom faselederne"
-    elif low_ll:
-        line_v = sum(low_ll) / len(low_ll)
-        ln_v = None
-        voltage_type = "230V"
-        confidence = "high"
-        reason = "Målt omtrent 230 V mellom aktive faseledere"
-    elif ln_values and effective == 0:
-        return ElectricalResult(
-            configured_phases=configured,
-            active_phases=active,
-            effective_phases=effective,
-            voltage_type="unknown",
-            line_voltage_v=None,
-            phase_neutral_voltage_v=None,
-            confidence="none",
-            reason="Fasespenningsmålinger finnes, men faseoppsettet er ikke kjent",
-            phase_mode_name=PHASE_MODE_NAMES.get(snapshot.phase_mode, f"Ukjent ({snapshot.phase_mode})"),
-            output_phase_name=OUTPUT_PHASE_NAMES.get(snapshot.output_phase, f"Ukjent ({snapshot.output_phase})"),
-            grid_type_name=GRID_TYPE_NAMES.get(snapshot.grid_type_code, f"Ikke rapportert ({snapshot.grid_type_code})"),
-            no_current_reason=NO_CURRENT_REASONS.get(snapshot.no_current_reason_code, f"Ukjent Easee-kode ({snapshot.no_current_reason_code})"),
-            minimum_current_a=None,
-        )
-    elif ln_values:
-        ln_v = sum(ln_values) / len(ln_values)
-        if effective >= 2:
-            line_v = ln_v * sqrt(3)
-            voltage_type = "400V"
-            confidence = "medium"
-            reason = "230 V klasse fase-nøytral; linjespenning utledet med √3"
-        else:
-            line_v = ln_v
-            voltage_type = "230V"
-            confidence = "medium"
-            reason = "Målt fase-nøytral spenning på én aktiv fase"
+    output = int(snapshot.output_phase)
+    mode = int(snapshot.phase_mode)
+    charging = snapshot.status.lower() == "charging"
+    if not supported:
+        configured = 0
+    elif mode == 1:
+        configured = 1
+    elif mode == 3:
+        configured = supply_phases
     else:
+        configured = _OUTPUT_PHASES.get(output, supply_phases)
+    active_terminals = {key for key, value in currents.items() if value >= 1}
+    phase_terminals = {"T3", "T4", "T5"} if tn else {"T2", "T3", "T4"}
+    count = len(active_terminals & phase_terminals)
+    # In IT, one charging path draws current in TWO phase conductors.
+    active = count if tn else (3 if count == 3 else 1 if count == 2 else 0)
+    effective = active if charging and active else configured
+    voltage_type = "400V" if tn else "230V"
+
+    def result(reason, *, line=None, neutral=None, factor=None):
+        valid = factor is not None and effective in {1, 2, 3}
         return ElectricalResult(
-            configured_phases=configured,
-            active_phases=active,
-            effective_phases=effective,
-            voltage_type="unknown",
-            line_voltage_v=None,
-            phase_neutral_voltage_v=None,
-            confidence="none",
-            reason="Mangler gyldige Easee-spenningsmålinger",
-            phase_mode_name=PHASE_MODE_NAMES.get(snapshot.phase_mode, f"Ukjent ({snapshot.phase_mode})"),
-            output_phase_name=OUTPUT_PHASE_NAMES.get(snapshot.output_phase, f"Ukjent ({snapshot.output_phase})"),
+            configured_phases=configured, active_phases=active,
+            effective_phases=effective, voltage_type=voltage_type if supported else "unknown",
+            line_voltage_v=round(line, 1) if line is not None else None,
+            phase_neutral_voltage_v=round(neutral, 1) if neutral is not None else None,
+            confidence="configured_measured" if valid else "none", reason=reason,
+            phase_mode_name=PHASE_MODE_NAMES.get(mode, f"Ukjent ({mode})"),
+            output_phase_name=OUTPUT_PHASE_NAMES.get(output, f"Ukjent ({output})"),
             grid_type_name=GRID_TYPE_NAMES.get(snapshot.grid_type_code, f"Ikke rapportert ({snapshot.grid_type_code})"),
             no_current_reason=NO_CURRENT_REASONS.get(snapshot.no_current_reason_code, f"Ukjent Easee-kode ({snapshot.no_current_reason_code})"),
-            minimum_current_a=_minimum_current(
-                voltage_type="unknown", active_phases=active,
-                effective_phases=effective,
-                charging=snapshot.status.lower() == "charging",
-            ),
+            minimum_current_a=_minimum_current(voltage_type, active, effective, charging) if valid else None,
+            charging_kw_per_amp=factor if valid else None, connection=connection,
         )
 
-    return ElectricalResult(
-        configured_phases=configured,
-        active_phases=active,
-        effective_phases=effective,
-        voltage_type=voltage_type,
-        line_voltage_v=round(line_v, 1),
-        phase_neutral_voltage_v=round(ln_v, 1) if ln_v is not None else None,
-        confidence=confidence,
-        reason=reason,
-        phase_mode_name=PHASE_MODE_NAMES.get(snapshot.phase_mode, f"Ukjent ({snapshot.phase_mode})"),
-        output_phase_name=OUTPUT_PHASE_NAMES.get(snapshot.output_phase, f"Ukjent ({snapshot.output_phase})"),
-        grid_type_name=GRID_TYPE_NAMES.get(snapshot.grid_type_code, f"Ikke rapportert ({snapshot.grid_type_code})"),
-        no_current_reason=NO_CURRENT_REASONS.get(snapshot.no_current_reason_code, f"Ukjent Easee-kode ({snapshot.no_current_reason_code})"),
-        minimum_current_a=_minimum_current(
-            voltage_type=voltage_type, active_phases=active,
-            effective_phases=effective,
-            charging=snapshot.status.lower() == "charging",
-        ),
-    )
+    if not supported:
+        return result("Bekreft laderens fysiske tilkobling under Konfigurer → Ladere")
+    expected_grids = {"tn_1": {3}, "tn_3": {1}, "it_1": {5}, "it_3": {4}}[connection]
+    grid = snapshot.grid_type_code
+    if grid and grid not in expected_grids:
+        return result("Easees rapporterte nettype avviker fra bekreftet tilkobling")
+    tn_outputs = {10, 12, 14, 20, 21, 30}
+    it_outputs = {11, 13, 15, 22}
+    if output and output not in (tn_outputs if tn else it_outputs):
+        return result("Easees utgangskobling avviker fra bekreftet tilkobling")
+    if supply_phases == 1 and (mode == 3 or _OUTPUT_PHASES.get(output, 0) > 1):
+        return result("Easee melder flerfasemodus på en bekreftet énfasetilkobling")
+    if charging and (active_terminals - phase_terminals - ({"T2"} if tn else set())):
+        return result("Målt strøm på terminal utenfor bekreftet tilkobling")
+    if supply_phases == 1 and active > 1:
+        return result("Målt fasebruk avviker fra bekreftet énfasetilkobling")
+    if not tn and charging and count == 1:
+        return result("Mangler sammenhengende strømmålinger fra IT-faselederne")
+
+    def measured(pair):
+        value = voltages.get(pair)
+        return value if value is not None and 180 <= value <= 300 else None
+
+    if tn:
+        phases = ["T3", "T4", "T5"] if supply_phases == 3 else ["T3"]
+        # Use actual active phase voltages during charging. Before assignment,
+        # reserve the highest possible phase voltage for one-/two-phase starts.
+        if charging and active:
+            phases = [key for key in phases if key in active_terminals]
+        elif effective == 1 and output in {10, 12, 14}:
+            phases = [{10: "T3", 12: "T4", 14: "T5"}[output]]
+        elif effective == 2 and output in {20, 21}:
+            phases = ["T3", "T4"] if output == 20 else ["T4", "T5"]
+        if any(key not in ({"T3", "T4", "T5"} if supply_phases == 3 else {"T3"}) for key in phases):
+            return result("Tildelt Easee-fase finnes ikke i bekreftet tilkobling")
+        values = [measured("T2" + key) for key in phases]
+        if not values or any(value is None for value in values):
+            return result("Mangler gyldig målt TN-spenning på nødvendige terminalpar")
+        selected = sorted(values, reverse=True)[:effective]
+        neutral = sum(selected) / len(selected)
+        # Supply class stays TN even when only one phase is used by the car.
+        line = neutral * sqrt(3)
+        factor = sum(selected) / 1000
+        return result("Bekreftet TN-tilkobling; målt fase–nøytral spenning", line=line,
+                      neutral=neutral, factor=factor)
+
+    pairs = ["T2T3", "T2T4", "T3T4"] if supply_phases == 3 else ["T2T3"]
+    single_pairs = {11: "T2T3", 13: "T2T4", 15: "T3T4"}
+    if effective == 1:
+        if charging and count == 2:
+            pairs = ["".join(sorted(active_terminals & phase_terminals))]
+        elif output in single_pairs:
+            pairs = [single_pairs[output]]
+        if supply_phases == 1 and pairs != ["T2T3"]:
+            return result("Tildelt Easee-fase finnes ikke i bekreftet tilkobling")
+    values = [measured(pair) for pair in pairs]
+    if not values or any(value is None for value in values):
+        return result("Mangler gyldig målt IT/TT-spenning på nødvendige terminalpar")
+    # Highest relevant measured voltage avoids granting too many amperes on
+    # an unassigned path or uneven supply. No nominal 230 V is substituted.
+    line = max(values)
+    factor = (sqrt(3) if effective == 3 else effective) * line / 1000
+    return result("Bekreftet IT/TT-tilkobling; målt spenning mellom faseledere",
+                  line=line, factor=factor)
 
 
 def _minimum_current(
@@ -312,19 +299,8 @@ def power_to_watts(value: float, unit: str) -> float:
 
 
 def kw_per_ampere(result: ElectricalResult) -> float | None:
-    """Return nominal charging kW per A for supported electrical setups."""
-
-    if result.effective_phases == 1 and result.phase_neutral_voltage_v:
-        return result.phase_neutral_voltage_v / 1000
-    if result.effective_phases == 2 and result.line_voltage_v:
-        # Two phases in a 400 V TN system use two phase-neutral conductors.
-        if result.voltage_type == "400V" and result.phase_neutral_voltage_v:
-            return 2 * result.phase_neutral_voltage_v / 1000
-        # Easee IT two-phase output uses two 230 V line-pair charging paths.
-        return 2 * result.line_voltage_v / 1000
-    if result.effective_phases == 3 and result.line_voltage_v:
-        return sqrt(3) * result.line_voltage_v / 1000
-    return None
+    """Return kW/A only from a validated connection and measured voltage."""
+    return result.charging_kw_per_amp
 
 
 def recommended_current_a(

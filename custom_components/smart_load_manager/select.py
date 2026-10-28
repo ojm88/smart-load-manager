@@ -15,6 +15,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .budget import CONSUMPTION_LIMIT_OPTIONS, consumption_limit_option
 from .const import (
     CONF_CONSUMPTION_LIMIT_KWH,
+    CONF_CONNECTION,
     DOMAIN,
     PHASE_MODE_CODES,
     PHASE_MODE_FROM_CODE,
@@ -34,7 +35,8 @@ async def async_setup_entry(
     from homeassistant.helpers import entity_registry as er
     registry = er.async_get(hass)
     for load in platform_loads(entry):
-        add_grouped(hass, entry, async_add_entities, [ChargerPhaseModeSelect(load.runtime_data, load)], "charging")
+        if load.data.get(CONF_CONNECTION) in {"it_3", "tn_3"}:
+            add_grouped(hass, entry, async_add_entities, [ChargerPhaseModeSelect(load.runtime_data, load)], "charging")
         if load.entry_id == site_entry(hass).entry_id:
             entities = [ConsumptionLimitSelect(load.runtime_data, load)]
             if len(charger_entries(hass)) == 2:
@@ -110,6 +112,8 @@ class ChargerPhaseModeSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordin
 
     async def async_select_option(self, option: str) -> None:
         """Ask the Easee integration to change the configured phase mode."""
+        if self.coordinator.entry.data.get(CONF_CONNECTION) not in {"it_3", "tn_3"}:
+            raise ValueError("Fasebytte krever bekreftet trefasetilkobling")
         if option not in PHASE_MODE_CODES:
             raise ValueError(f"Unsupported Easee phase mode: {option}")
         await async_send_phase_mode(

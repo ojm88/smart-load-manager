@@ -429,3 +429,25 @@ These decisions supersede the earlier temporary single-entry/view boundary.
 - Use a single-device first selector and a native multi-device selector with existing sources preselected for additions. HA's own add picker excludes current values. Reject removal/replacement of existing sources and enforce exactly one new enabled Easee source; do not confuse list edits with replacement membership.
 - Prefer actual manufacturer/model metadata to avoid the selector's additional integration-membership lookup. Fall back to integration=easee when metadata is missing. Validate Easee membership and electrical sources on the server because presentation metadata is not authoritative. Do not claim a phone speed improvement until the owner measures it.
 - Publication of beta.10 is authorized by the current request. Charging/control/budget/allocation algorithms and automatic-control-off policy remain unchanged.
+
+
+## 2026-10-27 — Confirm wiring per charger, use measured voltage (beta.11)
+
+This supersedes the automatic topology inference decision and the earlier requirement to leave electrical inference unchanged. Owner confirms a physical 230 V three-phase installation reports unrelated T3T5/T4T5 values over 400 V. Other captures demonstrate that populated pair count cannot establish wired phase count; a TN three-phase installation can expose only its three phase–neutral voltages.
+
+- Require one of it_1, it_3, tn_1, tn_3 per charger in native setup/options. Do not guess/migrate old records from phase mode or terminal maxima. Existing records load diagnostics but cannot calculate a positive current until confirmed.
+- Follow standard Easee terminal wiring: T1 is PE, TN T2=N with T3/T4/T5 phases, and 230 V IT/TT T2/T3/T4 phases with T5 unused. Never classify supply from the highest reported pair or use PE pairs for charging power.
+- Use measured relevant phase–neutral values on TN and phase–phase values on IT/TT. For an unassigned single path or unequal IT voltages, reserve capacity using the highest relevant measured voltage. TN multiphase uses the sum of the relevant measured phase voltages; IT three-phase retains sqrt(3) times measured line voltage. No nominal voltage replaces missing measurements.
+- Separate physical supply from configured mode, assigned output and measured phase use. Two active IT conductors represent one charging path. Preserve the agreed 6 A / 11 A minimum policy and shared budget/allocation rules.
+- Create phase-mode selector only for confirmed three-phase wiring; lifecycle-disable old ones on single/unknown connections, preserving explicit user disables. Guard direct selector requests. Dashboard generation omits the phase row for those loads.
+- Changing wiring is deliberate, sends 0 A when the controller is loaded, and reloads with automatic control off. Preserve peer membership, stable identities, schedules and household settings. Incomplete/failed changes do not save.
+- Do not reuse cached electrical factors when fresh required input or confirmed connection is missing/conflicting. Keep known supply type in diagnostics even if voltage measurements are absent, but expose no usable calculation factor.
+- Easee v0.9.74 subscribes to detectedPowerGridType internally but does not attach it to the status entity. No live internal value was verified. This implementation uses the owner's confirmed connection and checks the public nettype attribute if available; it does not depend on private Easee objects or extra API calls. User approval of manual wiring supersedes the proposed internal diagnostic investigation.
+- Sources: https://developer.easee.com/docs/enumerations, https://developer.easee.com/docs/charger-observation-ids, and the Charge Up installation guide https://download.easee.com/m/3de6f4ad6cf696d2/original/NO_ChargeUp_InstallationGuide.pdf (wiring diagrams, printed page 11). Captured fixtures exclude serial/site/device identifiers.
+
+
+## 2026-10-28 — Beta.11 publication approval
+
+- Owner explicitly authorizes release of beta.11 after review of PR #7 and its passing checks. Publish as a prerelease; retain stable 0.1.0 and all previous tags.
+- Code head 6a9323ece2b062f8723bae0dae24c0c37644b6d1 passes all four CI jobs in runs 40596346688 and 40596306879. This release preparation changes documentation only.
+- Physical beta.11 charging and phone acceptance remain pending; automatic control stays off after restart. Existing chargers must confirm actual wiring and regenerate dashboard YAML.

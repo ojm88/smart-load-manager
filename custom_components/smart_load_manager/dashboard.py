@@ -27,6 +27,16 @@ async def async_register_dashboard_service(hass):
             "sensor.SLM_HAN_POWER_SOURCE": owner.data[CONF_HAN_POWER_ENTITY]
         }
         for entry in [owner] + others:
+            if entry.data.get("electrical_connection") not in {"it_3", "tn_3"}:
+                import yaml
+                parsed = yaml.safe_load(text)
+                suffix = "_CHARGER_SUFFIX" if entry.entry_id != owner.entry_id else "_FIRST_CHARGER_SUFFIX"
+                target = "select.slm_phase_mode" + suffix
+                for card in parsed.get("cards", []):
+                    if "entities" in card:
+                        card["entities"] = [row for row in card["entities"]
+                                            if (row.get("entity") if isinstance(row, dict) else row) != target]
+                text = yaml.safe_dump(parsed, allow_unicode=True, sort_keys=False)
             second = entry.entry_id != owner.entry_id
             for domain, mapping in ENTITY_OBJECT_IDS.items():
                 for key, base in mapping.items():

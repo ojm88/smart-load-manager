@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1-beta.11
+
+- Confirm the physical supply and wired phases separately for each charger: 230 V IT/TT single/three phase, or 400/230 V TN single/three phase. Edit it under Configure → Chargers → Charger connections.
+- Interpret measured Easee terminal voltages using that connection; do not infer the supply from the highest reported pair. Calculations use live measured voltage, including reduced voltage such as 210 V. Count an IT single-phase path correctly across two current-carrying conductors.
+- Show phase-mode control only for confirmed three-phase connections; reject direct phase-control writes otherwise. Generated dashboard YAML omits the unavailable control.
+- Keep nominal supply type separate from charging mode. A TN supply remains TN when charging on one phase; the visible voltage shows phase–neutral for single-phase TN.
+- Require confirmation on existing installations before SLM calculates a positive current. Missing/conflicting required electrical data cannot reuse a cached old factor. Connection edits retain load identities/settings, send 0 A to the loaded charger, and reload with automatic control off.
+- Physical charging and phone acceptance of this change are pending.
+
 ## 0.1.1-beta.10
 
 - Use HA's native device selector with integration branding inside the normal setup dialog, including Companion. Remove the external logo bridge and hidden setup page.

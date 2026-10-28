@@ -27,6 +27,9 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         if not data or not load.get("available", True):
             explanation = tr("Opplysninger fra laderen mangler. Status kan ikke bekreftes.",
                              "Charger information is missing. Its status cannot be confirmed.")
+        elif data.get("electrical_ready") is False:
+            explanation = (str(data.get("electrical_error")) if norwegian else
+                           "Confirm the physical connection under Configure → Chargers and check Easee voltage measurements.")
         elif paused:
             stage = "paused"
             explanation = tr("Ladingen er satt på pause. Slå av ladepause for å fortsette.",

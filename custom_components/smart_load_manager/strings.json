@@ -30,7 +30,11 @@
         "title": "EV charging",
         "description": "Select the first Easee charger. First enable its Voltage sensor and wait for a measured value. You can then finish with one charger or add a second. Both share the household limit and retain independent schedules. Automatic control starts off. {validation_error}",
         "data": {
-          "charger_device": "First Easee charger"
+          "charger_device": "First Easee charger",
+          "electrical_connection": "Physical charger connection"
+        },
+        "data_description": {
+          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control."
         }
       },
       "charging_next": {
@@ -44,7 +48,11 @@
         "title": "Second Easee charger",
         "description": "The first charger is already selected. Keep it selected and use the empty field below to add one charger. Selected devices are excluded from the add list. Enable the new charger’s Easee Voltage sensor before continuing. {validation_error}",
         "data": {
-          "charger_device": "Selected chargers and new charger"
+          "charger_device": "Selected chargers and new charger",
+          "electrical_connection": "Physical connection of the new charger"
+        },
+        "data_description": {
+          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control."
         }
       }
     },
@@ -241,14 +249,19 @@
         "title": "Manage chargers",
         "menu_options": {
           "add_charger": "Add charger",
-          "remove_charger": "Remove charger"
+          "remove_charger": "Remove charger",
+          "connection": "Charger connections"
         }
       },
       "add_charger": {
         "title": "Add charger",
         "description": "The existing charger is already selected. Keep it selected and use the empty field below to add one new charger. The existing charger and settings are preserved. Use Remove charger to remove a charger. Enable the new charger’s Easee Voltage sensor first. The integration reloads and automatic control starts off. {validation_error}",
         "data": {
-          "charger_device": "Selected chargers and new charger"
+          "charger_device": "Selected chargers and new charger",
+          "electrical_connection": "Physical connection of the new charger"
+        },
+        "data_description": {
+          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control."
         }
       },
       "remove_charger": {
@@ -256,6 +269,18 @@
         "description": "Choose the charger to remove. The other charger and household settings are kept. SLM first sends 0 A to the removed charger. Its settings are saved if you add it again later. {validation_error}",
         "data": {
           "charger_device": "Charger to remove"
+        }
+      },
+      "connection": {
+        "title": "Physical charger connection",
+        "description": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control. {validation_error}",
+        "data": {
+          "charger_device": "Charger",
+          "electrical_connection": "Physical charger connection"
+        },
+        "data_description": {
+          "charger_device": "Select the charger to configure.",
+          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control. A change sends 0 A to the loaded charger and reloads SLM with automatic control off."
         }
       }
     },
@@ -265,6 +290,16 @@
     "abort": {
       "two_chargers": "Two chargers are already configured.",
       "one_charger_required": "At least one charger must remain configured."
+    }
+  },
+  "selector": {
+    "electrical_connection": {
+      "options": {
+        "it_1": "230 V IT/TT – single phase",
+        "it_3": "230 V IT/TT – three phase",
+        "tn_1": "400/230 V TN – single phase",
+        "tn_3": "400/230 V TN – three phase"
+      }
     }
   }
 }
