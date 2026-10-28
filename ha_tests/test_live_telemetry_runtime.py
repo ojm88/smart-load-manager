@@ -14,7 +14,9 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.hass = HomeAssistant(self.tmp.name)
         from homeassistant.helpers import frame
         frame.async_setup(self.hass)
-        self.site = NS(lock=asyncio.Lock(), controllers={}, latest_samples={})
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+        self.site = NS(lock=asyncio.Lock(), controllers={}, latest_samples={},
+                       refresh=AsyncMock(side_effect=UpdateFailed("synthetic unavailable site")))
         from smart_load_manager.entity_resolution import EaseeEntities
         easee = EaseeEntities(status='sensor.source_status', current='sensor.source_current',
                    voltage='sensor.source_voltage', power='sensor.source_power', current_limits=())
@@ -48,7 +50,7 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         await self.hass.async_block_till_done()
         self.assertEqual(c.data['status'], 'awaiting_start')
         self.assertEqual(c.data['han_power_w'], 17339)
-        self.assertEqual(c.data['recommended_current_a'], 10)
+        self.assertIsNone(c.data['recommended_current_a'])
         self.assertEqual(c.data['control_reason'], 'saved decision')
         self.assertEqual(c._unsub_refresh, deadline)
         c._async_sample.assert_awaited_once_with(calculate=False)
@@ -63,7 +65,7 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.site.controllers['owner'] = owner
         await c._async_publish_telemetry()
         self.assertEqual(self.site.latest_samples['first']['status'], 'awaiting_start')
-        self.assertEqual(self.site.latest_samples['first']['recommended_current_a'], 10)
+        self.assertIsNone(self.site.latest_samples['first']['recommended_current_a'])
         owner.async_update_listeners.assert_called_once()
         c._async_send_current.assert_not_awaited()
 
@@ -114,7 +116,7 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.assertEqual(c.data['han_power_w'], 17339)
         self.assertEqual(c.data['energy_used_kwh'], 7.87)
         self.assertEqual(c.data['energy_estimate_kwh'], 9.49)
-        self.assertEqual(c.data['recommended_current_a'], 10)
+        self.assertIsNone(c.data['recommended_current_a'])
 
     async def test_missing_charger_source_keeps_available_household_readings(self):
         from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -129,3 +131,84 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.assertFalse(c.data['inputs_valid'])
         self.assertIsNone(c.data['charger_current_a'])
         c._async_send_current.assert_not_awaited()
+
+    async def test_source_event_recalculates_recommendation_without_ordinary_command(self):
+        from smart_load_manager.site import SiteController
+        from homeassistant.util import dt as dt_util
+        c = self.coordinator
+        site = SiteController(self.hass)
+        site.controllers[c.entry.entry_id] = c
+        c.site = site
+        c.auto_control = True
+        c.last_commanded_current = 10
+        site.cadence.record_regular(dt_util.now().timestamp())
+        c._async_sample.return_value.update(
+            inputs_valid=True, han_fresh=True, energy_used_kwh=5,
+            safety_margin_kwh=.3, minutes_left=30, han_power_w=1000,
+            kw_per_amp=.23, schedule_allowed=True, control_minimum_current_a=6,
+            max_current_a=16, electrical={})
+        self.hass.states.async_set('sensor.source_power', 0)
+        notify = Mock()
+        unsub = c.async_add_listener(notify)
+        deadline = c._unsub_refresh
+        c.async_start_source_updates()
+        with patch('smart_load_manager.site.charger_entries', return_value=[c.entry]), patch(
+                'smart_load_manager.site.site_entry', return_value=c.entry):
+            self.hass.states.async_set('sensor.source_status', 'awaiting_start')
+            await self.hass.async_block_till_done()
+        self.assertEqual(c.data['recommended_current_a'], 16)
+        self.assertEqual(c.data['last_sent_current_a'], 10)
+        self.assertEqual(c.data['status'], 'awaiting_start')
+        c._async_sample.assert_awaited_once_with()
+        c._async_send_current.assert_not_awaited()
+        self.assertEqual(c._unsub_refresh, deadline)
+        self.assertTrue(notify.called)
+        unsub()
+
+    async def test_source_change_during_command_wait_is_not_lost(self):
+        c = self.coordinator
+        entered, release = asyncio.Event(), asyncio.Event()
+        count = 0
+        async def refresh(requester):
+            nonlocal count
+            count += 1
+            if count == 1:
+                entered.set()
+                await release.wait()
+            return dict(c.data, status='charging' if count > 1 else 'awaiting_start')
+        self.site.refresh = refresh
+        c.async_start_source_updates()
+        self.hass.states.async_set('sensor.source_status', 'awaiting_start')
+        await entered.wait()
+        self.hass.states.async_set('sensor.source_status', 'charging')
+        await asyncio.sleep(0)
+        release.set()
+        await self.hass.async_block_till_done()
+        self.assertEqual(count, 2)
+        self.assertEqual(c.data['status'], 'charging')
+
+    async def test_site_deadline_runs_without_new_source_and_is_cancelled_on_shutdown(self):
+        from smart_load_manager.site import SiteController
+        from homeassistant.util import dt as dt_util
+        c = self.coordinator
+        site = SiteController(self.hass)
+        site.controllers[c.entry.entry_id] = c
+        c.site = site
+        c.auto_control = True
+        c._source_changed = Mock()
+        now = dt_util.now().timestamp()
+        site.cadence.record_regular(now)
+        cancel = Mock()
+        with patch('smart_load_manager.site.async_call_later', return_value=cancel) as timer:
+            site._arm_check()
+            self.assertAlmostEqual(timer.call_args.args[1], 300, delta=1)
+            site.cadence.risk_since = now
+            site._arm_check()
+            self.assertAlmostEqual(timer.call_args.args[1], 30, delta=1)
+            self.assertTrue(cancel.called)
+            timer.call_args.args[2](dt_util.now())
+            c._source_changed.assert_called_once_with(None)
+            site._arm_check()
+            cancel.reset_mock()
+            await c.async_shutdown()
+            cancel.assert_called_once()

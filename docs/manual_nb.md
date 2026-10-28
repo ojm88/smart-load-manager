@@ -56,7 +56,7 @@ Seks hovedsensorer per lader: **Ladestatus**, **Effekt til bilen**, **Strøm til
 
 ## Dashboard
 
-Måleverdier og ladestatus følger endringer fra kildesensorene i HA. Beregning og regulering beholder 30-sekundersintervallet og eksisterende kommandobegrensninger. Markdown-kortet viser målereffekt (W), brukt energi denne timen (kWh) og forventet timeforbruk (kWh) på en kompakt linje. Manglende verdier vises som —. Generer kortet på nytt for å få dette oppsettet.
+Måleverdier og ladestatus følger endringer fra kildesensorene i HA. Ledig kapasitet og anbefalt ladestrøm beregnes ved kildeendringer, i tillegg til en tids- og gyldighetskontroll hvert 30. sekund. Ladegrensene reguleres normalt hvert femte minutt; uendret grense sendes ikke på nytt. En prognose basert på brukt energi, målereffekt og sist satte ladegrenser avgjør om budsjettet kan holde til neste regulering eller timeskifte. Vedvarende risiko i 30 sekunder kan gi tidligere reduksjon; kan budsjettet ikke vente, reduseres det straks. Pause, ugyldige nødvendige målinger og lavere fysisk strømgrense håndteres straks. Etter en tidlig reduksjon venter ordinær økning minst fem minutter. Kortet skiller mellom anbefalt strøm nå, sist satt grense og målt strøm. Markdown-kortet viser målereffekt (W), brukt energi denne timen (kWh) og forventet timeforbruk (kWh) på en kompakt linje. Manglende verdier vises som —. Generer kortet på nytt for å få dette oppsettet.
 
 Kjør `smart_load_manager.get_dashboard` under **Settings → Tools → Actions**. Kopier `yaml` til et **Manuelt kort i en eksisterende seksjon**. Generatoren bruker de faktiske entitets-ID-ene, også når du har gitt dem egne navn. Grafen leser EnergyTariff direkte.
 

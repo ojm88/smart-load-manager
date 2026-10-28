@@ -70,7 +70,17 @@ cards:
 
     {% if load.automatic_control and load.recommended_current_a is not none %}
 
-    Beregnet ladestrøm: **{{ load.recommended_current_a | round(0) | int }} A**.
+    Anbefalt nå: **{{ load.recommended_current_a | round(0) | int }} A**{% if load.last_sent_current_a
+    is number %} · Sist satt: **{{ load.last_sent_current_a | round(0) | int }} A**{%
+    endif %}.
+
+
+    {% if load.next_regulation_at is number %}
+
+    Neste ordinære regulering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'',
+    true) }}**.
+
+    {% endif %}
 
     {% endif %}
 

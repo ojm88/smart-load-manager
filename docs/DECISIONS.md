@@ -461,3 +461,16 @@ This supersedes the automatic topology inference decision and the earlier requir
 - Beta.11 is already published. Prepare this work separately as unreleased; do not alter its tag, assets or version, and do not publish a new beta without owner approval. README presentation remains frozen.
 
 - Owner clarifies that single-charger Markdown must contain no hypothetical two-charger guidance. Use singular waiting/disconnected/completed summaries with one configured load and suppress paired phase advice unless multiple loads are configured.
+
+
+## 2026-10-28 — Live calculation and five-minute regulation (beta.12)
+
+Owner explicitly approves the proposed command cadence. This supersedes the earlier decision to retain 30-second calculation/regulation and read-only source events.
+
+- Recalculate complete household capacity and recommendations on local HA source/attribute changes. Coalesce bursts but rerun if a source changes while a command is awaiting completion. Keep the 30-second watchdog for elapsed time, schedules and stale inputs. Use fractional remaining minutes through the actual clock-hour boundary.
+- Use one household cadence for single and paired charging. Ordinary application is five minutes after a completed regular cycle; avoid unchanged writes. Source publication must not reset the watchdog. Arm an independent next-decision/confirmation callback so changes do not depend on another source event arriving. Cancel it on shutdown.
+- Forecast held power conservatively: at least HAN or summed measured charger power, plus the positive gap between each last commanded limit's expected power and measured power. Compare used energy plus projected consumption through the earlier of next regulation or hour boundary against the selected limit minus safety margin. EnergyTariff's estimate remains display-only.
+- Require continuous forecast risk for 30 seconds before an early reduction. If the remaining reserved budget can be exhausted within that confirmation window, reduce immediately. Early commands only lower limits; no peer increase. Hold ordinary increases for five minutes after an early reduction. Pause, loss of required inputs, closed schedule, disconnection/completion and a lower physical current limit do not wait. Explicit manual requests retain their existing immediate, budget-serialized behavior.
+- Retain the original direct single-charger start on valid measurements. Two chargers still establish a known zero limit at takeover and require subsequent measured reduction confirmation before any capacity reassignment. A service response alone never confirms a paired physical reduction.
+- Expose recommendation, last sent current limit, and next regular time separately in Markdown and diagnostic attributes. A falling recommendation alone must not tell the user the still-running car is paused. No new duplicate sensor entities, no private Easee API, no credentials.
+- Prepare beta.12 in PR #8; this instruction does not authorize publication or alteration of beta.11. Physical acceptance is pending.

@@ -7,6 +7,10 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 from .allocation import Demand, allocate, available_charging_kw
 from .budget import consumption_limit_value
 from .const import DOMAIN
+from .regulation import RegulationCadence
+from homeassistant.util import dt as dt_util
+from homeassistant.core import callback
+from homeassistant.helpers.event import async_call_later
 
 
 class MeasurementPending(ValueError):
@@ -33,6 +37,9 @@ class SiteController:
         self.pending_reductions = {}
         self.manual_requests = {}
         self.latest_samples = {}
+        self.cadence = RegulationCadence()
+        self._check_unsub = None
+        self._check_at = None
 
     async def refresh(self, requester):
         async with self.lock:
@@ -42,7 +49,7 @@ class SiteController:
                 if any(e.entry_id not in self.controllers for e in configured):
                     data = await requester._async_sample()
                     data["recommended_current_a"] = 0
-                    data["control_reason"] = "Avventer at begge laderne blir tilgjengelige."
+                    data["control_reason"] = "Avventer at alle konfigurerte ladere blir tilgjengelige."
                     for c in self.controllers.values():
                         if c.auto_control or c.charging_paused:
                             await c._async_send_current(0)
@@ -53,7 +60,7 @@ class SiteController:
                 owner = site_entry(self.hass)
                 reference = samples[owner.entry_id]
                 if not all(d.get("inputs_valid") and d.get("han_fresh") for d in samples.values()):
-                    raise MeasurementPending("Automatisk laststyring avventer gyldige målinger for begge laderne.")
+                    raise MeasurementPending("Automatisk laststyring avventer gyldige målinger for alle konfigurerte ladere.")
                 # Every charger power must be known before removing it from HAN.
                 for key, c in self.controllers.items():
                     if str(samples[key]["status"]).lower() == "disconnected":
@@ -113,7 +120,7 @@ class SiteController:
                         # A pending manual increase reserves capacity before
                         # peer automatic currents are reduced and acknowledged.
                         targets[key] = value
-                await self._apply(targets, samples)
+                await self._regulated_apply(targets, samples, reference, owner, eligible)
                 phase_advice = ""
                 if mode == "both" and len(demands) == 2 and any(targets.get(d.key, 0) == 0 for d in demands):
                     single_minimum = 0
@@ -143,11 +150,15 @@ class SiteController:
                     d["site_control_ready"] = True
                     d["phase_advice"] = phase_advice or "Ingen anbefaling om fasebytte nå."
                     d["site_available_kw"] = round(capacity, 3)
+                for key, d in samples.items():
+                    d["last_sent_current_a"] = self.controllers[key].last_commanded_current
+                    d["next_regulation_at"] = self.cadence.next_regular_at
+                self._arm_check()
                 self.latest_samples = samples
                 for key, d in samples.items():
                     c = self.controllers[key]
                     if c is not requester:
-                        c.async_set_updated_data(d)
+                        self._publish(c, d)
                 return samples[requester.entry.entry_id]
             except MeasurementPending as err:
                 # Missing input is a control wait, not a loss of every diagnostic
@@ -176,16 +187,20 @@ class SiteController:
                     d["site_control_ready"] = False
                     d["site_available_kw"] = None
                     d["phase_advice"] = "Faseråd avventer oppdaterte målinger."
+                for key, d in samples.items():
+                    d["last_sent_current_a"] = self.controllers[key].last_commanded_current
+                    d["next_regulation_at"] = self.cadence.next_regular_at
+                self._arm_check()
                 self.latest_samples = samples
                 for key, d in samples.items():
                     if self.controllers[key] is not requester:
-                        self.controllers[key].async_set_updated_data(d)
+                        self._publish(self.controllers[key], d)
                 return samples[requester.entry.entry_id]
             except Exception as err:
                 # Do not keep a peer on an old positive command after a failed
                 # sample or command. Never let a failed reduction enable a rise.
                 for c in self.controllers.values():
-                    if c.auto_control or c.charging_paused:
+                    if (c.auto_control or c.charging_paused) and c.last_commanded_current != 0:
                         try:
                             await c._async_send_current(0)
                             self.pending_reductions[c.entry.entry_id] = (0, c._last_command_at)
@@ -194,6 +209,123 @@ class SiteController:
                     if c is not requester:
                         c.async_set_update_error(UpdateFailed(str(err)))
                 raise UpdateFailed(str(err)) from err
+
+    @callback
+    def async_cancel_check(self):
+        if self._check_unsub is not None:
+            self._check_unsub()
+        self._check_unsub = None
+        self._check_at = None
+
+    @callback
+    def _arm_check(self):
+        # Keep time-driven decisions independent of the arrival of source data.
+        # Lightweight synthetic test adapters have no HA event loop.
+        if not hasattr(self.hass, 'loop'):
+            return
+        deadlines = [value for value in (
+            self.cadence.next_regular_at,
+            self.cadence.risk_since + 30 if self.cadence.risk_since is not None else None,
+        ) if value is not None]
+        now = dt_util.now().timestamp()
+        deadline = min(deadlines) if deadlines else None
+        if (not any(c.auto_control for c in self.controllers.values())
+                or deadline is None or deadline <= now):
+            self.async_cancel_check()
+            return  # Pending acknowledgements retain the 30-second watchdog.
+        if deadline == self._check_at:
+            return
+        self.async_cancel_check()
+        self._check_at = deadline
+        self._check_unsub = async_call_later(self.hass, deadline - now, self._deadline)
+
+    @callback
+    def _deadline(self, _now):
+        self._check_unsub = None
+        self._check_at = None
+        for controller in self.controllers.values():
+            if not getattr(controller, '_telemetry_stopped', False):
+                controller._source_changed(None)
+                break
+
+    @staticmethod
+    def _publish(controller, data):
+        if hasattr(controller, 'async_publish_sample'):
+            controller.async_publish_sample(data)
+        else:
+            controller.async_set_updated_data(data)
+
+    async def _regulated_apply(self, targets, samples, reference, owner, eligible):
+        now = dt_util.now().timestamp()
+        # Reserve the commanded power, even while the vehicle draws less. HAN
+        # already includes measured charging and all unmanaged household loads.
+        held_kw = max(reference['han_power_w'] / 1000,
+                      sum(d['charger_power_w'] for d in samples.values()) / 1000)
+        for key, controller in self.controllers.items():
+            d = samples[key]
+            factor = d.get('kw_per_amp')
+            if factor and controller.last_commanded_current is not None:
+                held_kw += max(0, controller.last_commanded_current * factor
+                               - d['charger_power_w'] / 1000)
+        mode = self.cadence.decide(
+            now=now, limit_kwh=consumption_limit_value(owner),
+            used_kwh=reference['energy_used_kwh'], margin_kwh=reference['safety_margin_kwh'],
+            held_power_kw=held_kw,
+            seconds_to_hour=reference.get('seconds_to_hour', reference['minutes_left'] * 60))
+        manual_change = any(value != self.controllers[key].last_commanded_current
+                            for key, value in self.manual_requests.items()
+                            if key in targets)
+        if manual_change:
+            mode = 'regular'
+        allowed = {}
+        for key, target in targets.items():
+            c = self.controllers[key]
+            d = samples[key]
+            previous = c.last_commanded_current
+            if not c.auto_control:
+                allowed[key] = target  # Explicit manual requests/pause stay immediate.
+            elif key not in eligible or c.charging_paused:
+                allowed[key] = 0
+            elif mode == 'regular':
+                allowed[key] = target
+            elif mode in {'early', 'urgent'}:
+                allowed[key] = min(target, previous or 0)  # Never raise a peer early.
+            else:
+                allowed[key] = previous or 0
+            # A lower physical current limit must never wait for the budget timer.
+            maximum = int(d.get('max_current_a', 0))
+            allowed[key] = min(allowed[key], maximum)
+            minimum = d.get('control_minimum_current_a')
+            if allowed[key] and (minimum is None or allowed[key] < minimum):
+                allowed[key] = 0
+        before = {key: self.controllers[key].last_commanded_current for key in allowed}
+        if len(self.controllers) == 1:
+            # No peer receives released capacity: retain the original single-
+            # charger startup without requiring a new zero-power heartbeat.
+            for key, target in allowed.items():
+                c = self.controllers[key]
+                retry_due = now - c._last_command_at >= 60
+                if target != c.last_commanded_current or (
+                        samples[key]['charger_current_a'] > target + .5 and retry_due):
+                    await c._async_send_current(target)
+                self.pending_reductions.pop(key, None)
+        else:
+            await self._apply(allowed, samples)
+        reduced = any(before[key] is not None and
+                      self.controllers[key].last_commanded_current < before[key]
+                      for key in allowed)
+        if mode == 'regular' and not self.pending_reductions and any(
+                c.auto_control for c in self.controllers.values()):
+            self.cadence.record_regular(now)
+        elif mode != 'regular' and reduced:
+            self.cadence.record_early_reduction(now)
+        for d in samples.values():
+            d['regulation_reason'] = {
+                'regular': 'Ordinær regulering hvert femte minutt.',
+                'hold': 'Beholder strømgrensen frem til neste ordinære regulering.',
+                'early': 'Reduserer tidligere: vedvarende risiko for å bruke opp timebudsjettet.',
+                'urgent': 'Reduserer straks: timebudsjettet kan ikke vente.',
+            }[mode]
 
     async def _apply(self, targets, samples):
         # First confirm every previous reduction using telemetry reported AFTER

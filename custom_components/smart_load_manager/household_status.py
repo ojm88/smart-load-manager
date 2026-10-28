@@ -58,6 +58,12 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         elif data.get("awaiting_reduction"):
             explanation = tr("Ladingen justeres. Mer strøm fordeles når reduksjonen er bekreftet.",
                              "Charging is being adjusted. More current is shared once the reduction is confirmed.")
+        elif data.get("last_sent_current_a") is not None and recommended != data["last_sent_current_a"]:
+            sent = data["last_sent_current_a"]
+            stage = "automatic" if sent > 0 and status == "charging" else "waiting"
+            explanation = tr(
+                f"Anbefalingen er nå {recommended} A. Laderen beholder sist satte grense på {sent} A frem til regulering.",
+                f"The recommendation is now {recommended} A. The charger keeps its last limit of {sent} A until regulation.")
         elif recommended <= 0:
             other_running = any((other.get("data") or {}).get("recommended_current_a", 0) or 0
                                 for other in loads if other["id"] != load["id"])
@@ -87,6 +93,9 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "current_a": data.get("charger_current_a"),
             "power_w": data.get("charger_power_w"),
             "recommended_current_a": recommended,
+            "last_sent_current_a": data.get("last_sent_current_a"),
+            "next_regulation_at": data.get("next_regulation_at"),
+            "regulation_reason": data.get("regulation_reason"),
             "minimum_current_a": data.get("control_minimum_current_a"),
             "maximum_current_a": data.get("max_current_a"),
             "schedule_enabled": bool(data.get("schedule_enabled")),

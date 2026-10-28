@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.1-beta.12 (unreleased)
 
-- Update charger measurements and shared household status when the selected HA sources change, including attribute-only voltage/current changes. Keep the existing 30-second regulation cycle and command limits; telemetry events do not allocate power, calculate a new current recommendation or send charger commands.
+- Update charger measurements and shared household status when the selected HA sources change, including attribute-only voltage/current changes. Recalculate capacity and recommendations on source changes, with a 30-second time/freshness watchdog. Ordinary automatic commands run every five minutes; unchanged limits are not resent. Earlier reductions require a 30-second persistent forecast risk, or occur immediately if the reserved hourly budget cannot wait. Pauses, invalid input and lower physical current limits remain immediate.
+- Distinguish live recommended current from the last sent limit and next regular regulation time. Hold ordinary increases for five minutes after an early reduction. Retain measured confirmation before reassignment between two chargers and the original direct single-charger startup.
 - Add a compact meter power / used this hour / estimated hour line and an explicit connected-car notice to both generated Markdown cards. Missing readings show a dash. Regenerate existing dashboard YAML to adopt the layout.
 
 ## 0.1.1-beta.11

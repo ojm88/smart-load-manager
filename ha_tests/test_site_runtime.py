@@ -1,7 +1,7 @@
 """Exercise command ordering and site coordination in HA's Python runtime."""
 from types import SimpleNamespace as NS
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 from datetime import datetime, UTC
 from smart_load_manager.site import SiteController
 
@@ -102,6 +102,10 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.commands.clear()
         result=await site.refresh(site.controllers['b'])
         self.assertEqual(result['recommended_current_a'],14)
+        self.assertEqual(self.commands,[])  # Recommendation changes live; increase waits.
+        deadline = datetime.fromtimestamp(site.cadence.next_regular_at, UTC)
+        with patch('smart_load_manager.site.dt_util.now', return_value=deadline):
+            await site.refresh(site.controllers['b'])
         self.assertEqual(self.commands,[('b',14)])
 
     def setup_missing_power(self, automatic=True):
@@ -178,3 +182,113 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.assertTrue(data['site_control_ready'])
         self.assertEqual(data['recommended_current_a'],7)
         self.assertEqual(self.commands,[('a',7),('b',7)])
+
+    def setup_regulation(self, *, single=False):
+        site = self.setup_missing_power()
+        if single:
+            site.controllers.pop('b')
+            self.entries.pop()
+        for key, c in site.controllers.items():
+            c.last_commanded_current = 10
+            d = c._async_sample.return_value
+            d.update(charger_power_w=2300, charger_current_a=10,
+                     energy_used_kwh=5, seconds_to_hour=1800)
+            self.states[key+'_power'] = NS(state='2300', last_updated=self.now)
+            self.states[key+'_current'] = NS(state='10', last_updated=self.now)
+        site.cadence.record_regular(self.now.timestamp())
+        return site
+
+    async def refresh_at(self, site, seconds):
+        from datetime import timedelta
+        with patch('smart_load_manager.site.dt_util.now', return_value=self.now+timedelta(seconds=seconds)):
+            return await site.refresh(next(iter(site.controllers.values())))
+
+    async def test_live_recommendations_do_not_change_limits_between_five_minute_ticks(self):
+        for single in (True, False):
+            site = self.setup_regulation(single=single)
+            for seconds in (1, 10, 60, 299):
+                data = await self.refresh_at(site, seconds)
+                self.assertGreater(data['recommended_current_a'], 10)
+                self.assertEqual(data['last_sent_current_a'], 10)
+                self.assertEqual(self.commands, [])
+            await self.refresh_at(site, 300)
+            self.assertTrue(self.commands)
+            self.assertTrue(all(value > 10 for _, value in self.commands))
+            sent = list(self.commands)
+            await self.refresh_at(site, 301)
+            self.assertEqual(self.commands, sent)
+
+    async def test_persistent_forecast_risk_reduces_then_blocks_immediate_rebound(self):
+        from datetime import timedelta
+        for single in (True, False):
+            site = self.setup_regulation(single=single)
+            for c in site.controllers.values():
+                c._async_sample.return_value['energy_used_kwh'] = 9.5
+            await self.refresh_at(site, 1)
+            await self.refresh_at(site, 30)
+            self.assertEqual(self.commands, [])
+            await self.refresh_at(site, 31)
+            self.assertEqual(self.commands, [(key, 0) for key in site.controllers])
+            self.commands.clear()
+            for key, c in site.controllers.items():
+                c._async_sample.return_value.update(energy_used_kwh=5, han_power_w=1000,
+                                                    charger_current_a=0, charger_power_w=0)
+                for suffix in ('power', 'current'):
+                    self.states[key+'_'+suffix] = NS(state='0', last_updated=self.now+timedelta(seconds=32))
+            await self.refresh_at(site, 32)
+            await self.refresh_at(site, 300)
+            self.assertEqual(self.commands, [])
+            self.assertFalse(site.pending_reductions)
+            await self.refresh_at(site, 331)
+            self.assertTrue(self.commands)
+
+    async def test_brief_risk_does_not_reduce_and_urgent_risk_does(self):
+        site = self.setup_regulation()
+        for c in site.controllers.values(): c._async_sample.return_value['energy_used_kwh'] = 9.5
+        await self.refresh_at(site, 1)
+        for c in site.controllers.values(): c._async_sample.return_value['energy_used_kwh'] = 5
+        await self.refresh_at(site, 20)
+        self.assertEqual(self.commands, [])
+        self.assertIsNone(site.cadence.risk_since)
+        for c in site.controllers.values(): c._async_sample.return_value['energy_used_kwh'] = 9.69
+        await self.refresh_at(site, 21)
+        self.assertEqual(self.commands, [('a', 0), ('b', 0)])
+
+    async def test_finished_charger_stops_without_raising_peer_before_tick(self):
+        site = self.setup_regulation()
+        site.controllers['a']._async_sample.return_value['status'] = 'completed'
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('a', 0)])
+
+    async def test_lower_physical_current_limit_does_not_wait_five_minutes(self):
+        site = self.setup_regulation()
+        for c in site.controllers.values(): c._async_sample.return_value['max_current_a'] = 8
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('a', 8), ('b', 8)])
+
+    async def test_unavailable_sources_stop_immediately_between_ticks(self):
+        site = self.setup_regulation()
+        site.controllers['b']._async_sample.return_value['inputs_valid'] = False
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('a', 0), ('b', 0)])
+
+    async def test_single_charger_start_retains_direct_start_with_valid_measurements(self):
+        site = self.setup_regulation(single=True)
+        site.cadence.next_regular_at = None
+        site.controllers['a'].last_commanded_current = None
+        await self.refresh_at(site, 0)
+        self.assertEqual(self.commands, [('a', 16)])
+        self.assertEqual(site.controllers['a'].last_commanded_current, 16)
+        self.assertFalse(site.pending_reductions)
+
+    async def test_single_charger_does_not_spam_unchanged_limit_during_delayed_reduction(self):
+        site = self.setup_regulation(single=True)
+        c = site.controllers['a']
+        c.last_commanded_current = 16
+        c._last_command_at = self.now.timestamp()
+        c._async_sample.return_value.update(charger_current_a=18, charger_power_w=4140)
+        await self.refresh_at(site, 1)
+        await self.refresh_at(site, 30)
+        self.assertEqual(self.commands, [])
+        await self.refresh_at(site, 60)
+        self.assertEqual(self.commands, [('a', 16)])

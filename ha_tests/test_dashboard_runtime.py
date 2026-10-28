@@ -93,3 +93,22 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
             self.assertIn('—', text)
             self.assertNotIn('None', text)
             payload.update(han_power_w=17339, energy_used_kwh=7.87, energy_estimate_kwh=9.49)
+
+    async def test_markdown_distinguishes_live_recommendation_from_sent_limit(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        env = Environment()
+        env.filters['timestamp_custom'] = lambda value, fmt, local: '18:05'
+        row = dict(name='Garasje', status='charging', explanation='Lading', power_w=2300,
+                   automatic_control=True, recommended_current_a=8,
+                   last_sent_current_a=10, next_regulation_at=1000)
+        payload = dict(controlled_loads=[row], summary='Lading', consumption_limit_kwh=10)
+        env.globals.update(states=lambda entity: 'automatic',
+                           state_attr=lambda entity, key: payload.get(key))
+        for name in ['one.yaml', 'two.yaml']:
+            card = yaml.safe_load((Path(__file__).parents[1] /
+                'custom_components/smart_load_manager/dashboard' / name).read_text())
+            text = env.from_string(card['cards'][0]['content']).render()
+            self.assertIn('Anbefalt nå: **8 A**', text)
+            self.assertIn('Sist satt: **10 A**', text)
+            self.assertIn('18:05', text)
