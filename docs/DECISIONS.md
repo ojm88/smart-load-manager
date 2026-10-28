@@ -474,3 +474,13 @@ Owner explicitly approves the proposed command cadence. This supersedes the earl
 - Retain the original direct single-charger start on valid measurements. Two chargers still establish a known zero limit at takeover and require subsequent measured reduction confirmation before any capacity reassignment. A service response alone never confirms a paired physical reduction.
 - Expose recommendation, last sent current limit, and next regular time separately in Markdown and diagnostic attributes. A falling recommendation alone must not tell the user the still-running car is paused. No new duplicate sensor entities, no private Easee API, no credentials.
 - Prepare beta.12 in PR #8; this instruction does not authorize publication or alteration of beta.11. Physical acceptance is pending.
+
+
+## 2026-10-28 — Complete Easee operation-state handling
+
+Owner capture has raw status completed and a completed household explanation, alongside a nonzero calculated recommendation in beta.11. This is not merely a delayed status refresh: completed is already recognized in the captured view. Display charging completed explicitly and force the recommendation to zero for non-eligible modes; do not translate completed into verified 100% battery SOC.
+
+- Verify const.EASEE_STATUS in Easee v0.9.74 and current master; both expose the same 22 unique state names (23 integer codes). Keep one shared, explicitly tested state map, preserving charged/awaiting_authentication as compatibility aliases.
+- Only awaiting_start, charging, ready_to_charge, start_charging and awaiting_load_balancing can receive positive automatic current. Recognize every documented blocking mode with its own Norwegian/English explanation. Unknown future names wait with an explicit unknown-status explanation, rather than being allocated power implicitly.
+- Completion/disconnection and specific Easee errors/waits take precedence over generic electrical/SLM waiting prose. Known blocking states stop automatic current without waiting for the five-minute interval. Manual commands retain their separately explicit behavior.
+- Source: https://github.com/nordicopen/easee_hass/blob/v0.9.74/custom_components/easee/const.py (EASEE_STATUS); compared against master on 2026-10-28. Software fixtures contain no actual installation identifiers. Physical acceptance pending.

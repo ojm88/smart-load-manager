@@ -4,6 +4,7 @@ Future load adapters contribute rows here. Dashboard Markdown reads this single
 household description contract rather than implementing a second control model.
 """
 from __future__ import annotations
+from .charger_status import normalize_status, allows_automatic_current, status_explanation
 
 
 def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norwegian=True):
@@ -17,7 +18,7 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
     any_advice = False
     for load in loads:
         data = load.get("data") or {}
-        status = str(data.get("status", "unknown")).lower().replace(" ", "_")
+        status = normalize_status(data.get("status", "unknown"))
         automatic = bool(data.get("auto_control"))
         paused = bool(data.get("charging_paused"))
         recommended = data.get("recommended_current_a")
@@ -27,6 +28,14 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         if not data or not load.get("available", True):
             explanation = tr("Opplysninger fra laderen mangler. Status kan ikke bekreftes.",
                              "Charger information is missing. Its status cannot be confirmed.")
+        elif status == "disconnected":
+            stage = "disconnected"
+            explanation = status_explanation(status, norwegian=norwegian)
+        elif status == "completed":
+            stage = "completed"
+            explanation = status_explanation(status, norwegian=norwegian)
+        elif not allows_automatic_current(status):
+            explanation = status_explanation(status, norwegian=norwegian)
         elif data.get("electrical_ready") is False:
             explanation = (str(data.get("electrical_error")) if norwegian else
                            "Confirm the physical connection under Configure → Chargers and check Easee voltage measurements.")
@@ -34,12 +43,6 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             stage = "paused"
             explanation = tr("Ladingen er satt på pause. Slå av ladepause for å fortsette.",
                              "Charging is paused. Turn off charging pause to continue.")
-        elif status == "disconnected":
-            stage = "disconnected"
-            explanation = tr("Bilen er ikke koblet til laderen.", "The car is not connected.")
-        elif status in {"completed", "charged"}:
-            stage = "completed"
-            explanation = tr("Bilen har avsluttet ladingen.", "The car has stopped requesting charging.")
         elif automatic and not ready:
             explanation = tr("Laststyringen venter på gyldige målinger før ladingen kan reguleres.",
                              "Load control is waiting for valid measurements before adjusting charging.")
@@ -120,8 +123,8 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "paused": tr("Ladingen er satt på pause.", "Charging is paused."),
             "disconnected": (tr("Bilen er ikke koblet til laderen.", "The car is not connected to the charger.") if single
                              else tr("Ingen bil er koblet til laderne.", "No car is connected to the chargers.")),
-            "completed": (tr("Bilen har avsluttet ladingen.", "The car has stopped requesting charging.") if single
-                          else tr("Bilene har avsluttet ladingen.", "The cars have stopped requesting charging.")),
+            "completed": (tr("Ladingen er fullført.", "Charging is completed.") if single
+                          else tr("Begge ladeøktene er fullført.", "Both charging sessions are completed.")),
         }[state]
     else:
         state = "mixed"

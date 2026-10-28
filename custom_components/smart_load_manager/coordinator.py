@@ -39,6 +39,7 @@ from .const import (
 from .entity_resolution import resolve_easee_entities
 from .budget import consumption_limit_value
 from .control import async_send_dynamic_limit
+from .charger_status import allows_automatic_current, normalize_status
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -363,8 +364,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     min_current_a=current_minimum,
                     kw_per_amp=current_kw_per_amp,
                 )
-            charger_disconnected = status_state.state.lower() == "disconnected"
-            if charger_disconnected:
+            charger_disconnected = normalize_status(status_state.state) == "disconnected"
+            if not allows_automatic_current(status_state.state):
                 recommended = 0
 
 

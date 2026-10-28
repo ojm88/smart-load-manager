@@ -292,3 +292,14 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(self.commands, [])
         await self.refresh_at(site, 60)
         self.assertEqual(self.commands, [('a', 16)])
+
+    async def test_all_blocked_easee_states_stop_and_completed_has_zero_recommendation(self):
+        from smart_load_manager.charger_status import STATUS_TEXT, CHARGE_ELIGIBLE
+        for status in (set(STATUS_TEXT) - CHARGE_ELIGIBLE) | {'future_status'}:
+            with self.subTest(status=status):
+                site = self.setup_regulation(single=True)
+                site.controllers['a']._async_sample.return_value['status'] = status
+                data = await self.refresh_at(site, 1)
+                self.assertEqual(data['recommended_current_a'], 0)
+                self.assertEqual(data['last_sent_current_a'], 0)
+                self.assertEqual(self.commands, [('a',0)])

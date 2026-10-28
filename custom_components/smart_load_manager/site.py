@@ -8,6 +8,7 @@ from .allocation import Demand, allocate, available_charging_kw
 from .budget import consumption_limit_value
 from .const import DOMAIN
 from .regulation import RegulationCadence
+from .charger_status import allows_automatic_current, normalize_status
 from homeassistant.util import dt as dt_util
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_call_later
@@ -97,9 +98,9 @@ class SiteController:
                 eligible = []
                 for key, d in samples.items():
                     c = self.controllers[key]
-                    status = str(d["status"]).lower().replace(" ", "_")
+                    status = normalize_status(d["status"])
                     can_run = (c.auto_control and not c.charging_paused and d["schedule_allowed"]
-                               and status not in {"disconnected", "completed", "charged", "error", "offline", "awaiting_authentication"})
+                               and allows_automatic_current(status))
                     if can_run:
                         if not d.get("kw_per_amp") or not d.get("control_minimum_current_a") or d["max_current_a"] <= 0:
                             raise MeasurementPending("Automatisk laststyring avventer fase, spenning eller strømgrense fra en lader.")
