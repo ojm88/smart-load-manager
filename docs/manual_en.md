@@ -47,6 +47,10 @@ The Voltage sensor shows phase–neutral for single-phase TN, inferred line volt
 
 ## Measurements and dashboard
 
+Easee **completed** displays **Charging is completed**, with a zero current recommendation. This is not a battery SOC measurement. Authorization waits, Easee scheduling, Equalizer pauses and faults have explicit explanations. Unknown states block positive automatic allocation until a supported state is reported.
+
+Measurements and charging status follow HA source changes. Capacity and recommended current recalculate on source changes, with a 30-second elapsed-time and freshness watchdog. Automatic limits normally update every five minutes; unchanged limits are not resent. A forecast from used energy, meter power and held current limits checks the budget until the next update or hour boundary. Risk persisting for 30 seconds can trigger an earlier reduction; imminent exhaustion bypasses confirmation. Pause, invalid required input and lower physical current limits remain immediate. An early reduction blocks ordinary increases for at least five minutes. The card distinguishes the current recommendation, last sent limit and measured current. The Markdown card has a compact meter power (W), energy used this hour (kWh), and estimated hourly energy (kWh) line. Missing values display as —. Regenerate the card to adopt this layout.
+
 Each charger has six main measurements: status, charging power, measured current, recommended current, active phases and voltage. Names use function followed by the charger name, consistently from the first charger. Voltage follows the confirmed connection and charging mode; phase–neutral voltage and electrical details remain status attributes. Recommended current includes minimum and maximum attributes. A diagnostic priority sensor appears with two chargers.
 
 The household status explains why each load runs or waits and provides phase advice. Measurement status contains shared source IDs, HAN age and input validity.

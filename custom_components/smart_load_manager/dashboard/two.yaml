@@ -7,6 +7,19 @@ cards:
 
     {% set loads = state_attr(info, ''controlled_loads'') or [] %}
 
+
+    {% set power = state_attr(info, ''han_power_w'') %}
+
+    {% set used = state_attr(info, ''energy_used_kwh'') %}
+
+    {% set estimate = state_attr(info, ''energy_estimate_kwh'') %}
+
+    ⚡ Måler: **{{ (power | round(0) | int ~ '' W'') if power is number else ''—''
+    }}** · ✅ Brukt: **{{ (used | round(2) ~ '' kWh'') if used is number else ''—''
+    }}** · 🔄 Estimat: **{{ (estimate | round(2) ~ '' kWh'') if estimate is number
+    else ''—'' }}**
+
+
     {% if states(info) in [''unknown'', ''unavailable''] or not loads %}
 
     ℹ️ **Opplysninger om laststyringen er ikke tilgjengelige akkurat nå.**
@@ -33,6 +46,16 @@ cards:
 
     ### {{ load.name }}
 
+    {% if load.status in [''awaiting_start'', ''charging'', ''ready_to_charge'', ''completed'',
+    ''charged'', ''awaiting_authentication''] %}
+
+
+    🔌 Bilen er koblet til.
+
+
+    {% endif %}
+
+
     {{ load.explanation }}
 
     {% if load.power_w is not none %}
@@ -43,7 +66,17 @@ cards:
 
     {% if load.automatic_control and load.recommended_current_a is not none %}
 
-    Beregnet ladestrøm: **{{ load.recommended_current_a | round(0) | int }} A**.
+    Anbefalt nå: **{{ load.recommended_current_a | round(0) | int }} A**{% if load.last_sent_current_a
+    is number %} · Sist satt: **{{ load.last_sent_current_a | round(0) | int }} A**{%
+    endif %}.
+
+
+    {% if load.next_regulation_at is number %}
+
+    Neste ordinære regulering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'',
+    true) }}**.
+
+    {% endif %}
 
     {% endif %}
 

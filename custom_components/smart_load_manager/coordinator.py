@@ -7,7 +7,8 @@ import logging
 import math
 from dataclasses import asdict
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from homeassistant.util import dt as dt_util
@@ -37,7 +38,8 @@ from .const import (
 )
 from .entity_resolution import resolve_easee_entities
 from .budget import consumption_limit_value
-from .control import async_send_dynamic_limit, target_current_for_control
+from .control import async_send_dynamic_limit
+from .charger_status import allows_automatic_current, normalize_status
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,13 +90,132 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.last_commanded_current: int | None = None
         self._last_command_at = 0.0
         self.site.controllers[entry.entry_id] = self
+        self._source_unsub = None
+        self._telemetry_task = None
+        self._telemetry_stopped = False
+        self._telemetry_dirty = False
+
+    async def async_config_entry_first_refresh(self):
+        await super().async_config_entry_first_refresh()
+        self.async_start_source_updates()
+
+    @callback
+    def async_start_source_updates(self):
+        """Observe local HA changes; command timing belongs to the site policy."""
+        if self._source_unsub is not None:
+            return
+        sources = {self.easee.status, self.easee.current, self.easee.voltage,
+                   self.easee.power, *self.easee.current_limits,
+                   self.entry.data[CONF_HAN_POWER_ENTITY],
+                   self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY),
+                   TARIFF_ESTIMATE_ENTITY}
+        self._source_unsub = async_track_state_change_event(
+            self.hass, [source for source in sources if source], self._source_changed)
+
+    @callback
+    def _source_changed(self, event):
+        self._telemetry_dirty = True
+        if not self._telemetry_stopped and (
+                self._telemetry_task is None or self._telemetry_task.done()):
+            self._telemetry_task = self.hass.async_create_task(self._async_publish_telemetry())
+
+    async def _async_publish_telemetry(self):
+        # Source changes recalculate the complete installation. The site policy
+        # decides whether a command is due; publishing never resets polling.
+        while not self._telemetry_stopped:
+            self._telemetry_dirty = False
+            try:
+                data = await self.site.refresh(self)
+            except UpdateFailed:
+                for controller in self.site.controllers.values():
+                    if hasattr(controller, '_async_publish_partial_telemetry'):
+                        await controller._async_publish_partial_telemetry()
+            else:
+                self.async_publish_sample(data)
+            if not self._telemetry_dirty:
+                return
+
+    @callback
+    def async_publish_sample(self, data):
+        self.data = data
+        self.last_update_success = True
+        self.async_update_listeners()
+
+    async def _async_publish_partial_telemetry(self):
+        # Serialize with paired regulation, but never invoke it. Updating data
+        # directly avoids async_set_updated_data resetting the polling deadline.
+        async with self.site.lock:
+            if self._telemetry_stopped:
+                return
+            try:
+                measured = await self._async_sample(calculate=False)
+                self.last_update_success = True
+            except UpdateFailed as err:
+                def value(entity_id, *, power=False):
+                    state = self.hass.states.get(entity_id) if entity_id else None
+                    try:
+                        number = _number(state)
+                        return power_to_watts(number, str(state.attributes.get("unit_of_measurement", ""))) if power else number
+                    except (TypeError, ValueError):
+                        return None
+
+                han_state = self.hass.states.get(self.entry.data[CONF_HAN_POWER_ENTITY])
+                han_age = ((dt_util.now() - dt_util.as_local(han_state.last_updated)).total_seconds()
+                           if han_state is not None else None)
+                han_power = value(self.entry.data[CONF_HAN_POWER_ENTITY], power=True)
+                measured = {
+                    "status": getattr(self.hass.states.get(self.easee.status), "state", "unavailable"),
+                    "charger_current_a": value(self.easee.current),
+                    "charger_power_w": value(self.easee.power, power=True),
+                    "electrical": {}, "electrical_ready": False,
+                    "electrical_error": str(err), "inputs_valid": False,
+                    "han_fresh": han_measurement_is_fresh(han_age, han_power),
+                    "han_age_seconds": han_age, "han_power_w": han_power,
+                    "energy_used_kwh": value(self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY)),
+                    "energy_estimate_kwh": value(TARIFF_ESTIMATE_ENTITY),
+                }
+            live_keys = {
+                "status", "charger_current_a", "charger_power_w", "electrical",
+                "electrical_ready", "electrical_error", "inputs_valid",
+                "phase_code", "phase_mode_code", "han_power_w", "han_age_seconds",
+                "han_fresh", "energy_used_kwh", "energy_estimate_kwh",
+                "max_current_a", "minimum_current_a", "control_minimum_current_a",
+                "kw_per_amp", "terminal_currents_a", "terminal_voltages_v", "easee_enum_codes",
+            }
+            self.data = {**(self.data or {}),
+                         **{k: v for k, v in measured.items() if k in live_keys},
+                         'site_control_ready': False,
+                         'recommended_current_a': 0 if self.auto_control else None,
+                         'last_sent_current_a': self.last_commanded_current,
+                         'next_regulation_at': getattr(getattr(self.site, 'cadence', None), 'next_regular_at', None)}
+            self.last_update_success = True
+            if self.entry.entry_id in self.site.latest_samples:
+                self.site.latest_samples[self.entry.entry_id] = dict(self.data)
+            # Shared household entities belong to the first coordinator and
+            # must also hear updates originating from the second charger.
+            for controller in self.site.controllers.values():
+                controller.async_update_listeners()
+
+    async def async_shutdown(self):
+        self._telemetry_stopped = True
+        if hasattr(self.site, "async_cancel_check"):
+            self.site.async_cancel_check()
+        if self._source_unsub is not None:
+            self._source_unsub()
+            self._source_unsub = None
+        if self._telemetry_task is not None and not self._telemetry_task.done():
+            self._telemetry_task.cancel()
+            import asyncio
+            try:
+                await self._telemetry_task
+            except asyncio.CancelledError:
+                pass
+        await super().async_shutdown()
 
     async def _async_update_data(self) -> dict[str, object]:
-        if len(charger_entries(self.hass)) > 1:
-            return await self.site.refresh(self)
-        return await self._async_sample(apply=True)
+        return await self.site.refresh(self)
 
-    async def _async_sample(self, apply=False) -> dict[str, object]:
+    async def _async_sample(self, *, calculate=True) -> dict[str, object]:
         try:
             status_state = self.hass.states.get(self.easee.status)
             current_state = self.hass.states.get(self.easee.current)
@@ -177,7 +298,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                         str(power_state.attributes.get("unit_of_measurement", "")),
                     )
 
-            minutes_left = 60 - local_now.minute
+            seconds_to_hour = 3600 - (local_now.minute * 60 + local_now.second + local_now.microsecond / 1_000_000)
+            minutes_left = seconds_to_hour / 60
             # Keep beta.9's saved value as a migration fallback for existing entries.
             from .site import site_entry
             hourly_limit = consumption_limit_value(site_entry(self.hass))
@@ -224,7 +346,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
             electrical_error = electrical.reason if current_kw_per_amp is None or current_minimum is None else ""
             invalid_input_reason = han_error or tariff_error or electrical_error
-            if invalid_input_reason:
+            if not calculate:
+                recommended = (self.data or {}).get("recommended_current_a")
+            elif invalid_input_reason:
                 recommended = 0 if self.auto_control else None
             elif not schedule_allowed:
                 recommended = 0 if self.auto_control else 0
@@ -240,26 +364,10 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     min_current_a=current_minimum,
                     kw_per_amp=current_kw_per_amp,
                 )
-            charger_disconnected = status_state.state.lower() == "disconnected"
-            if charger_disconnected:
+            charger_disconnected = normalize_status(status_state.state) == "disconnected"
+            if not allows_automatic_current(status_state.state):
                 recommended = 0
 
-            target_current = target_current_for_control(
-                enabled=self.auto_control,
-                recommendation=recommended,
-                connected=not charger_disconnected,
-                schedule_allowed=schedule_allowed,
-                sources_valid=not bool(invalid_input_reason),
-                paused=self.charging_paused,
-            )
-            if apply and target_current is not None:
-                now_ts = local_now.timestamp()
-                command_age = now_ts - self._last_command_at
-                if (
-                    (target_current != self.last_commanded_current or command_age >= 300)
-                    and command_age >= 60
-                ):
-                    await self.async_set_current(target_current)
 
             if recommended is None and self.auto_control and self.last_commanded_current == 0:
                 # Keep the zero limit in coordinator state while phase data is
@@ -310,6 +418,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "max_current_a": max_current,
                 "safety_margin_kwh": safety_margin,
                 "minutes_left": minutes_left,
+                "seconds_to_hour": seconds_to_hour,
                 "auto_control": self.auto_control,
                 "charging_paused": self.charging_paused,
                 "schedule_enabled": schedule_enabled,
@@ -328,11 +437,6 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 },
             }
         except (TypeError, ValueError) as err:
-            if apply and (self.auto_control or self.charging_paused):
-                try:
-                    await self.async_set_current(0)
-                except Exception:  # Keep coordinator's original failure visible.
-                    _LOGGER.exception("Kunne ikke sende 0 A etter ugyldige kildedata")
             raise UpdateFailed(str(err)) from err
 
     async def async_set_current(self, current: int) -> None:

@@ -54,3 +54,11 @@ class HouseholdStatusTests(unittest.TestCase):
         state,info=build_household_status([self.load(awaiting_reduction=True)],limit_kwh=10)
         self.assertEqual(state,'waiting')
         self.assertIn('bekreftet',info['controlled_loads'][0]['explanation'])
+
+    def test_lower_live_recommendation_does_not_claim_running_car_is_paused(self):
+        state, info = build_household_status([
+            self.load(status='charging', recommended_current_a=0, last_sent_current_a=10)
+        ], limit_kwh=10)
+        self.assertEqual(state, 'automatic')
+        self.assertIn('beholder', info['controlled_loads'][0]['explanation'])
+        self.assertEqual(info['controlled_loads'][0]['last_sent_current_a'], 10)

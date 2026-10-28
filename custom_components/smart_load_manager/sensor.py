@@ -256,6 +256,9 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
             attributes.update(
                 minimum_current_a=data.get("control_minimum_current_a", data.get("minimum_current_a")),
                 maximum_current_a=data.get("max_current_a"),
+                last_sent_current_a=data.get("last_sent_current_a"),
+                next_regulation_at=data.get("next_regulation_at"),
+                regulation_reason=data.get("regulation_reason"),
             )
         elif self._key == "status":
             attributes["card_suffix"] = self.coordinator.entry.data.get("entity_suffix", "")
@@ -325,7 +328,7 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
             norwegian=str(self.hass.config.language or "").startswith("nb"))
         reference = snapshots.get(getattr(owner, "entry_id", ""), coordinator.data or {})
         payload.update({key: reference.get(key) for key in (
-            "han_power_w", "energy_used_kwh", "safety_margin_kwh", "minutes_left",
+            "han_power_w", "energy_used_kwh", "energy_estimate_kwh", "safety_margin_kwh", "minutes_left",
         )})
         return state, payload
 
