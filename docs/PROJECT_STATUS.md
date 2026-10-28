@@ -8,11 +8,11 @@ Updated: 2026-10-28
 - Published beta: **0.1.1-beta.13** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.13)).
 - Release code: `e6fef3b7b9043ea0a7a7c9c599edcf85640dec2f`; merged PR #9. Tag/target and manifest version verified; draft=false, prerelease=true.
 - Release-preparation runs **40752938419** and **40752928920** passed all four jobs for e956bfa67d512c1e5c91c98068e277b670289b1d. The merge tree equals the tested release-preparation tree 8081a12ff5cddc2f0cd16d4ce05879dad6be54a8.
-- Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Physical beta.13 charging acceptance is pending.
+- Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Owner confirms beta.13 works with **one configured physical charger**. Two-charger physical acceptance remains pending.
 
 ## Unreleased beta.14 preparation
 
-- Owner reports beta.13 now appears to charge correctly. This is preliminary single-installation feedback, not full physical acceptance of every one/two-charger case.
+- Owner confirms beta.13 works with **one configured charger**. This confirms that tested installation only; two-charger physical operation is not yet confirmed. Keep beta.14 changes ready in the draft while the owner tests for further issues. Do not publish until separately requested.
 - Schedule opening/closing and explicit controls now trigger immediate validated allocation without waiting for the five-minute gate or coordinator refresh debounce. This includes pause/resume, automatic/schedule switches, start-time edits, phase selection and priority/distribution changes. Normal meter-driven recommendations and forecast reductions retain their cadence. Required measurements, budget/minimums, manual behavior and measured reduction-before-increase remain.
 - A dedicated callback wakes the site at the next schedule boundary even without source updates. Windows are half-open (start included, end excluded), use seconds/local wall time and wrap midnight. Callback lifecycle and queued controls are retained through awaited commands.
 - Markdown headings now show each charger's preferred SLM user name and actual status, with separate explanations for both loads. A generic source name cannot override an SLM user name. Dashboard generation, priority choices and shared explanations use the same naming helper. Regenerate YAML for the new heading.

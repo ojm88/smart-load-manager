@@ -520,3 +520,8 @@ Owner explicitly authorizes publication of PR #9 as prerelease 0.1.1-beta.13. In
 - Schedule transitions get a dedicated cancellable timer in addition to ordinary/risk deadlines. Calculate the next opening/closing from local wall time, including seconds/midnight/DST. End is exclusive, avoiding the old extra post-boundary charging second. Source updates/edits replace the timer; unload cancels it.
 - Markdown exposes a localized status_label per load and renders name – status, e.g. Garasje – Lader / Tesla – Pauset, alongside its own explanation. Only Easee charging status says Lader; a positive recommendation is insufficient. Prefer an explicit SLM device name override, then source override/saved name. Reuse the naming helper for dashboard labels and priority choices without changing entity identities or user entity overrides. Existing YAML must be regenerated for this layout change.
 - Prepare a draft for beta.14; no publication approval or physical acceptance is implied. Do not change beta.13 tags/version.
+
+
+## 2026-10-28 — Owner confirms beta.13 single-charger operation; hold beta.14
+
+Owner confirms beta.13 works and explicitly limits the test to one configured charger. Record this as physical single-charger feedback, not two-charger or exhaustive acceptance. Keep the prepared beta.14 changes in draft PR #10 while collecting additional findings. Do not merge, publish or install beta.14 until separately requested. Existing software test results remain valid; this update changes validation records only.
