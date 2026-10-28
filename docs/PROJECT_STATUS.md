@@ -5,11 +5,11 @@ Updated: 2026-10-28
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.11** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.11)).
-- Release code: `e5951112d85a7eb257344aefeb8b393b1c1ef167`; merged PR #7.
-- GitHub Actions [40639534986](https://github.com/ojm88/smart-load-manager/actions/runs/40639534986) and [40639529486](https://github.com/ojm88/smart-load-manager/actions/runs/40639529486) passed all four jobs for release-preparation head 5dd6dd6bb3ce36591465fda6e27a433a6b21a2f8. Published as a prerelease after explicit owner approval.
+- Published beta: **0.1.1-beta.12** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.12)).
+- Release code: `118bc974c8915c830893503e112cc3a5c4fa1c9d`; merged PR #8.
+- Release-preparation GitHub Actions [40746588612](https://github.com/ojm88/smart-load-manager/actions/runs/40746588612) and [40746583042](https://github.com/ojm88/smart-load-manager/actions/runs/40746583042) passed all four jobs for ce3365e1af817940eb787ffad0827eb862e0cc8f. Published as a prerelease after explicit owner approval.
 
-## Approved beta.12 release preparation (PR #8)
+## Published beta.12 (PR #8)
 
 - Source events now recalculate complete household capacity and recommendations live; the 30-second watchdog also accounts for elapsed time and freshness. Ordinary automatic current commands are gated at five minutes, with forecast-based reductions earlier after 30 seconds of persistent risk or immediately if the reserved budget cannot wait. Pauses, invalid required measurements and lower physical limits remain immediate. Early reductions cannot raise a peer and block ordinary increases for five minutes.
 - Single-charger direct startup remains; paired measured-reduction acknowledgement remains. A dedicated timer handles the next regulation/risk decision even without a new source event, and source events during awaited commands are replayed.
@@ -156,3 +156,10 @@ On 2026-10-28 the owner explicitly requests publication of beta.11. PR #7 code h
 Published 0.1.1-beta.11 on 2026-10-28 from merge commit e5951112d85a7eb257344aefeb8b393b1c1ef167 after explicit owner approval. Verified draft=false, prerelease=true, tag and target commit match, and manifest version is 0.1.1-beta.11. Release-preparation CI passed all four jobs on both push and PR; 129 distinct software tests cover pure calculations, both supported HA runtimes and the selector regression. Stable 0.1.0 and earlier tags remain unchanged.
 
 After installation, restart HA, confirm physical wiring separately for each existing charger under Configure → Chargers → Charger connections, regenerate dashboard YAML, inspect measured voltages and deliberately enable automatic control. No physical beta.11 charging or new phone setup acceptance is claimed.
+
+
+## Beta.12 publication verified
+
+Published 0.1.1-beta.12 on 2026-10-28 from PR #8 merge commit 118bc974c8915c830893503e112cc3a5c4fa1c9d, whose tree matches the tested release-preparation tree 97b1509756bc0a7b577d62d0e847154dd7f8d55c. Verified draft=false, prerelease=true, exact tag/target SHA and tagged manifest version. Release-preparation push and PR runs 40746583042 / 40746588612 passed all four jobs. Stable 0.1.0 and previous tags remain unchanged.
+
+After installation, restart HA, regenerate the Manual card via Settings → Tools → Actions → smart_load_manager.get_dashboard and deliberately enable automatic control after reviewing the measurements. Test physical single/two-charger operation, held limits, forecast reduction, completion and the new card. These physical/phone acceptance checks remain pending.
