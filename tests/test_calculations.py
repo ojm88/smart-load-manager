@@ -209,6 +209,28 @@ class ElectricalCalculationTests(unittest.TestCase):
     ))
     self.assertEqual(result.minimum_current_a, 6)
 
+  def test_charging_before_current_sensor_updates_uses_validated_connection(self):
+    for connection, mode, volts, minimum in (
+        ('tn_3', 3, {'T2T3': 235, 'T2T4': 239, 'T2T5': 241}, 6),
+        ('tn_3', 1, {'T2T3': 235, 'T2T4': 239, 'T2T5': 241}, 6),
+        ('tn_1', 1, {'T2T3': 210}, 6),
+        ('it_3', 3, {'T2T3': 210, 'T2T4': 212, 'T3T4': 211}, 11),
+        ('it_3', 1, {'T2T3': 210, 'T2T4': 212, 'T3T4': 211}, 6),
+        ('it_1', 1, {'T2T3': 210}, 6),
+    ):
+      with self.subTest(connection=connection, mode=mode):
+        args = dict(connection=connection, phase_mode=mode, voltages_v=volts,
+                    currents_a={'T2': 0, 'T3': 0, 'T4': 0, 'T5': 0})
+        waiting = detect_electrical_setup(ElectricalSnapshot(status='awaiting_start', **args))
+        starting = detect_electrical_setup(ElectricalSnapshot(status='charging', **args))
+        self.assertEqual(starting.active_phases, 0)
+        self.assertEqual(starting.minimum_current_a, minimum)
+        self.assertEqual(kw_per_ampere(starting), kw_per_ampere(waiting))
+        args['voltages_v'] = {}
+        missing = detect_electrical_setup(ElectricalSnapshot(status='charging', **args))
+        self.assertIsNone(kw_per_ampere(missing))
+        self.assertIsNone(missing.minimum_current_a)
+
   def test_recommended_current_respects_energy_budget_and_minimum(self):
     args = dict(hourly_limit_kwh=10, energy_used_kwh=5, han_power_w=5000,
                 charger_power_w=3000, minutes_left=30, safety_margin_kwh=0.3,

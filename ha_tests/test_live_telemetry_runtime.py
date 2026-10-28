@@ -187,6 +187,61 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.assertEqual(count, 2)
         self.assertEqual(c.data['status'], 'charging')
 
+    async def test_charging_status_before_current_readings_does_not_stop_startup(self):
+        from smart_load_manager.site import SiteController
+        c = self.coordinator
+        c.entry.data['electrical_connection'] = 'tn_3'
+        c._async_sample = ChargingCoordinator._async_sample.__get__(c)
+        site = SiteController(self.hass)
+        site.controllers[c.entry.entry_id] = c
+        c.site = site
+        c.auto_control = True
+        commands = []
+        from homeassistant.util import dt as dt_util
+        async def send(current):
+            commands.append(current)
+            c.last_commanded_current = current
+            c._last_command_at = dt_util.now().timestamp()
+        c._async_send_current = send
+        attrs = {'config_phaseMode': 3, 'state_outputPhase': 0, 'circuit_ratedCurrent': 16}
+        self.hass.states.async_set('sensor.source_status', 'awaiting_start', attrs)
+        self.hass.states.async_set('sensor.source_current', 0, {
+            'state_inCurrentT2': 0, 'state_inCurrentT3': 0,
+            'state_inCurrentT4': 0, 'state_inCurrentT5': 0})
+        self.hass.states.async_set('sensor.source_voltage', 235, {
+            'state_inVoltageT2T3': 235, 'state_inVoltageT2T4': 239,
+            'state_inVoltageT2T5': 241})
+        self.hass.states.async_set('sensor.source_power', 0, {'unit_of_measurement': 'W'})
+        self.hass.states.async_set('sensor.source_han', 1847, {'unit_of_measurement': 'W'})
+        self.hass.states.async_set('sensor.energy_used_this_hour', .18)
+        with patch('smart_load_manager.site.charger_entries', return_value=[c.entry]), patch(
+                'smart_load_manager.site.site_entry', return_value=c.entry):
+            c.async_publish_sample(await site.refresh(c))
+            self.assertGreater(commands[0], 0)
+            initial = commands[0]
+            deadline = site.cadence.next_regular_at
+            c.async_start_source_updates()
+            # Easee status arrives first; unchanged terminal readings are still 0.
+            self.hass.states.async_set('sensor.source_status', 'charging', attrs)
+            await self.hass.async_block_till_done()
+            self.assertEqual(commands, [initial])
+            self.assertTrue(c.data['inputs_valid'])
+            self.assertEqual(c.data['electrical']['active_phases'], 0)
+            self.assertEqual(c.data['control_minimum_current_a'], 6)
+            self.assertEqual(site.cadence.next_regular_at, deadline)
+            # Measured current/power can follow later without a new regulation.
+            self.hass.states.async_set('sensor.source_current', initial, {
+                'state_inCurrentT3': initial, 'state_inCurrentT4': initial,
+                'state_inCurrentT5': initial})
+            self.hass.states.async_set('sensor.source_power', initial*715, {'unit_of_measurement': 'W'})
+            await self.hass.async_block_till_done()
+            self.assertEqual(commands, [initial])
+            self.assertEqual(c.data['electrical']['active_phases'], 3)
+            # This does not relax actual loss of required voltage measurements.
+            self.hass.states.async_set('sensor.source_voltage', 'unavailable')
+            await self.hass.async_block_till_done()
+            self.assertEqual(commands, [initial, 0])
+
     async def test_site_deadline_runs_without_new_source_and_is_cancelled_on_shutdown(self):
         from smart_load_manager.site import SiteController
         from homeassistant.util import dt as dt_util

@@ -275,8 +275,13 @@ def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
 def _minimum_current(
     voltage_type: str, active_phases: int, effective_phases: int, charging: bool
 ) -> int | None:
-    """Use measured phases while charging, output-phase config while paused."""
-    phase_count = active_phases if charging else effective_phases
+    """Use measured phase use, or validated configuration before current rises.
+
+    Easee can report charging before its separate current sensor updates. Zero
+    measured phases does not invalidate confirmed wiring and measured voltage.
+    The caller only exposes this minimum after validating that electrical path.
+    """
+    phase_count = active_phases if charging and active_phases else effective_phases
     if phase_count not in {1, 2, 3} or voltage_type not in {"230V", "400V"}:
         return None
     if voltage_type == "230V" and phase_count == 3:
