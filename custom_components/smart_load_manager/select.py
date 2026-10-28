@@ -1,7 +1,7 @@
 """Integration-owned controls for the hourly household energy budget."""
 
 from __future__ import annotations
-from .device_info import get_device
+from .device_info import charger_display_name
 from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 from .installation import charger_entries, update_load, shared_identity
 
@@ -22,7 +22,7 @@ from .const import (
     PHASE_MODE_OPTIONS,
 )
 from .coordinator import ChargingCoordinator
-from .control import async_send_phase_mode
+from .control import async_send_phase_mode, async_refresh_control
 from .entity_ids import suggested_entity_id
 
 
@@ -121,7 +121,7 @@ class ChargerPhaseModeSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordin
             str(self.coordinator.entry.data["charger_device"]),
             option,
         )
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)
 
 
 class SiteChoiceSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SelectEntity):
@@ -146,8 +146,7 @@ class SiteChoiceSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator],
         devices = dr.async_get(self.hass)
         names = {}
         for entry in entries:
-            device = get_device(devices, entry.data["charger_device"])
-            name = (device.name_by_user or device.name) if device else entry.title
+            name = charger_display_name(devices, entry)
             names[entry.entry_id] = name or entry.title
         # Duplicate names must still allow an unambiguous selection.
         return {key: f"{name} ({key[:6]})" if list(names.values()).count(name) > 1 else name
@@ -171,4 +170,4 @@ class SiteChoiceSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator],
         options = dict(self._entry.options)
         options[self._key] = value
         update_load(self.hass, self._entry, options=options)
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)

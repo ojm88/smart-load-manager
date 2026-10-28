@@ -102,7 +102,7 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.commands.clear()
         result=await site.refresh(site.controllers['b'])
         self.assertEqual(result['recommended_current_a'],14)
-        self.assertEqual(self.commands,[])  # Recommendation changes live; increase waits.
+        self.assertEqual(self.commands,[('b',14)])  # Completion releases the peer's turn immediately.
         deadline = datetime.fromtimestamp(site.cadence.next_regular_at, UTC)
         with patch('smart_load_manager.site.dt_util.now', return_value=deadline):
             await site.refresh(site.controllers['b'])
@@ -296,7 +296,7 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         data = await self.refresh_at(site, 10)
         self.assertEqual(self.commands, [('a', 14)])
         self.assertEqual(site.cadence.next_regular_at, self.now.timestamp()+310)
-        self.assertIn('koblet til', data['regulation_reason'])
+        self.assertIn('straks', data['regulation_reason'])
         # Normal Easee startup transitions and meter changes are not new starts.
         self.commands.clear()
         c._async_sample.return_value.update(status='charging', max_current_a=20, han_power_w=1000)
@@ -371,7 +371,7 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         await self.refresh_at(site, 12)
         self.assertTrue(any(key == 'b' and value > 0 for key, value in self.commands))
         self.assertFalse(site.pending_reductions)
-        self.assertFalse(site._connection_pending)
+        self.assertEqual(site._control_requested, site._control_applied)
         self.assertEqual(site.cadence.next_regular_at, self.now.timestamp()+312)
 
     async def test_unplug_replug_triggers_a_new_immediate_cycle(self):
@@ -408,3 +408,39 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
                 self.assertEqual(data['recommended_current_a'], 0)
                 self.assertEqual(data['last_sent_current_a'], 0)
                 self.assertEqual(self.commands, [('a',0)])
+
+    async def test_pausing_one_charger_releases_peer_only_after_measured_stop(self):
+        from datetime import timedelta
+        site = self.setup_regulation()
+        await self.refresh_at(site, 0)  # Establish each load's permissions.
+        site.controllers['a'].charging_paused = True
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('a', 0)])
+        await self.refresh_at(site, 2)
+        self.assertEqual(self.commands, [('a', 0)])
+        site.controllers['a']._async_sample.return_value.update(charger_current_a=0, charger_power_w=0)
+        for c in site.controllers.values():
+            c._async_sample.return_value['han_power_w'] = 3700
+        for suffix in ('power', 'current'):
+            self.states['a_'+suffix] = NS(state='0', last_updated=self.now+timedelta(seconds=3))
+        await self.refresh_at(site, 3)
+        self.assertEqual(self.commands, [('a', 0), ('b', 16)])
+        self.assertEqual(site.cadence.next_regular_at, self.now.timestamp()+303)
+
+    async def test_new_control_request_during_awaited_command_is_not_consumed(self):
+        site = self.setup_regulation(single=True)
+        c = site.controllers['a']
+        original_send = c._async_send_current
+        async def send(value):
+            await original_send(value)
+            if value == 16:
+                site.async_request_control()
+        c._async_send_current = send
+        site.async_request_control()
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('a', 16)])
+        self.assertNotEqual(site._control_requested, site._control_applied)
+        c._async_sample.return_value.update(max_current_a=20, han_power_w=1000)
+        await self.refresh_at(site, 2)
+        self.assertEqual(self.commands, [('a', 16), ('a', 20)])
+        self.assertEqual(site._control_requested, site._control_applied)

@@ -86,11 +86,42 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             if status != "charging":
                 explanation = tr("Det er satt av strøm til lading, men bilen har ikke startet å lade.",
                                  "Current is available for charging, but the car has not started charging.")
+        # Actual Easee charging is visible even while a stop is being applied.
+        if not data or not load.get('available', True):
+            label = tr('Utilgjengelig', 'Unavailable')
+        elif status == 'charging':
+            label = tr('Lader', 'Charging')
+        elif status == 'completed':
+            label = tr('Fullført', 'Completed')
+        elif status == 'disconnected':
+            label = tr('Frakoblet', 'Disconnected')
+        elif status == 'offline':
+            label = tr('Utilgjengelig', 'Offline')
+        elif status.startswith('error') or status == 'erratic_ev':
+            label = tr('Feil', 'Fault')
+        elif stage == 'paused':
+            label = tr('Pauset', 'Paused')
+        elif automatic and not data.get('schedule_allowed', True):
+            label = tr('Venter på starttid', 'Waiting for schedule')
+        elif status in {'authenticating', 'awaiting_authorization', 'de_authorizing'}:
+            label = tr('Venter på godkjenning', 'Waiting for authorization')
+        elif status == 'paused_due_to_equalizer':
+            label = tr('Pauset av Equalizer', 'Paused by Equalizer')
+        elif status == 'awaiting_scheduled_start':
+            label = tr('Venter på Easee-ladeplan', 'Waiting for Easee schedule')
+        elif status == 'start_charging':
+            label = tr('Starter', 'Starting')
+        elif not allows_automatic_current(status):
+            label = tr('Venter', 'Waiting')
+        elif data.get('electrical_ready') is False or (automatic and not ready):
+            label = tr('Avventer målinger', 'Waiting for measurements')
+        else:
+            label = tr('Venter', 'Waiting')
         advice = str(data.get("phase_advice", ""))
         any_advice |= advice.startswith("Enfase på begge")
         rows.append({
             "id": load["id"], "name": load["name"], "load_type": load.get("load_type", "ev_charger"),
-            "stage": stage, "status": status, "explanation": explanation,
+            "stage": stage, "status": status, "status_label": label, "explanation": explanation,
             "automatic_control": automatic, "paused": paused,
             "first_priority": load["id"] == priority if len(loads) > 1 else None,
             "current_a": data.get("charger_current_a"),

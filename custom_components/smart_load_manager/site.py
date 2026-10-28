@@ -38,8 +38,9 @@ class SiteController:
         self.pending_reductions = {}
         self.manual_requests = {}
         self.latest_samples = {}
-        self._disconnected = set()
-        self._connection_pending = set()
+        self._permissions = {}
+        self._control_requested = 0
+        self._control_applied = 0
         self.cadence = RegulationCadence()
         self._check_unsub = None
         self._check_at = None
@@ -60,20 +61,19 @@ class SiteController:
                     return data
                 for key, controller in self.controllers.items():
                     samples[key] = await controller._async_sample()
-                # Remember a real unplugged state across authorization/offline
-                # waits. Ready -> charging is not another plug-in event.
-                self._disconnected.intersection_update(self.controllers)
-                self._connection_pending.intersection_update(self.controllers)
+                # Permission/control transitions are independent of meter-driven
+                # regulation. Normal ready -> charging transitions stay steady.
+                self._permissions = {key: value for key, value in self._permissions.items()
+                                     if key in self.controllers}
                 for key, d in samples.items():
                     c = self.controllers[key]
-                    status = normalize_status(d['status'])
-                    if status == 'disconnected':
-                        self._disconnected.add(key)
-                        self._connection_pending.discard(key)
-                    elif key in self._disconnected and allows_automatic_current(status):
-                        self._disconnected.discard(key)
-                        if c.auto_control and not c.charging_paused and d['schedule_allowed']:
-                            self._connection_pending.add(key)
+                    permission = (c.auto_control, c.charging_paused,
+                                  d['schedule_allowed'], allows_automatic_current(d['status']),
+                                  d.get('phase_mode_code'))
+                    previous = self._permissions.get(key)
+                    self._permissions[key] = permission
+                    if previous is not None and permission != previous:
+                        self.async_request_control()
                 owner = site_entry(self.hass)
                 reference = samples[owner.entry_id]
                 if not all(d.get("inputs_valid") and d.get("han_fresh") for d in samples.values()):
@@ -170,8 +170,8 @@ class SiteController:
                 for key, d in samples.items():
                     d["last_sent_current_a"] = self.controllers[key].last_commanded_current
                     d["next_regulation_at"] = self.cadence.next_regular_at
-                self._arm_check()
                 self.latest_samples = samples
+                self._arm_check()
                 for key, d in samples.items():
                     c = self.controllers[key]
                     if c is not requester:
@@ -207,8 +207,8 @@ class SiteController:
                 for key, d in samples.items():
                     d["last_sent_current_a"] = self.controllers[key].last_commanded_current
                     d["next_regulation_at"] = self.cadence.next_regular_at
-                self._arm_check()
                 self.latest_samples = samples
+                self._arm_check()
                 for key, d in samples.items():
                     if self.controllers[key] is not requester:
                         self._publish(self.controllers[key], d)
@@ -228,6 +228,11 @@ class SiteController:
                 raise UpdateFailed(str(err)) from err
 
     @callback
+    def async_request_control(self):
+        """Request one immediate validated cycle, surviving awaited commands."""
+        self._control_requested += 1
+
+    @callback
     def async_cancel_check(self):
         if self._check_unsub is not None:
             self._check_unsub()
@@ -244,8 +249,11 @@ class SiteController:
             self.cadence.next_regular_at,
             self.cadence.risk_since + 30 if self.cadence.risk_since is not None else None,
         ) if value is not None]
+        deadlines.extend(d['next_schedule_change_at'] for d in self.latest_samples.values()
+                         if d.get('next_schedule_change_at') is not None)
         now = dt_util.now().timestamp()
-        deadline = min(deadlines) if deadlines else None
+        future = [value for value in deadlines if value > now]
+        deadline = min(future) if future else None
         if (not any(c.auto_control for c in self.controllers.values())
                 or deadline is None or deadline <= now):
             self.async_cancel_check()
@@ -294,11 +302,11 @@ class SiteController:
                             if key in targets)
         if manual_change:
             mode = 'regular'
-        self._connection_pending.intersection_update(eligible)
-        if self._connection_pending:
-            # Reallocate once on plug-in, then start a fresh five-minute cycle.
-            # Keep the request while paired reductions await measured approval.
-            mode = 'connection'
+        control_generation = self._control_requested
+        if control_generation != self._control_applied:
+            # Keep this request until paired reductions are measured. New
+            # requests received while sending commands must not be cleared.
+            mode = 'control'
         allowed = {}
         for key, target in targets.items():
             c = self.controllers[key]
@@ -308,7 +316,7 @@ class SiteController:
                 allowed[key] = target  # Explicit manual requests/pause stay immediate.
             elif key not in eligible or c.charging_paused:
                 allowed[key] = 0
-            elif mode in {'regular', 'connection'}:
+            elif mode in {'regular', 'control'}:
                 allowed[key] = target
             elif mode in {'early', 'urgent'}:
                 allowed[key] = min(target, previous or 0)  # Never raise a peer early.
@@ -336,16 +344,16 @@ class SiteController:
         reduced = any(before[key] is not None and
                       self.controllers[key].last_commanded_current < before[key]
                       for key in allowed)
-        if mode in {'regular', 'connection'} and not self.pending_reductions and any(
+        if mode in {'regular', 'control'} and not self.pending_reductions and any(
                 c.auto_control for c in self.controllers.values()):
             self.cadence.record_regular(now)
-            self._connection_pending.clear()
-        elif mode not in {'regular', 'connection'} and reduced:
+            self._control_applied = control_generation
+        elif mode not in {'regular', 'control'} and reduced:
             self.cadence.record_early_reduction(now)
         for d in samples.values():
             d['regulation_reason'] = {
                 'regular': 'Ordinær regulering hvert femte minutt.',
-                'connection': 'Regulerer straks fordi en bil er koblet til.',
+                'control': 'Regulerer straks etter endret ladetillatelse eller brukerkommando.',
                 'hold': 'Beholder strømgrensen frem til neste ordinære regulering.',
                 'early': 'Reduserer tidligere: vedvarende risiko for å bruke opp timebudsjettet.',
                 'urgent': 'Reduserer straks: timebudsjettet kan ikke vente.',

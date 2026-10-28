@@ -66,6 +66,21 @@ def get_device(registry, device_id):
     return registry.devices.get(device_id)
 
 
+def charger_display_name(registry, entry):
+    """Use the user's SLM name, then source override and saved setup name."""
+    saved = entry.data.get('charger_name') or str(getattr(entry, 'title', getattr(entry, 'entry_id', 'Lader'))).removeprefix('Smart Load Manager OJM – ')
+    if registry is None:
+        return saved
+    managed = (registry.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+               if hasattr(registry, 'async_get_device') else None)
+    source = get_device(registry, entry.data.get('charger_device'))
+    return (getattr(managed, 'name_by_user', None)
+            or getattr(source, 'name_by_user', None)
+            or entry.data.get('charger_name')
+            or getattr(managed, 'name', None)
+            or getattr(source, 'name', None) or saved)
+
+
 class ChargerNameMixin:
     """Keep deliberate full charger names on HA versions that compose device names."""
 

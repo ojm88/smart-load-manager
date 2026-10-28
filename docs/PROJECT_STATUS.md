@@ -10,6 +10,14 @@ Updated: 2026-10-28
 - Release-preparation runs **40752938419** and **40752928920** passed all four jobs for e956bfa67d512c1e5c91c98068e277b670289b1d. The merge tree equals the tested release-preparation tree 8081a12ff5cddc2f0cd16d4ce05879dad6be54a8.
 - Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Physical beta.13 charging acceptance is pending.
 
+## Unreleased beta.14 preparation
+
+- Owner reports beta.13 now appears to charge correctly. This is preliminary single-installation feedback, not full physical acceptance of every one/two-charger case.
+- Schedule opening/closing and explicit controls now trigger immediate validated allocation without waiting for the five-minute gate or coordinator refresh debounce. This includes pause/resume, automatic/schedule switches, start-time edits, phase selection and priority/distribution changes. Normal meter-driven recommendations and forecast reductions retain their cadence. Required measurements, budget/minimums, manual behavior and measured reduction-before-increase remain.
+- A dedicated callback wakes the site at the next schedule boundary even without source updates. Windows are half-open (start included, end excluded), use seconds/local wall time and wrap midnight. Callback lifecycle and queued controls are retained through awaited commands.
+- Markdown headings now show each charger's preferred SLM user name and actual status, with separate explanations for both loads. A generic source name cannot override an SLM user name. Dashboard generation, priority choices and shared explanations use the same naming helper. Regenerate YAML for the new heading.
+- Local validation: **85 pure tests**, **102 HA runtime tests** (both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**) and **1 Node test** pass, 188 distinct software tests. New coverage includes exact boundary callbacks without meter updates, cancellation after time edits, automatic/manual pause-resume, current budget validation, automatic enable, schedule disable/edit, paired measured stop before peer increase, queued requests during command waits and named per-load status rendering. JSON/YAML, compilation and whitespace checks pass. No beta.14 release is authorized or published; manifest and published beta.13 remain unchanged. Physical beta.14 acceptance is pending.
+
 ## Published beta.13 (PR #9)
 
 - Reproduced and corrected a beta.12 startup stop loop: charging status arriving before zero-current readings rise caused the minimum-current check to return None and send 0 A. The corrected path uses confirmed wiring and measured voltage until measured phase use exists. A real HA source-event regression fails before the fix and passes after; missing voltage still stops charging. Read-only live inspection confirms beta.12 is installed; beta.13 was subsequently published after explicit owner approval.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — beta.14
+
+- Evaluate user controls and charging-permission transitions immediately: schedule opening/closing, edited start time, schedule/automatic-control toggles, pause/resume, phase mode and priority/distribution choices. Normal meter-driven regulation keeps its five-minute cadence. Keep validated inputs, fresh capacity calculation and measured paired reduction confirmation.
+- Arm a dedicated callback for each next schedule boundary, including seconds and midnight. A daily window closes at its end time. Preserve pending control requests received during awaited commands.
+- Show each charger as name – status in Markdown, with its own reason. Prefer the SLM device user name over the generic Easee name. Actual charging status comes from Easee, not from the recommendation. Regenerate dashboard YAML to adopt the heading.
+
 ## 0.1.1-beta.13
 
 - Fix a startup stop loop when Easee reports charging before terminal-current measurements rise from zero. Keep the minimum derived from confirmed wiring and measured voltage until measured phase use is available; never infer measured current or bypass missing/conflicting electrical inputs.

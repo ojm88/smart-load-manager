@@ -21,6 +21,7 @@ from .calculations import (
     power_to_watts,
     recommended_current_a,
     schedule_window_active,
+    next_schedule_transition,
 )
 from .const import (
     CONF_HAN_POWER_ENTITY,
@@ -38,7 +39,7 @@ from .const import (
 )
 from .entity_resolution import resolve_easee_entities
 from .budget import consumption_limit_value
-from .control import async_send_dynamic_limit
+from .control import async_send_dynamic_limit, async_refresh_control
 from .charger_status import allows_automatic_current, normalize_status
 
 _LOGGER = logging.getLogger(__name__)
@@ -425,6 +426,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "schedule_allowed": schedule_allowed,
                 "schedule_start_time": schedule_start_time,
                 "schedule_reason": schedule_reason,
+                "next_schedule_change_at": next_schedule_transition(
+                    local_now, schedule_start_time, SCHEDULE_WINDOW_HOURS
+                ) if schedule_enabled else None,
                 "charger_entities": asdict(self.easee),
                 "han_entity": han_entity,
                 "terminal_currents_a": currents,
@@ -466,7 +470,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         options = dict(self.entry.options)
         options[CONF_SCHEDULE_ENABLED] = self.schedule_enabled
         update_load(self.hass, self.entry, options=options)
-        await self.async_request_refresh()
+        await async_refresh_control(self)
 
     async def async_set_charging_paused(self, paused: bool) -> None:
         """Pause/resume charging with a persistent Easee dynamic limit."""
@@ -483,7 +487,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         update_load(self.hass, self.entry, options=options)
         if self.charging_paused:
             await self.async_set_current(0)
-        await self.async_request_refresh()
+        await async_refresh_control(self)
         if not self.charging_paused and not self.auto_control:
             # In manual mode, restore the previous limit only while all current
             # safety checks still pass. Otherwise the charger stays paused.

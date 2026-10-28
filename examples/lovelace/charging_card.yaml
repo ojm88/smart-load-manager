@@ -48,7 +48,7 @@ cards:
     {% for load in loads %}
 
 
-    ### {{ load.name }}
+    ### {{ load.name }} – {{ load.status_label | default(''Venter'') }}
 
     {% if load.status in [''awaiting_start'', ''charging'', ''ready_to_charge'', ''completed'',
     ''charged'', ''awaiting_authentication''] %}

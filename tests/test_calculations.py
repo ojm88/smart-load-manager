@@ -11,6 +11,7 @@ from custom_components.smart_load_manager.calculations import (
     power_to_watts,
     recommended_current_a,
     schedule_window_active,
+    next_schedule_transition,
 )
 
 
@@ -21,7 +22,7 @@ class ElectricalCalculationTests(unittest.TestCase):
     active, _ = schedule_window_active(datetime(2026, 10, 23, 7, 59), "20:00:00")
     self.assertTrue(active)
     active, _ = schedule_window_active(datetime(2026, 10, 23, 8, 0), "20:00:00")
-    self.assertTrue(active)
+    self.assertFalse(active)
     active, _ = schedule_window_active(datetime(2026, 10, 23, 8, 0, 1), "20:00:00")
     self.assertFalse(active)
     active, _ = schedule_window_active(datetime(2026, 10, 23, 19, 59), "20:00:00")
@@ -31,6 +32,27 @@ class ElectricalCalculationTests(unittest.TestCase):
     active, reason = schedule_window_active(datetime(2026, 10, 22, 23, 0), "unavailable")
     self.assertFalse(active)
     self.assertIn("ugyldig", reason)
+
+  def test_next_schedule_boundary_uses_seconds_and_midnight(self):
+    from datetime import UTC
+    now = datetime(2026, 10, 28, 22, 59, 59, tzinfo=UTC)
+    self.assertEqual(next_schedule_transition(now, '23:00:00'), now.timestamp()+1)
+    at_start = datetime(2026, 10, 28, 23, tzinfo=UTC)
+    self.assertEqual(next_schedule_transition(at_start, '23:00:00'),
+                     datetime(2026, 10, 29, 11, tzinfo=UTC).timestamp())
+    at_end = datetime(2026, 10, 29, 11, tzinfo=UTC)
+    self.assertEqual(next_schedule_transition(at_end, '23:00:00'),
+                     datetime(2026, 10, 29, 23, tzinfo=UTC).timestamp())
+    self.assertIsNone(next_schedule_transition(now, 'invalid'))
+
+  def test_schedule_boundaries_follow_local_time_across_dst(self):
+    from zoneinfo import ZoneInfo
+    oslo = ZoneInfo('Europe/Oslo')
+    for month, day in ((3, 28), (10, 24)):
+      now = datetime(2026, month, day, 23, tzinfo=oslo)
+      end = datetime(2026, month, day+1, 11, tzinfo=oslo)
+      self.assertEqual(next_schedule_transition(now, '23:00:00'), end.timestamp())
+      self.assertFalse(schedule_window_active(end, '23:00:00')[0])
 
   def test_han_freshness_requires_positive_recent_measurement(self):
     self.assertTrue(han_measurement_is_fresh(60, 1000))

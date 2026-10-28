@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_SCHEDULE_START_TIME, DEFAULT_SCHEDULE_START_TIME
 from .coordinator import ChargingCoordinator
+from .control import async_refresh_control
 from .entity_ids import suggested_entity_id
 
 
@@ -56,5 +57,5 @@ class ChargingScheduleStartTime(ChargerNameMixin, CoordinatorEntity[ChargingCoor
         options = dict(self.coordinator.entry.options)
         options[CONF_SCHEDULE_START_TIME] = value.isoformat(timespec="seconds")
         update_load(self.hass, self.coordinator.entry, options=options)
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)
         self.async_write_ha_state()
