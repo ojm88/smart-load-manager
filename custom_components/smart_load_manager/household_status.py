@@ -96,19 +96,23 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "easee_reason": data.get("electrical", {}).get("no_current_reason"),
             "control_detail": data.get("control_reason"),
         })
+    single = len(rows) == 1
     stages = {row["stage"] for row in rows}
     if not rows or "waiting" in stages:
         state = "waiting"
-        summary = tr("En eller flere ladere venter. Årsaken står ved hver lader nedenfor.",
-                     "One or more chargers are waiting. Each charger's reason is shown below.")
+        summary = (tr("Laderen venter. Årsaken står nedenfor.", "The charger is waiting. Its reason is shown below.")
+                   if single else tr("En eller flere ladere venter. Årsaken står ved hver lader nedenfor.",
+                                     "One or more chargers are waiting. Each charger's reason is shown below."))
     elif len(stages) == 1:
         state = next(iter(stages))
         summary = {
             "automatic": tr("Ladingen tilpasses boligens ledige kapasitet.", "Charging follows the home's available capacity."),
             "manual": tr("Automatisk laststyring er av.", "Automatic load control is off."),
             "paused": tr("Ladingen er satt på pause.", "Charging is paused."),
-            "disconnected": tr("Ingen bil er koblet til laderne.", "No car is connected to the chargers."),
-            "completed": tr("Bilene har avsluttet ladingen.", "The cars have stopped requesting charging."),
+            "disconnected": (tr("Bilen er ikke koblet til laderen.", "The car is not connected to the charger.") if single
+                             else tr("Ingen bil er koblet til laderne.", "No car is connected to the chargers.")),
+            "completed": (tr("Bilen har avsluttet ladingen.", "The car has stopped requesting charging.") if single
+                          else tr("Bilene har avsluttet ladingen.", "The cars have stopped requesting charging.")),
         }[state]
     else:
         state = "mixed"
@@ -124,7 +128,7 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         distribution += " " + tr("Fordelingen gjelder ladere med automatisk laststyring på.",
                                   "Sharing applies to chargers with automatic load control enabled.")
     advice = tr("Enfase på begge laderne kan gi plass til at begge lader samtidig. Fasevalg endres manuelt hvis bilene støtter det.",
-                "Single phase on both chargers may allow both to charge together. Change phase mode manually if the cars support it.") if any_advice else ""
+                "Single phase on both chargers may allow both to charge together. Change phase mode manually if the cars support it.") if len(rows) > 1 and any_advice else ""
     return state, {"summary": summary, "consumption_limit_kwh": limit_kwh,
                    "charging_mode": mode if len(rows) > 1 else None,
                    "priority_charger": priority_name if len(rows) > 1 else None,
