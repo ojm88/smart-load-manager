@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta.13
+## 0.1.1-beta.13
 
 - Fix a startup stop loop when Easee reports charging before terminal-current measurements rise from zero. Keep the minimum derived from confirmed wiring and measured voltage until measured phase use is available; never infer measured current or bypass missing/conflicting electrical inputs.
 

@@ -9,12 +9,12 @@ Updated: 2026-10-28
 - Release code: `118bc974c8915c830893503e112cc3a5c4fa1c9d`; merged PR #8.
 - Release-preparation GitHub Actions [40746588612](https://github.com/ojm88/smart-load-manager/actions/runs/40746588612) and [40746583042](https://github.com/ojm88/smart-load-manager/actions/runs/40746583042) passed all four jobs for ce3365e1af817940eb787ffad0827eb862e0cc8f. Published as a prerelease after explicit owner approval.
 
-## Unreleased beta.13 preparation
+## Beta.13 publication preparation
 
 - Reproduced and corrected a beta.12 startup stop loop: charging status arriving before zero-current readings rise caused the minimum-current check to return None and send 0 A. The corrected path uses confirmed wiring and measured voltage until measured phase use exists. A real HA source-event regression fails before the fix and passes after; missing voltage still stops charging. Read-only live inspection confirms beta.12 is installed; beta.13 remains a draft.
 - Newly connected cars trigger a shared regulation as soon as Easee reports a supported ready/charging status, without waiting for the existing five-minute deadline. Authorization/offline waits do not start charging. Normal status transitions do not repeatedly reset regulation.
 - Retains opt-in, schedule, pause, measured electrical data, minimum/shared capacity and paired reduction confirmation. On completing the startup cycle, the next ordinary regulation is five minutes later. Beta.12 live calculations and early reductions remain. No new dashboard YAML is required for this control-only change.
-- Local validation: **81 pure tests** and **89 HA runtime tests** pass; runtime suites pass on both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**. Six new regressions cover immediate/repeated plug-in, authorization waits, policy/budget blocks, missing-input recovery and measured paired reduction acknowledgement. No physical charger commands or acceptance tests performed. Beta.12 remains the published version; beta.13 publication is not yet authorized.
+- Local validation: **81 pure tests** and **89 HA runtime tests** pass; runtime suites pass on both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**. Six new regressions cover immediate/repeated plug-in, authorization waits, policy/budget blocks, missing-input recovery and measured paired reduction acknowledgement. No physical charger commands or acceptance tests performed. Beta.12 remains the published version; Owner explicitly authorized beta.13 publication on 2026-10-28. Code head 46bbe57561742a8938f676fd5f76f5e29e421d12 passed all four CI jobs in runs 40751798978 and 40751788952. Version is prepared as 0.1.1-beta.13; publication is recorded after verification.
 
 ## Published beta.12 (PR #8)
 
