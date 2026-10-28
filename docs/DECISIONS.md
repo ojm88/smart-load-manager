@@ -489,3 +489,11 @@ Owner capture has raw status completed and a completed household explanation, al
 ## 2026-10-28 — Beta.12 publication approval
 
 Owner explicitly requests publication of beta.12 after the final review. Publish PR #8 as a prerelease with version/tag 0.1.1-beta.12, retaining stable 0.1.0 and all older tags. Code head d15239cecf1dce24c49bd2fb9131102823aa4fe3 passed all four CI jobs on push and PR (40744557348 / 40744567210). This preparation changes documentation only. Restart HA, generate new dashboard YAML using smart_load_manager.get_dashboard and deliberately enable automatic control after inspecting the measurements. Physical charging and phone acceptance of beta.12 remain pending.
+
+
+## 2026-10-28 — Immediate plug-in evaluation (beta.13 preparation)
+
+- Owner requests immediate evaluation/start on connection, rather than waiting for the next ordinary regulation. Remember observed disconnected status per charger, including through authorization/offline/unknown waits, and initiate one fresh shared cycle when that car reports an eligible ready/charging state. Do not treat ready-to-charging transitions or routine meter updates as new connections.
+- Preserve automatic opt-in, schedules, pause, measurement/electrical validation, shared allocation and minimum current. Missing data never starts charging; retain a pending connection evaluation while required inputs recover. No new external polls or nominal voltage fallback.
+- Apply through the existing paired reduction/measurement acknowledgement path. Keep a startup cycle pending until those reductions are confirmed; only then start a fresh five-minute interval. Ordinary live recommendations, forecast reductions and watchdog remain as beta.12. A second car may require reducing the first before it can start.
+- Clear connection state on runtime unload. No dashboard layout/entity changes; existing beta.12 YAML continues to work. Prepare separately from the published beta.12 tag; publication of beta.13 is not authorized by this proposal. Physical acceptance is pending.

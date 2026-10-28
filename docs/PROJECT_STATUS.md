@@ -9,6 +9,12 @@ Updated: 2026-10-28
 - Release code: `118bc974c8915c830893503e112cc3a5c4fa1c9d`; merged PR #8.
 - Release-preparation GitHub Actions [40746588612](https://github.com/ojm88/smart-load-manager/actions/runs/40746588612) and [40746583042](https://github.com/ojm88/smart-load-manager/actions/runs/40746583042) passed all four jobs for ce3365e1af817940eb787ffad0827eb862e0cc8f. Published as a prerelease after explicit owner approval.
 
+## Unreleased beta.13 preparation
+
+- Newly connected cars trigger a shared regulation as soon as Easee reports a supported ready/charging status, without waiting for the existing five-minute deadline. Authorization/offline waits do not start charging. Normal status transitions do not repeatedly reset regulation.
+- Retains opt-in, schedule, pause, measured electrical data, minimum/shared capacity and paired reduction confirmation. On completing the startup cycle, the next ordinary regulation is five minutes later. Beta.12 live calculations and early reductions remain. No new dashboard YAML is required for this control-only change.
+- Local validation: **80 pure tests** and **88 HA runtime tests** pass; runtime suites pass on both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**. Six new regressions cover immediate/repeated plug-in, authorization waits, policy/budget blocks, missing-input recovery and measured paired reduction acknowledgement. No physical charger commands or acceptance tests performed. Beta.12 remains the published version; beta.13 publication is not yet authorized.
+
 ## Published beta.12 (PR #8)
 
 - Source events now recalculate complete household capacity and recommendations live; the 30-second watchdog also accounts for elapsed time and freshness. Ordinary automatic current commands are gated at five minutes, with forecast-based reductions earlier after 30 seconds of persistent risk or immediately if the reserved budget cannot wait. Pauses, invalid required measurements and lower physical limits remain immediate. Early reductions cannot raise a peer and block ordinary increases for five minutes.

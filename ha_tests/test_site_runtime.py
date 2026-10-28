@@ -281,6 +281,111 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(site.controllers['a'].last_commanded_current, 16)
         self.assertFalse(site.pending_reductions)
 
+    async def unplug(self, site, key='a', seconds=1):
+        c = site.controllers[key]
+        c._async_sample.return_value.update(status='disconnected', charger_current_a=0,
+                                            charger_power_w=0)
+        await self.refresh_at(site, seconds)
+        self.commands.clear()
+
+    async def test_plug_in_starts_before_old_deadline_and_restarts_five_minutes(self):
+        site = self.setup_regulation(single=True)
+        await self.unplug(site)
+        c = site.controllers['a']
+        c._async_sample.return_value['status'] = 'awaiting_start'
+        data = await self.refresh_at(site, 10)
+        self.assertEqual(self.commands, [('a', 14)])
+        self.assertEqual(site.cadence.next_regular_at, self.now.timestamp()+310)
+        self.assertIn('koblet til', data['regulation_reason'])
+        # Normal Easee startup transitions and meter changes are not new starts.
+        self.commands.clear()
+        c._async_sample.return_value.update(status='charging', max_current_a=20, han_power_w=1000)
+        await self.refresh_at(site, 11)
+        await self.refresh_at(site, 309)
+        self.assertEqual(self.commands, [])
+        await self.refresh_at(site, 310)
+        self.assertEqual(self.commands, [('a', 20)])
+
+    async def test_plug_in_waits_for_authorization_then_starts_without_timer_wait(self):
+        site = self.setup_regulation(single=True)
+        await self.unplug(site)
+        d = site.controllers['a']._async_sample.return_value
+        for status in ('authenticating', 'awaiting_authorization', 'offline', 'future_status'):
+            d['status'] = status
+            await self.refresh_at(site, 10)
+            self.assertEqual(self.commands, [])
+        d['status'] = 'ready_to_charge'
+        await self.refresh_at(site, 20)
+        self.assertEqual(self.commands, [('a', 14)])
+
+    async def test_plug_in_respects_pause_schedule_automatic_off_and_budget(self):
+        for blocked in ('pause', 'schedule', 'manual', 'budget'):
+            with self.subTest(blocked=blocked):
+                site = self.setup_regulation(single=True)
+                await self.unplug(site)
+                c = site.controllers['a']
+                d = c._async_sample.return_value
+                d['status'] = 'awaiting_start'
+                if blocked == 'pause': c.charging_paused = True
+                if blocked == 'schedule': d['schedule_allowed'] = False
+                if blocked == 'manual': c.auto_control = False
+                if blocked == 'budget': d['energy_used_kwh'] = 10
+                await self.refresh_at(site, 10)
+                self.assertFalse(any(value > 0 for _, value in self.commands))
+
+    async def test_plug_in_request_survives_invalid_input_until_measurements_ready(self):
+        site = self.setup_regulation(single=True)
+        await self.unplug(site)
+        d = site.controllers['a']._async_sample.return_value
+        d.update(status='awaiting_start', inputs_valid=False)
+        await self.refresh_at(site, 10)
+        self.assertEqual(self.commands, [])
+        d['inputs_valid'] = True
+        await self.refresh_at(site, 11)
+        self.assertEqual(self.commands, [('a', 14)])
+
+    async def test_second_plug_reallocates_only_after_measured_peer_reduction(self):
+        from datetime import timedelta
+        site = self.setup_regulation()
+        await self.unplug(site, 'b')
+        # First car keeps its existing 10 A while the other is disconnected.
+        self.assertEqual(site.controllers['a'].last_commanded_current, 10)
+        site.controllers['b']._async_sample.return_value['status'] = 'awaiting_start'
+        # A tighter target requires the running car to give up capacity first.
+        for c in site.controllers.values():
+            c._async_sample.return_value['han_power_w'] = 8500
+        await self.refresh_at(site, 10)
+        self.assertEqual(self.commands, [('a', 6)])
+        self.assertEqual(site.controllers['b'].last_commanded_current, 0)
+        self.commands.clear()
+        await self.refresh_at(site, 11)
+        self.assertEqual(self.commands, [])  # Old telemetry is not approval.
+        for c in site.controllers.values():
+            c._async_sample.return_value['han_power_w'] = 7580
+        a = site.controllers['a']
+        limit = a.last_commanded_current
+        a._async_sample.return_value.update(charger_current_a=limit, charger_power_w=limit*230)
+        for suffix in ('power', 'current'):
+            self.states['a_'+suffix] = NS(state=str(limit), last_updated=self.now+timedelta(seconds=12))
+            self.states['b_'+suffix] = NS(state='0', last_updated=self.now+timedelta(seconds=12))
+        await self.refresh_at(site, 12)
+        self.assertTrue(any(key == 'b' and value > 0 for key, value in self.commands))
+        self.assertFalse(site.pending_reductions)
+        self.assertFalse(site._connection_pending)
+        self.assertEqual(site.cadence.next_regular_at, self.now.timestamp()+312)
+
+    async def test_unplug_replug_triggers_a_new_immediate_cycle(self):
+        site = self.setup_regulation(single=True)
+        await self.unplug(site)
+        d = site.controllers['a']._async_sample.return_value
+        d['status'] = 'awaiting_start'
+        await self.refresh_at(site, 10)
+        await self.unplug(site, seconds=15)
+        d['status'] = 'awaiting_start'
+        await self.refresh_at(site, 20)
+        self.assertEqual(self.commands, [('a', 14)])
+        self.assertEqual(site.cadence.next_regular_at, self.now.timestamp()+320)
+
     async def test_single_charger_does_not_spam_unchanged_limit_during_delayed_reduction(self):
         site = self.setup_regulation(single=True)
         c = site.controllers['a']
