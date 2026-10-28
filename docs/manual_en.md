@@ -47,6 +47,8 @@ The Voltage sensor shows phase–neutral for single-phase TN, inferred line volt
 
 ## Measurements and dashboard
 
+Measurements and charging status follow HA source changes. Calculation and regulation retain the 30-second interval and existing command limits. The Markdown card has a compact meter power (W), energy used this hour (kWh), and estimated hourly energy (kWh) line. Missing values display as —. Regenerate the card to adopt this layout.
+
 Each charger has six main measurements: status, charging power, measured current, recommended current, active phases and voltage. Names use function followed by the charger name, consistently from the first charger. Voltage follows the confirmed connection and charging mode; phase–neutral voltage and electrical details remain status attributes. Recommended current includes minimum and maximum attributes. A diagnostic priority sensor appears with two chargers.
 
 The household status explains why each load runs or waits and provides phase advice. Measurement status contains shared source IDs, HAN age and input validity.

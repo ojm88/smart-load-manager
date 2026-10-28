@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Update charger measurements and shared household status when the selected HA sources change, including attribute-only voltage/current changes. Keep the existing 30-second regulation cycle and command limits; telemetry events do not allocate power, calculate a new current recommendation or send charger commands.
+- Add a compact meter power / used this hour / estimated hour line and an explicit connected-car notice to both generated Markdown cards. Missing readings show a dash. Regenerate existing dashboard YAML to adopt the layout.
+
 ## 0.1.1-beta.11
 
 - Confirm the physical supply and wired phases separately for each charger: 230 V IT/TT single/three phase, or 400/230 V TN single/three phase. Edit it under Configure → Chargers → Charger connections.

@@ -325,7 +325,7 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
             norwegian=str(self.hass.config.language or "").startswith("nb"))
         reference = snapshots.get(getattr(owner, "entry_id", ""), coordinator.data or {})
         payload.update({key: reference.get(key) for key in (
-            "han_power_w", "energy_used_kwh", "safety_margin_kwh", "minutes_left",
+            "han_power_w", "energy_used_kwh", "energy_estimate_kwh", "safety_margin_kwh", "minutes_left",
         )})
         return state, payload
 

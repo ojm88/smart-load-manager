@@ -7,7 +7,8 @@ import logging
 import math
 from dataclasses import asdict
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from homeassistant.util import dt as dt_util
@@ -88,13 +89,103 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.last_commanded_current: int | None = None
         self._last_command_at = 0.0
         self.site.controllers[entry.entry_id] = self
+        self._source_unsub = None
+        self._telemetry_task = None
+        self._telemetry_stopped = False
+
+    async def async_config_entry_first_refresh(self):
+        await super().async_config_entry_first_refresh()
+        self.async_start_source_updates()
+
+    @callback
+    def async_start_source_updates(self):
+        """Observe local HA sources without requesting cloud data or regulation."""
+        if self._source_unsub is not None:
+            return
+        sources = {self.easee.status, self.easee.current, self.easee.voltage,
+                   self.easee.power, *self.easee.current_limits,
+                   self.entry.data[CONF_HAN_POWER_ENTITY],
+                   self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY),
+                   TARIFF_ESTIMATE_ENTITY}
+        self._source_unsub = async_track_state_change_event(
+            self.hass, [source for source in sources if source], self._source_changed)
+
+    @callback
+    def _source_changed(self, event):
+        if not self._telemetry_stopped and (
+                self._telemetry_task is None or self._telemetry_task.done()):
+            self._telemetry_task = self.hass.async_create_task(self._async_publish_telemetry())
+
+    async def _async_publish_telemetry(self):
+        # Serialize with paired regulation, but never invoke it. Updating data
+        # directly avoids async_set_updated_data resetting the polling deadline.
+        async with self.site.lock:
+            if self._telemetry_stopped:
+                return
+            try:
+                measured = await self._async_sample(calculate=False)
+                self.last_update_success = True
+            except UpdateFailed as err:
+                def value(entity_id, *, power=False):
+                    state = self.hass.states.get(entity_id) if entity_id else None
+                    try:
+                        number = _number(state)
+                        return power_to_watts(number, str(state.attributes.get("unit_of_measurement", ""))) if power else number
+                    except (TypeError, ValueError):
+                        return None
+
+                han_state = self.hass.states.get(self.entry.data[CONF_HAN_POWER_ENTITY])
+                han_age = ((dt_util.now() - dt_util.as_local(han_state.last_updated)).total_seconds()
+                           if han_state is not None else None)
+                han_power = value(self.entry.data[CONF_HAN_POWER_ENTITY], power=True)
+                measured = {
+                    "status": getattr(self.hass.states.get(self.easee.status), "state", "unavailable"),
+                    "charger_current_a": value(self.easee.current),
+                    "charger_power_w": value(self.easee.power, power=True),
+                    "electrical": {}, "electrical_ready": False,
+                    "electrical_error": str(err), "inputs_valid": False,
+                    "han_fresh": han_measurement_is_fresh(han_age, han_power),
+                    "han_age_seconds": han_age, "han_power_w": han_power,
+                    "energy_used_kwh": value(self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY)),
+                    "energy_estimate_kwh": value(TARIFF_ESTIMATE_ENTITY),
+                }
+            live_keys = {
+                "status", "charger_current_a", "charger_power_w", "electrical",
+                "electrical_ready", "electrical_error", "inputs_valid",
+                "phase_code", "phase_mode_code", "han_power_w", "han_age_seconds",
+                "han_fresh", "energy_used_kwh", "energy_estimate_kwh",
+                "max_current_a", "minimum_current_a", "control_minimum_current_a",
+                "kw_per_amp", "terminal_currents_a", "terminal_voltages_v", "easee_enum_codes",
+            }
+            self.data = {**(self.data or {}),
+                         **{k: v for k, v in measured.items() if k in live_keys}}
+            if self.entry.entry_id in self.site.latest_samples:
+                self.site.latest_samples[self.entry.entry_id] = dict(self.data)
+            # Shared household entities belong to the first coordinator and
+            # must also hear updates originating from the second charger.
+            for controller in self.site.controllers.values():
+                controller.async_update_listeners()
+
+    async def async_shutdown(self):
+        self._telemetry_stopped = True
+        if self._source_unsub is not None:
+            self._source_unsub()
+            self._source_unsub = None
+        if self._telemetry_task is not None and not self._telemetry_task.done():
+            self._telemetry_task.cancel()
+            import asyncio
+            try:
+                await self._telemetry_task
+            except asyncio.CancelledError:
+                pass
+        await super().async_shutdown()
 
     async def _async_update_data(self) -> dict[str, object]:
         if len(charger_entries(self.hass)) > 1:
             return await self.site.refresh(self)
         return await self._async_sample(apply=True)
 
-    async def _async_sample(self, apply=False) -> dict[str, object]:
+    async def _async_sample(self, apply=False, *, calculate=True) -> dict[str, object]:
         try:
             status_state = self.hass.states.get(self.easee.status)
             current_state = self.hass.states.get(self.easee.current)
@@ -224,7 +315,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
             electrical_error = electrical.reason if current_kw_per_amp is None or current_minimum is None else ""
             invalid_input_reason = han_error or tariff_error or electrical_error
-            if invalid_input_reason:
+            if not calculate:
+                recommended = (self.data or {}).get("recommended_current_a")
+            elif invalid_input_reason:
                 recommended = 0 if self.auto_control else None
             elif not schedule_allowed:
                 recommended = 0 if self.auto_control else 0

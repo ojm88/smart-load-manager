@@ -73,3 +73,23 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
             self.assertIn('forbruksgrense',text)
             self.assertNotIn('None',text)
         self.assertEqual(used,{'sensor.slm_status'})
+
+    async def test_compact_meter_line_renders_values_and_missing_data(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        env = Environment()
+        payload = dict(han_power_w=17339, energy_used_kwh=7.87, energy_estimate_kwh=9.49)
+        env.globals.update(states=lambda entity: 'waiting',
+                           state_attr=lambda entity, key: payload.get(key))
+        for name in ['one.yaml', 'two.yaml']:
+            card = yaml.safe_load((Path(__file__).parents[1] /
+                'custom_components/smart_load_manager/dashboard' / name).read_text())
+            template = env.from_string(card['cards'][0]['content'])
+            text = template.render()
+            for value in ['17339 W', '7.87 kWh', '9.49 kWh']:
+                self.assertIn(value, text)
+            payload.clear()
+            text = template.render()
+            self.assertIn('—', text)
+            self.assertNotIn('None', text)
+            payload.update(han_power_w=17339, energy_used_kwh=7.87, energy_estimate_kwh=9.49)

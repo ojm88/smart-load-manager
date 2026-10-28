@@ -9,6 +9,13 @@ Updated: 2026-10-28
 - Release code: `e5951112d85a7eb257344aefeb8b393b1c1ef167`; merged PR #7.
 - GitHub Actions [40639534986](https://github.com/ojm88/smart-load-manager/actions/runs/40639534986) and [40639529486](https://github.com/ojm88/smart-load-manager/actions/runs/40639529486) passed all four jobs for release-preparation head 5dd6dd6bb3ce36591465fda6e27a433a6b21a2f8. Published as a prerelease after explicit owner approval.
 
+## Prepared after beta.11 (unreleased)
+
+- Owner reports delayed connected-car indication and requests immediate display updates from HA source changes, with the existing regulation cadence retained. Implemented source subscriptions, coalesced read-only updates, peer-to-household notifications and shutdown cleanup. Recommendations and allocations remain on the regulation path.
+- Both Markdown templates/examples now include a compact meter W / used kWh / estimated kWh line, unavailable-value dashes and an explicit connected-car notice. Source values use the household-status attributes; no duplicate sensors added.
+- Local validation: **66 pure tests**, **69 HA runtime tests** on both **HA 2026.2.3 / Python 3.13** and **HA 2026.10.4 / Python 3.14**, and **1 Node logo test** pass (136 distinct tests). JSON, dashboard YAML, compilation and whitespace checks pass. Tests cover local state/attribute events, unrelated-source exclusion, paired notifications, unchanged regulation deadline/recommendation, no event-driven commands, source loss, teardown and compact Markdown rendering. GitHub CI is pending.
+- Beta.11 and stable tags remain unchanged. No release is authorized by the request to prepare changes. Physical charging and phone/display acceptance remain pending.
+
 ## Published beta.6 corrections
 
 Owner tested beta.5 configuration: grouping is approved, but device selection is slow; selecting only a new charger in the replacement-list form retires the first charger, disables its entities, and can leave household status unavailable.
