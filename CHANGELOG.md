@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1-beta.12 (unreleased)
+## 0.1.1-beta.12
 
 - Cover all documented Easee operation-state names, including authorization, scheduling, Equalizer pauses and specific faults. Only explicitly supported ready/charging states may receive positive automatic current; unknown states wait. Completed charging shows a completed explanation and zero recommendation without claiming battery SOC.
 

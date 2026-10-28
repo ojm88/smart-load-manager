@@ -484,3 +484,8 @@ Owner capture has raw status completed and a completed household explanation, al
 - Only awaiting_start, charging, ready_to_charge, start_charging and awaiting_load_balancing can receive positive automatic current. Recognize every documented blocking mode with its own Norwegian/English explanation. Unknown future names wait with an explicit unknown-status explanation, rather than being allocated power implicitly.
 - Completion/disconnection and specific Easee errors/waits take precedence over generic electrical/SLM waiting prose. Known blocking states stop automatic current without waiting for the five-minute interval. Manual commands retain their separately explicit behavior.
 - Source: https://github.com/nordicopen/easee_hass/blob/v0.9.74/custom_components/easee/const.py (EASEE_STATUS); compared against master on 2026-10-28. Software fixtures contain no actual installation identifiers. Physical acceptance pending.
+
+
+## 2026-10-28 — Beta.12 publication approval
+
+Owner explicitly requests publication of beta.12 after the final review. Publish PR #8 as a prerelease with version/tag 0.1.1-beta.12, retaining stable 0.1.0 and all older tags. Code head d15239cecf1dce24c49bd2fb9131102823aa4fe3 passed all four CI jobs on push and PR (40744557348 / 40744567210). This preparation changes documentation only. Restart HA, generate new dashboard YAML using smart_load_manager.get_dashboard and deliberately enable automatic control after inspecting the measurements. Physical charging and phone acceptance of beta.12 remain pending.
