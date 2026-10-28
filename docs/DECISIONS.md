@@ -444,3 +444,10 @@ This supersedes the automatic topology inference decision and the earlier requir
 - Do not reuse cached electrical factors when fresh required input or confirmed connection is missing/conflicting. Keep known supply type in diagnostics even if voltage measurements are absent, but expose no usable calculation factor.
 - Easee v0.9.74 subscribes to detectedPowerGridType internally but does not attach it to the status entity. No live internal value was verified. This implementation uses the owner's confirmed connection and checks the public nettype attribute if available; it does not depend on private Easee objects or extra API calls. User approval of manual wiring supersedes the proposed internal diagnostic investigation.
 - Sources: https://developer.easee.com/docs/enumerations, https://developer.easee.com/docs/charger-observation-ids, and the Charge Up installation guide https://download.easee.com/m/3de6f4ad6cf696d2/original/NO_ChargeUp_InstallationGuide.pdf (wiring diagrams, printed page 11). Captured fixtures exclude serial/site/device identifiers.
+
+
+## 2026-10-28 — Beta.11 publication approval
+
+- Owner explicitly authorizes release of beta.11 after review of PR #7 and its passing checks. Publish as a prerelease; retain stable 0.1.0 and all previous tags.
+- Code head 6a9323ece2b062f8723bae0dae24c0c37644b6d1 passes all four CI jobs in runs 40596346688 and 40596306879. This release preparation changes documentation only.
+- Physical beta.11 charging and phone acceptance remain pending; automatic control stays off after restart. Existing chargers must confirm actual wiring and regenerate dashboard YAML.

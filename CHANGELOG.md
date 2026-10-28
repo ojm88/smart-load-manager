@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1-beta.11 (unreleased)
+## 0.1.1-beta.11
 
 - Confirm the physical supply and wired phases separately for each charger: 230 V IT/TT single/three phase, or 400/230 V TN single/three phase. Edit it under Configure → Chargers → Charger connections.
 - Interpret measured Easee terminal voltages using that connection; do not infer the supply from the highest reported pair. Calculations use live measured voltage, including reduced voltage such as 210 V. Count an IT single-phase path correctly across two current-carrying conductors.
