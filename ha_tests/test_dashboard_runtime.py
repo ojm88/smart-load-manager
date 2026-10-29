@@ -86,7 +86,7 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                 'custom_components/smart_load_manager/dashboard' / name).read_text())
             template = env.from_string(card['cards'][0]['content'])
             text = template.render()
-            for value in ['17339 W', '7.87 kWh', '9.49 kWh']:
+            for value in ['17.3&nbsp;kW', '7.9&nbsp;kWh', '9.5&nbsp;kWh']:
                 self.assertIn(value, text)
             payload.clear()
             text = template.render()
@@ -146,3 +146,82 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(charger_display_name(registry, entry), 'Garasje')
         source.name_by_user = None
         self.assertEqual(charger_display_name(registry, entry), 'EASEE')
+
+    async def test_disconnected_cards_hide_charging_details_and_redundant_loads(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from smart_load_manager.household_status import build_household_status
+        env = Environment()
+        env.filters['timestamp_custom'] = lambda *args: '13:20'
+        raw = dict(status='disconnected', auto_control=True, inputs_valid=True,
+                   han_fresh=True, charger_power_w=0, recommended_current_a=0,
+                   last_sent_current_a=0, next_regulation_at=1000)
+        for count in (1, 2):
+            state, payload = build_household_status([
+                dict(id=str(i), name='Charger'+str(i), data=raw) for i in range(count)
+            ], limit_kwh=10)
+            payload.update(han_power_w=17339, energy_used_kwh=99.99, energy_estimate_kwh=123.45)
+            env.globals.update(states=lambda _: state, state_attr=lambda _,k: payload.get(k))
+            for name in ('one.yaml', 'two.yaml'):
+                card = yaml.safe_load((Path(__file__).parents[1] /
+                    'custom_components/smart_load_manager/dashboard' / name).read_text())
+                self.assertNotIn('title', card['cards'][0])
+                text = env.from_string(card['cards'][0]['content']).render()
+                self.assertIn('Ingen bil tilkoblet' if count == 1 else 'Ingen biler tilkoblet', text)
+                for hidden in ('Ladeeffekt:', 'Anbefalt nå:', 'Sist satt:', 'Neste ordinære', 'Charger0', 'Førsteprioritet:'):
+                    self.assertNotIn(hidden, text)
+                self.assertIn('17.3&nbsp;kW', text)
+                self.assertIn('123&nbsp;kWh', text)
+
+    async def test_only_charging_rows_show_current_power_and_next_regulation(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from smart_load_manager.household_status import build_household_status
+        env = Environment()
+        env.filters['timestamp_custom'] = lambda *args: '13:20'
+        data = dict(status='charging', auto_control=True, inputs_valid=True, han_fresh=True,
+                    kw_per_amp=.23, max_current_a=16, charger_power_w=2530,
+                    recommended_current_a=11, last_sent_current_a=11, next_regulation_at=1000)
+        for second_status in ('disconnected', 'completed', 'awaiting_start'):
+            state, payload = build_household_status([
+                dict(id='a', name='Garasje', data=data),
+                dict(id='b', name='Tesla', data=dict(data, status=second_status, charger_power_w=0)),
+            ], limit_kwh=10)
+            env.globals.update(states=lambda _: state, state_attr=lambda _,k:payload.get(k))
+            for name in ('one.yaml','two.yaml'):
+                card=yaml.safe_load((Path(__file__).parents[1]/
+                    'custom_components/smart_load_manager/dashboard'/name).read_text())
+                text=env.from_string(card['cards'][0]['content']).render()
+                self.assertIn('Garasje – Lader', text)
+                self.assertIn('Tesla –', text)
+                self.assertEqual(text.count('Ladeeffekt:'),1)
+                self.assertEqual(text.count('Neste ordinære regulering:'),1)
+                self.assertEqual(text.count('Anbefalt nå:'),1)
+                if second_status == 'disconnected':
+                    self.assertIn('Bil tilkoblet: Garasje. Frakoblet: Tesla.', text)
+                    self.assertIn('1 av 2 biler tilkoblet', text)
+
+    async def test_high_meter_values_stay_in_three_separate_value_cells(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from html.parser import HTMLParser
+        class Cells(HTMLParser):
+            def __init__(self):
+                super().__init__(); self.cells=[]; self.active=False
+            def handle_starttag(self,tag,attrs):
+                if tag=='td': self.active=True; self.cells.append('')
+            def handle_endtag(self,tag):
+                if tag=='td': self.active=False
+            def handle_data(self,value):
+                if self.active: self.cells[-1]+=value
+        for values in ((17339,7.87,9.49),(99999,999.99,1234.56),(999999,9999,10000)):
+            payload=dict(han_power_w=values[0],energy_used_kwh=values[1],energy_estimate_kwh=values[2])
+            env=Environment();env.globals.update(states=lambda _: 'unknown',state_attr=lambda _,k:payload.get(k))
+            for name in ('one.yaml','two.yaml'):
+                card=yaml.safe_load((Path(__file__).parents[1]/
+                    'custom_components/smart_load_manager/dashboard'/name).read_text())
+                text=env.from_string(card['cards'][0]['content']).render()
+                parser=Cells();parser.feed(text)
+                self.assertEqual(len(parser.cells),3)
+                self.assertTrue(all(len(cell.strip())<=9 for cell in parser.cells),parser.cells)
+                self.assertNotIn('None',text)

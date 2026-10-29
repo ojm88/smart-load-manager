@@ -1,12 +1,7 @@
-# Ved énfasetilkobling: utelat fasevalg-raden. get_dashboard gjør dette automatisk.
-# Manual card template. Replace FIRST_CHARGER_SUFFIX with the first charger card_suffix.
-# For two chargers, replace CHARGER_SUFFIX with the second charger card_suffix.
-# Replace SLM_HAN_POWER_SOURCE with your HAN power sensor. Prefer generating this card
-# with smart_load_manager.get_dashboard to resolve all current IDs automatically.
+# Manual card. Run smart_load_manager.get_dashboard for your registered entity IDs.
 type: vertical-stack
 cards:
 - type: markdown
-  title: Laststyring hjemme – status og forklaring
   content: '{% set info = ''sensor.slm_status'' %}
 
     {% set loads = state_attr(info, ''controlled_loads'') or [] %}
@@ -18,10 +13,47 @@ cards:
 
     {% set estimate = state_attr(info, ''energy_estimate_kwh'') %}
 
-    ⚡ Måler: **{{ (power | round(0) | int ~ '' W'') if power is number else ''—''
-    }}** · ✅ Brukt: **{{ (used | round(2) ~ '' kWh'') if used is number else ''—''
-    }}** · 🔄 Estimat: **{{ (estimate | round(2) ~ '' kWh'') if estimate is number
-    else ''—'' }}**
+    {% macro amount(value, unit, divisor=1) -%}
+
+    {% if value is number -%}
+
+    {% set scaled = value / divisor -%}
+
+    {{ (scaled | round(0) | int) if scaled | abs >= 100 else (scaled | round(1)) }}&nbsp;{{ unit }}
+
+    {%- else -%}—{%- endif %}
+
+    {%- endmacro %}
+
+    {% set disconnected = loads | selectattr(''status'', ''equalto'', ''disconnected'') | list %}
+
+    {% set connected = loads | selectattr(''status'', ''in'', [''awaiting_start'', ''charging'', ''ready_to_charge'',
+    ''completed'', ''start_charging'', ''awaiting_load_balancing'', ''awaiting_authorization'']) | list
+    %}
+
+    {% if loads and disconnected | length == loads | length %}
+
+    ### {{ ''Ingen bil tilkoblet'' if loads | length == 1 else ''Ingen biler tilkoblet'' }}
+
+    {% else %}
+
+    {% if loads | length > 1 and connected | length + disconnected | length == loads | length %}
+
+    ### {{ connected | length }} av {{ loads | length }} biler tilkoblet
+
+    {% else %}
+
+    ### Ladestatus
+
+    {% endif %}
+
+    {% endif %}
+
+    <table><thead><tr><th>⚡ Måler</th><th>✅ Brukt</th><th>🔄 Est.</th></tr></thead><tbody><tr><td><b>{{
+    amount(power, ''kW'', 1000) }}</b></td><td><b>{{ amount(used, ''MWh'' if used is number and used >=
+    1000 else ''kWh'', 1000 if used is number and used >= 1000 else 1) }}</b></td><td><b>{{ amount(estimate,
+    ''MWh'' if estimate is number and estimate >= 1000 else ''kWh'', 1000 if estimate is number and estimate
+    >= 1000 else 1) }}</b></td></tr></tbody></table>
 
 
     {% if states(info) in [''unknown'', ''unavailable''] or not loads %}
@@ -30,13 +62,18 @@ cards:
 
     {% else %}
 
+    {% if disconnected | length != loads | length %}
+
     **{{ state_attr(info, ''summary'') }}**
 
+    {% endif %}
 
-    Forbruksgrensen for hele boligen er **{{ state_attr(info, ''consumption_limit_kwh'')
-    }} kWh denne timen**.
 
-    {% if state_attr(info, ''distribution_explanation'') %}
+    Forbruksgrensen for hele boligen er **{{ state_attr(info, ''consumption_limit_kwh'') }} kWh denne
+    timen**.
+
+    {% if state_attr(info, ''distribution_explanation'') and loads | rejectattr(''status'', ''equalto'',
+    ''disconnected'') | list | length > 1 %}
 
 
     {{ state_attr(info, ''distribution_explanation'') }}
@@ -47,11 +84,13 @@ cards:
 
     {% for load in loads %}
 
+    {% if disconnected | length != loads | length %}
+
 
     ### {{ load.name }} – {{ load.status_label | default(''Venter'') }}
 
-    {% if load.status in [''awaiting_start'', ''charging'', ''ready_to_charge'', ''completed'',
-    ''charged'', ''awaiting_authentication''] %}
+    {% if load.status in [''awaiting_start'', ''charging'', ''ready_to_charge'', ''completed'', ''charged'',
+    ''awaiting_authentication''] %}
 
 
     🔌 Bilen er koblet til.
@@ -60,7 +99,14 @@ cards:
     {% endif %}
 
 
+    {% if load.status != ''disconnected'' %}
+
     {{ load.explanation }}
+
+    {% endif %}
+
+
+    {% if load.status == ''charging'' %}
 
     {% if load.power_w is not none %}
 
@@ -71,14 +117,16 @@ cards:
     {% if load.automatic_control and load.recommended_current_a is not none %}
 
     Anbefalt nå: **{{ load.recommended_current_a | round(0) | int }} A**{% if load.last_sent_current_a
-    is number %} · Sist satt: **{{ load.last_sent_current_a | round(0) | int }} A**{%
-    endif %}.
+    is number %} · Sist satt: **{{ load.last_sent_current_a | round(0) | int }} A**{% endif %}.
 
 
     {% if load.next_regulation_at is number %}
 
-    Neste ordinære regulering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'',
-    true) }}**.
+    Neste ordinære regulering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'', true) }}**.
+
+    {% endif %}
+
+    {% endif %}
 
     {% endif %}
 

@@ -161,6 +161,17 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         state = "mixed"
         summary = tr("Laderne har ulik status. Se forklaringen ved hver lader nedenfor.",
                      "The chargers have different states. See each charger's explanation below.")
+    disconnected = [row for row in rows if row['status'] == 'disconnected']
+    if len(disconnected) == len(rows) and rows:
+        summary = tr('Ingen bil er tilkoblet.' if single else 'Ingen biler er tilkoblet.',
+                     'No car is connected.' if single else 'No cars are connected.')
+    elif disconnected:
+        connected = [row['name'] for row in rows if row['status'] in
+                     {'awaiting_start', 'charging', 'ready_to_charge', 'completed',
+                      'start_charging', 'awaiting_load_balancing', 'awaiting_authorization'}]
+        if connected:
+            summary = tr(f"Bil tilkoblet: {', '.join(connected)}. Frakoblet: {', '.join(row['name'] for row in disconnected)}.",
+                         f"Car connected: {', '.join(connected)}. Disconnected: {', '.join(row['name'] for row in disconnected)}.")
     distribution = ""
     if len(rows) > 1:
         distribution = (tr("Begge deler ledig ladekapasitet. Er det bare plass til én, får den prioriterte laderen lade først.",

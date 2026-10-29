@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — beta.15
+
+- Compact Markdown headings and three measurement columns keep meter power, used energy and estimate on the same value row. Display meter power in kW, round displayed values and scale very large energy to MWh; calculation precision is unchanged.
+- Show no-car and known mixed-connection headings. Hide redundant per-charger sections when all cars are disconnected, and show power/current/next-regulation details only for Easee charging status. Keep waiting/completed explanations and actual raw states. Regenerate dashboard YAML after installing this future layout update.
+
 ## 0.1.1-beta.14
 
 - Break the completion/pause/restart feedback loop: retain a budgeted idle allowance after completed rather than automatically sending 0 A. Prioritize active sessions and retain paired measured reduction confirmation before reallocating capacity. Ready/waiting reports do not turn an ended session into a new priority demand; actual start/charging or disconnection resets it. Raw Easee status remains unchanged.

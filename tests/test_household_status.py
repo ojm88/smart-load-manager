@@ -85,3 +85,17 @@ class HouseholdStatusTests(unittest.TestCase):
             with self.subTest(status=status, changes=changes):
                 _, info = build_household_status([self.load(status=status, **changes)], limit_kwh=10)
                 self.assertEqual(info['controlled_loads'][0]['status_label'], label)
+
+    def test_connection_summary_distinguishes_single_pair_and_mixed(self):
+        for loads, expected in (
+            ([self.load(status='disconnected')], 'Ingen bil er tilkoblet.'),
+            ([self.load(status='disconnected'), self.load('b',status='disconnected')], 'Ingen biler er tilkoblet.'),
+            ([self.load(), self.load('b',status='disconnected')], 'Bil tilkoblet: Garasje. Frakoblet: Carport.'),
+        ):
+            _, payload=build_household_status(loads,limit_kwh=10)
+            self.assertEqual(payload['summary'],expected)
+
+    def test_unknown_peer_is_never_described_as_connected(self):
+        _,payload=build_household_status([self.load(status='disconnected'),self.load('b',status='unknown')],limit_kwh=10)
+        self.assertNotIn('Bil tilkoblet:',payload['summary'])
+        self.assertNotIn('Ingen biler',payload['summary'])
