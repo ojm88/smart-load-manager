@@ -62,3 +62,26 @@ class HouseholdStatusTests(unittest.TestCase):
         self.assertEqual(state, 'automatic')
         self.assertIn('beholder', info['controlled_loads'][0]['explanation'])
         self.assertEqual(info['controlled_loads'][0]['last_sent_current_a'], 10)
+
+    def test_each_charger_has_its_own_readable_status_and_reason(self):
+        loads = [self.load(), self.load('b', status='awaiting_start',
+                 recommended_current_a=0, schedule_allowed=False, schedule_start_time='23:00:00')]
+        _, info = build_household_status(loads, limit_kwh=10)
+        first, second = info['controlled_loads']
+        self.assertEqual((first['name'], first['status_label']), ('Garasje', 'Lader'))
+        self.assertEqual((second['name'], second['status_label']), ('Carport', 'Venter på starttid'))
+        self.assertIn('23:00', second['explanation'])
+
+    def test_status_labels_never_infer_charging_from_a_recommendation(self):
+        for status, changes, label in (
+            ('awaiting_start', {}, 'Venter'),
+            ('awaiting_start', {'charging_paused': True}, 'Pauset'),
+            ('completed', {}, 'Fullført'),
+            ('disconnected', {}, 'Frakoblet'),
+            ('awaiting_authorization', {}, 'Venter på godkjenning'),
+            ('error', {}, 'Feil'),
+            ('offline', {}, 'Utilgjengelig'),
+        ):
+            with self.subTest(status=status, changes=changes):
+                _, info = build_household_status([self.load(status=status, **changes)], limit_kwh=10)
+                self.assertEqual(info['controlled_loads'][0]['status_label'], label)

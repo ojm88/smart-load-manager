@@ -1,6 +1,6 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-28
+Updated: 2026-10-29
 
 ## Version
 
@@ -8,7 +8,24 @@ Updated: 2026-10-28
 - Published beta: **0.1.1-beta.13** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.13)).
 - Release code: `e6fef3b7b9043ea0a7a7c9c599edcf85640dec2f`; merged PR #9. Tag/target and manifest version verified; draft=false, prerelease=true.
 - Release-preparation runs **40752938419** and **40752928920** passed all four jobs for e956bfa67d512c1e5c91c98068e277b670289b1d. The merge tree equals the tested release-preparation tree 8081a12ff5cddc2f0cd16d4ce05879dad6be54a8.
-- Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Physical beta.13 charging acceptance is pending.
+- Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Owner confirms beta.13 works with **one configured physical charger**. Two-charger physical acceptance remains pending.
+
+## Approved beta.14 release preparation
+
+Owner explicitly requests publishing beta.14 on 2026-10-29. PR #10 code head ce15ab54b2ce01ee23973649009543bc7234e729 passed all four jobs in CI run 40842357564. Local validation passes 195 distinct tests: 85 pure, 109 HA runtime (both supported HA/Python versions), and one Node test. This preparation changes the manifest version to 0.1.1-beta.14 and release documentation only. Publish as a prerelease; preserve stable 0.1.0 and previous tags. Publication is recorded after release/tag verification. Physical beta.14 completion, wake/preheating and two-charger acceptance remain pending. Restart HA, regenerate dashboard YAML via smart_load_manager.get_dashboard, inspect measurements and deliberately enable automatic control.
+
+## Beta.14 preparation history
+
+- Completion feedback correction (2026-10-29): owner reports beta.13 raw Easee status cycling after completed under automatic control. Implemented budgeted idle allowances instead of a completion-triggered zero. Active sessions receive capacity first; remembered idle ceilings prevent pause-induced ready/waiting reports reclaiming priority. Raw status is never rewritten. Existing pause/schedule/fault/input stops and forecast reductions remain.
+- At exactly zero measured W, known idle states below 1 A no longer cause repeated zero writes. Paired stop confirmation still requires both current and power reports newer than the reduction; charging/unknown states, positive W and >=1 A retain the previous strict comparison. Completion state is cleared on actual charging/start/disconnect and unload.
+- Updated validation: **85 pure tests**, **109 HA runtime tests** on both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**, plus **1 Node test**, all pass locally (195 distinct software tests). New completion regressions fail against the preceding implementation. Checks cover retained allowance across ticks/status changes, household risk reductions/recovery, paired measured stop before active-peer increase, both allocation modes, blocked inputs/controls and narrow standby tolerance. Compilation/JSON/YAML/whitespace pass. These supersede the earlier beta.14 counts below.
+- No physical charger command, beta.14 installation or release performed. Required owner acceptance: automatic completion remains quiet when capacity permits; legitimate budget/peer reductions remain effective; verify wake/preheating and completed-to-new-session behavior, then both chargers. Beta.13's earlier positive one-charger feedback does not resolve this newly reported completion fault.
+
+- Owner confirms beta.13 works with **one configured charger**. This confirms that tested installation only; two-charger physical operation is not yet confirmed. Keep beta.14 changes ready in the draft while the owner tests for further issues. Do not publish until separately requested.
+- Schedule opening/closing and explicit controls now trigger immediate validated allocation without waiting for the five-minute gate or coordinator refresh debounce. This includes pause/resume, automatic/schedule switches, start-time edits, phase selection and priority/distribution changes. Normal meter-driven recommendations and forecast reductions retain their cadence. Required measurements, budget/minimums, manual behavior and measured reduction-before-increase remain.
+- A dedicated callback wakes the site at the next schedule boundary even without source updates. Windows are half-open (start included, end excluded), use seconds/local wall time and wrap midnight. Callback lifecycle and queued controls are retained through awaited commands.
+- Markdown headings now show each charger's preferred SLM user name and actual status, with separate explanations for both loads. A generic source name cannot override an SLM user name. Dashboard generation, priority choices and shared explanations use the same naming helper. Regenerate YAML for the new heading.
+- Local validation: **85 pure tests**, **102 HA runtime tests** (both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**) and **1 Node test** pass, 188 distinct software tests. New coverage includes exact boundary callbacks without meter updates, cancellation after time edits, automatic/manual pause-resume, current budget validation, automatic enable, schedule disable/edit, paired measured stop before peer increase, queued requests during command waits and named per-load status rendering. JSON/YAML, compilation and whitespace checks pass. No beta.14 release is authorized or published; manifest and published beta.13 remain unchanged. Physical beta.14 acceptance is pending.
 
 ## Published beta.13 (PR #9)
 

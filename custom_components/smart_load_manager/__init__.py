@@ -171,8 +171,8 @@ async def async_setup_entry(hass, entry):
             site.pending_reductions.pop(key, None)
             site.manual_requests.pop(key, None)
             site.latest_samples.pop(key, None)
-            site._disconnected.discard(key)
-            site._connection_pending.discard(key)
+            site._permissions.pop(key, None)
+            site._completed_limits.pop(key, None)
         raise ConfigEntryNotReady(str(err)) from err
     from .dashboard import async_register_dashboard_service
 
@@ -196,6 +196,6 @@ async def async_unload_entry(hass, entry):
             site.pending_reductions.pop(key, None)
             site.manual_requests.pop(key, None)
             site.latest_samples.pop(key, None)
-            site._disconnected.discard(key)
-            site._connection_pending.discard(key)
+            site._permissions.pop(key, None)
+            site._completed_limits.pop(key, None)
     return unloaded

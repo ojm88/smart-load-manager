@@ -59,3 +59,13 @@ async def async_send_phase_mode(hass, device_id: str, phase_mode: str) -> None:
         {"device_id": device_id, "phase_mode": phase_mode},
         blocking=True,
     )
+
+
+async def async_refresh_control(coordinator):
+    """Apply an explicit user control without waiting for ordinary regulation."""
+    if hasattr(coordinator.site, 'async_request_control'):
+        coordinator.site.async_request_control()
+        # Explicit commands must also bypass the coordinator refresh debounce.
+        coordinator.async_publish_sample(await coordinator.site.refresh(coordinator))
+    else:
+        await coordinator.async_request_refresh()

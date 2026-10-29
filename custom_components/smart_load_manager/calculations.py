@@ -24,9 +24,27 @@ def schedule_window_active(
     stop_time = (datetime.combine(local_now.date(), start_time) + timedelta(hours=duration_hours)).time()
     for day_offset in (0, -1):
         start = datetime.combine(local_now.date() + timedelta(days=day_offset), start_time)
-        if start <= local_now <= start + timedelta(hours=duration_hours):
+        if start <= local_now < start + timedelta(hours=duration_hours):
             return True, f"Innenfor tidsvinduet {start_time.strftime('%H:%M')}–{stop_time.strftime('%H:%M')}"
     return False, f"Utenfor {duration_hours}-timersvinduet fra {start_time.strftime('%H:%M')}"
+
+
+def next_schedule_transition(now: datetime, start_text: str, duration_hours: int = 12):
+    """Next opening/closing in local wall time, including midnight and DST."""
+    try:
+        start_time = time.fromisoformat(start_text)
+        if start_time.tzinfo is not None:
+            return None
+    except (TypeError, ValueError):
+        return None
+    candidates = []
+    for offset in (-1, 0, 1, 2):
+        start = datetime.combine(now.date() + timedelta(days=offset), start_time,
+                                 tzinfo=now.tzinfo)
+        for point in (start, start + timedelta(hours=duration_hours)):
+            if point.timestamp() > now.timestamp():
+                candidates.append(point.timestamp())
+    return min(candidates) if candidates else None
 
 
 def han_measurement_is_fresh(age_seconds: float | None, power_w: float | None, max_age: int = 60) -> bool:

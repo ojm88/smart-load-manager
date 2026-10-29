@@ -510,3 +510,33 @@ Owner explicitly requests publication of beta.12 after the final review. Publish
 ## 2026-10-28 — Beta.13 publication approval
 
 Owner explicitly authorizes publication of PR #9 as prerelease 0.1.1-beta.13. Include the reproduced charging-before-current startup correction and immediate new-connection evaluation while retaining beta.12 live calculation, five-minute cadence, forecast reductions and paired measured-reduction acknowledgement. Code head 46bbe57561742a8938f676fd5f76f5e29e421d12 passed all four jobs in CI runs 40751798978 and 40751788952. This preparation changes version and release records only. Restart HA and deliberately enable automatic control after inspecting measurements. Existing beta.12 dashboard YAML remains valid. Physical charging acceptance remains pending.
+
+
+## 2026-10-28 — Immediate controls and named status headings (beta.14 preparation)
+
+- Owner confirms beta.13 appears to work, but schedule opening and pause/resume can still wait for the ordinary five-minute application gate. Treat user intent/charging permission transitions separately from meter-driven budget changes. Explicit native controls bypass both the gate and the coordinator request debounce; serialize all allocation/commands with the existing site lock. Do not interpret ordinary awaiting_start/charging transitions as new control requests.
+- Observe automatic enable, pause, schedule permission, supported Easee permission and reported phase-mode changes. Native start-time/schedule, priority/distribution and phase actions explicitly request a cycle. Stops/completion may free a peer's turn immediately, after measured reductions are confirmed. Inputs/limits/shared budget still determine whether a positive command is possible; automatic mode never blindly restores a saved limit. Manual pause/resume retains its existing explicitly saved limit and checks.
+- Persist an increasing request generation until a complete validated cycle finishes, so requests arriving while a command awaits completion are not erased. Missing inputs cannot authorize an increase. Preserve the beta.13 charging-before-current fix, normal five-minute cadence and early forecast reduction behavior.
+- Schedule transitions get a dedicated cancellable timer in addition to ordinary/risk deadlines. Calculate the next opening/closing from local wall time, including seconds/midnight/DST. End is exclusive, avoiding the old extra post-boundary charging second. Source updates/edits replace the timer; unload cancels it.
+- Markdown exposes a localized status_label per load and renders name – status, e.g. Garasje – Lader / Tesla – Pauset, alongside its own explanation. Only Easee charging status says Lader; a positive recommendation is insufficient. Prefer an explicit SLM device name override, then source override/saved name. Reuse the naming helper for dashboard labels and priority choices without changing entity identities or user entity overrides. Existing YAML must be regenerated for this layout change.
+- Prepare a draft for beta.14; no publication approval or physical acceptance is implied. Do not change beta.13 tags/version.
+
+
+## 2026-10-28 — Owner confirms beta.13 single-charger operation; hold beta.14
+
+Owner confirms beta.13 works and explicitly limits the test to one configured charger. Record this as physical single-charger feedback, not two-charger or exhaustive acceptance. Keep the prepared beta.14 changes in draft PR #10 while collecting additional findings. Do not merge, publish or install beta.14 until separately requested. Existing software test results remain valid; this update changes validation records only.
+
+
+## 2026-10-29 — Break the completed/pause feedback loop (held beta.14)
+
+- Owner supplied source-status/video evidence: completed followed by awaiting_start within three seconds and repeated ready/waiting transitions during automatic control, unlike fixed manual current. Code inspection confirms completed was removed from demands and forced 0 A; subsequent ready/waiting reports restored demand. Easee documents 0 A as pause. This identifies a command-policy feedback path, not a claim to possess historical cloud command traces.
+- Treat completed as an idle session with a ceiling equal to the last commanded allowance at completion (zero if no known positive allowance). Do not grow that ceiling or infer battery SOC. Retain it through ready/waiting states. Clear on actual charging/start_charging, disconnection, removal/unload. Do not rewrite raw Easee status or latch the displayed state.
+- Allocate active demands first, then only remaining budget to idle sessions, capped by that ceiling and the live maximum/minimum. In one-at-a-time mode an active allocation leaves no idle allowance. Every positive idle allowance remains part of reserved possible power and the forecast. Household risk/invalid inputs, pause, schedule and blocked states retain their stops. This can legitimately change raw status when a reduction is necessary; the guarantee is no pause solely due to completed, not immutable charger status.
+- Remember ended-session priority across pause-induced ready/waiting reports so transferring capacity does not immediately reclaim it. Actual reported charging may be a renewed draw and restores normal active allocation. Safe serial reduction/measurement-before-increase remains required.
+- Known idle completed/awaiting_start/ready_to_charge reports below 1 A with exactly zero W are treated as standby for the zero-current comparison. This narrow exception also avoids retrying an unchanged zero and allows paired stop acknowledgement only with both post-command reports. Never apply to positive power, >=1 A, charging, unknown modes or missing telemetry. Do not use this exception to set reported current to zero.
+- Physical completion, wake/preheating and two-charger acceptance remain required. No release or installation is authorized by this code-preparation request.
+
+
+## 2026-10-29 — Beta.14 publication approval
+
+Owner explicitly requests publishing the reviewed PR #10 as prerelease 0.1.1-beta.14. Include budgeted idle handling after completed, the narrow zero-W standby comparison, immediate schedule/user controls and named status headings. Code head ce15ab54b2ce01ee23973649009543bc7234e729 passes all four CI jobs in run 40842357564. This supersedes the earlier hold instruction for this release only. Stable 0.1.0 and older tags remain unchanged. Regenerate dashboard YAML for headings. Physical charger acceptance remains pending; publication does not install or enable automatic control in any HA instance.

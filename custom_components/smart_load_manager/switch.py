@@ -7,6 +7,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ChargingCoordinator
+from .control import async_refresh_control
 from .entity_ids import suggested_entity_id
 
 
@@ -40,14 +41,14 @@ class AutomaticLoadControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
 
     async def async_turn_on(self, **kwargs) -> None:
         self.coordinator.auto_control = True
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         self.coordinator.auto_control = False
         # Refresh coordinator listeners so the manual current number becomes
         # available immediately when automatic control releases ownership.
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)
         self.async_write_ha_state()
 
 
@@ -142,7 +143,7 @@ class ChargingPriorityControl(ChargerNameMixin, CoordinatorEntity, SwitchEntity)
         owner = site_entry(self.hass)
         priority = self._entry.entry_id if enabled else next(e.entry_id for e in entries if e.entry_id != self._entry.entry_id)
         update_load(self.hass, owner, options={**owner.options, "priority_charger": priority})
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)
         for controller in self.coordinator.site.controllers.values():
             controller.async_update_listeners()
 

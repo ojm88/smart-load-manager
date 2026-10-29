@@ -112,3 +112,37 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
             self.assertIn('Anbefalt nå: **8 A**', text)
             self.assertIn('Sist satt: **10 A**', text)
             self.assertIn('18:05', text)
+
+    async def test_markdown_shows_name_and_independent_status_for_both_chargers(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from smart_load_manager.household_status import build_household_status
+        data = dict(status='charging', auto_control=True, inputs_valid=True, han_fresh=True,
+                    kw_per_amp=.23, max_current_a=16, recommended_current_a=11)
+        _, payload = build_household_status([
+            dict(id='a', name='Garasje', data=data),
+            dict(id='b', name='Carport', data=dict(data, status='awaiting_start', charging_paused=True)),
+        ], limit_kwh=10)
+        env = Environment()
+        env.globals.update(states=lambda entity: 'mixed', state_attr=lambda entity, key: payload.get(key))
+        for name in ('one.yaml', 'two.yaml'):
+            card = yaml.safe_load((Path(__file__).parents[1] /
+                'custom_components/smart_load_manager/dashboard' / name).read_text())
+            text = env.from_string(card['cards'][0]['content']).render()
+            self.assertIn('Garasje – Lader', text)
+            self.assertIn('Carport – Pauset', text)
+            self.assertIn('Slå av ladepause', text)
+
+    async def test_charger_name_prefers_slm_user_name_to_generic_easee_name(self):
+        from smart_load_manager.device_info import charger_display_name
+        entry = NS(entry_id='a', title='EASEE', data={'charger_device':'source', 'charger_name':'EASEE'})
+        source = NS(name='EASEE', name_by_user=None)
+        managed = NS(name='EASEE', name_by_user='Tesla')
+        registry = NS(async_get=lambda identity: source,
+                      async_get_device=lambda **kw: managed)
+        self.assertEqual(charger_display_name(registry, entry), 'Tesla')
+        managed.name_by_user = None
+        source.name_by_user = 'Garasje'
+        self.assertEqual(charger_display_name(registry, entry), 'Garasje')
+        source.name_by_user = None
+        self.assertEqual(charger_display_name(registry, entry), 'EASEE')
