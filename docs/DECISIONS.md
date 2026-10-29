@@ -540,3 +540,16 @@ Owner confirms beta.13 works and explicitly limits the test to one configured ch
 ## 2026-10-29 — Beta.14 publication approval
 
 Owner explicitly requests publishing the reviewed PR #10 as prerelease 0.1.1-beta.14. Include budgeted idle handling after completed, the narrow zero-W standby comparison, immediate schedule/user controls and named status headings. Code head ce15ab54b2ce01ee23973649009543bc7234e729 passes all four CI jobs in run 40842357564. This supersedes the earlier hold instruction for this release only. Stable 0.1.0 and older tags remain unchanged. Regenerate dashboard YAML for headings. Physical charger acceptance remains pending; publication does not install or enable automatic control in any HA instance.
+
+
+## 2026-10-29 — Compact phone Markdown (beta.15 preparation)
+
+- Owner requests three top measurements on one value row at household high values and a short heading on ordinary iPhone widths. Replace the long card title and inline labels with a short content heading and a native HTML table with three header/value columns. Use kW for meter W, one decimal below magnitude 100 and whole values above, MWh for energy >=1000 kWh. Keep units/nonbreaking spaces and do not alter readings or calculation precision. Phone rendering still needs actual owner verification; structural render tests do not prove every viewport/font setting.
+- All disconnected: use singular/plural no-car heading, keep household readings/budget, suppress redundant per-load sections and pair-distribution boilerplate. Mixed known connections: show count in the heading, identify connected/disconnected names, retain the disconnected row's short name/status only. Unknown/unavailable is never inferred to mean connected or disconnected.
+- Show per-charger power, recommended/last-set current and next-regulation time only for raw charging status. Waiting, paused and completed retain status/reason; no regulation or command policy changes. Keep both packaged templates and ready-made examples synchronized. Existing saved YAML must be regenerated after the future update.
+- Prepare beta.15 without changing published beta.14, manifest, tags, HA configuration or physical charger control. No publication is authorized by these suggestions.
+
+
+## 2026-10-29 — Beta.15 publication approval
+
+Owner explicitly requests release of the compact-card PR #11 as prerelease 0.1.1-beta.15. Code head 8e2345203202cb856b984169b60077d8fa82816c passes all four jobs in CI run 40873366785. This supersedes the earlier draft hold for this release. Preserve beta.14 and all prior tags, keep charging/control logic unchanged and require regenerated YAML for the presentation update. Actual iPhone rendering remains owner acceptance; publication does not install or enable control on any HA instance.

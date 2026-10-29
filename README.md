@@ -63,7 +63,7 @@ Choose a target that fits normal household demand, your grid tariff and how much
 | Completed sessions | Completion alone does not pause the charger. Any retained current allowance remains budgeted; active sessions take priority. Easee status is displayed as reported. |
 | Regulation | Recalculates on source changes. Evaluates connection, schedule boundaries and user start/stop controls immediately. Otherwise adjusts limits every five minutes; forecast risks and invalid measurements can require earlier reductions. |
 | Explanations | Each charger shows its name, charging/waiting/paused status and its own reason. |
-| Dashboard | `smart_load_manager.get_dashboard` returns a Manual card using actual registered entity IDs. |
+| Dashboard | `smart_load_manager.get_dashboard` returns a compact Manual card using actual registered entity IDs. Connected/disconnected status is explicit; charging details appear while charging. |
 
 ## Sensors and explanations
 
