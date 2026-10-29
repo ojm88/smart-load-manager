@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta.14
+## 0.1.1-beta.14
 
 - Break the completion/pause/restart feedback loop: retain a budgeted idle allowance after completed rather than automatically sending 0 A. Prioritize active sessions and retain paired measured reduction confirmation before reallocating capacity. Ready/waiting reports do not turn an ended session into a new priority demand; actual start/charging or disconnection resets it. Raw Easee status remains unchanged.
 - Avoid repeated zero-limit writes for known idle states reporting less than 1 A at exactly 0 W. Paired acknowledgement still requires fresh current and power reports; positive power, charging/unknown states and readings of at least 1 A do not receive this exception.

@@ -10,7 +10,11 @@ Updated: 2026-10-29
 - Release-preparation runs **40752938419** and **40752928920** passed all four jobs for e956bfa67d512c1e5c91c98068e277b670289b1d. The merge tree equals the tested release-preparation tree 8081a12ff5cddc2f0cd16d4ce05879dad6be54a8.
 - Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Owner confirms beta.13 works with **one configured physical charger**. Two-charger physical acceptance remains pending.
 
-## Unreleased beta.14 preparation
+## Approved beta.14 release preparation
+
+Owner explicitly requests publishing beta.14 on 2026-10-29. PR #10 code head ce15ab54b2ce01ee23973649009543bc7234e729 passed all four jobs in CI run 40842357564. Local validation passes 195 distinct tests: 85 pure, 109 HA runtime (both supported HA/Python versions), and one Node test. This preparation changes the manifest version to 0.1.1-beta.14 and release documentation only. Publish as a prerelease; preserve stable 0.1.0 and previous tags. Publication is recorded after release/tag verification. Physical beta.14 completion, wake/preheating and two-charger acceptance remain pending. Restart HA, regenerate dashboard YAML via smart_load_manager.get_dashboard, inspect measurements and deliberately enable automatic control.
+
+## Beta.14 preparation history
 
 - Completion feedback correction (2026-10-29): owner reports beta.13 raw Easee status cycling after completed under automatic control. Implemented budgeted idle allowances instead of a completion-triggered zero. Active sessions receive capacity first; remembered idle ceilings prevent pause-induced ready/waiting reports reclaiming priority. Raw status is never rewritten. Existing pause/schedule/fault/input stops and forecast reductions remain.
 - At exactly zero measured W, known idle states below 1 A no longer cause repeated zero writes. Paired stop confirmation still requires both current and power reports newer than the reduction; charging/unknown states, positive W and >=1 A retain the previous strict comparison. Completion state is cleared on actual charging/start/disconnect and unload.

@@ -535,3 +535,8 @@ Owner confirms beta.13 works and explicitly limits the test to one configured ch
 - Remember ended-session priority across pause-induced ready/waiting reports so transferring capacity does not immediately reclaim it. Actual reported charging may be a renewed draw and restores normal active allocation. Safe serial reduction/measurement-before-increase remains required.
 - Known idle completed/awaiting_start/ready_to_charge reports below 1 A with exactly zero W are treated as standby for the zero-current comparison. This narrow exception also avoids retrying an unchanged zero and allows paired stop acknowledgement only with both post-command reports. Never apply to positive power, >=1 A, charging, unknown modes or missing telemetry. Do not use this exception to set reported current to zero.
 - Physical completion, wake/preheating and two-charger acceptance remain required. No release or installation is authorized by this code-preparation request.
+
+
+## 2026-10-29 — Beta.14 publication approval
+
+Owner explicitly requests publishing the reviewed PR #10 as prerelease 0.1.1-beta.14. Include budgeted idle handling after completed, the narrow zero-W standby comparison, immediate schedule/user controls and named status headings. Code head ce15ab54b2ce01ee23973649009543bc7234e729 passes all four CI jobs in run 40842357564. This supersedes the earlier hold instruction for this release only. Stable 0.1.0 and older tags remain unchanged. Regenerate dashboard YAML for headings. Physical charger acceptance remains pending; publication does not install or enable automatic control in any HA instance.
