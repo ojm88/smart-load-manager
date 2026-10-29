@@ -10,13 +10,17 @@ Updated: 2026-10-29
 - Release-preparation CI run **40875261526** passed for **4a8d7efec633930342177e31464b4d00c88af8f9**. The published merge tree equals tested preparation tree **3fc990e71bdc4fcc425b290bf787073a56ef02d7**. Code CI **40873366785** also passed. 200 distinct tests pass, including runtime suites on both supported HA/Python versions.
 - Beta.15 changes presentation only; charging calculations, allocation and commands retain beta.14 behavior. Restart HA and regenerate the existing Manual-card YAML using **smart_load_manager.get_dashboard**. No HA instance was installed or controlled by publication. Actual iPhone visual acceptance remains pending. Beta.14 physical completion/wake/two-charger acceptance remains separate. Stable 0.1.0 and prior tags are unchanged.
 
+## Development review — 2026-10-29
+
+Reviewed beta.1–15 against release records, owner feedback, decisions and relevant tests. [Retrospective](RETROSPECTIVE_BETA1_15.md) identifies predictable source/command-feedback, lifecycle, timing and mobile-UI omissions. AGENTS.md now requires a relevant full-journey/source-contract/regression review and separates software evidence from physical acceptance. No runtime change, new beta, new test execution or physical acceptance occurred in this review. Beta.15 remains published; phone and hardware acceptance still follow the version summary above.
+
 ## Approved beta.15 release preparation
 
 Owner explicitly requests publishing beta.15 on 2026-10-29. PR #11 code head **8e2345203202cb856b984169b60077d8fa82816c** passes all four CI jobs in run **40873366785**. Prepare manifest **0.1.1-beta.15** and publish as a prerelease. This supersedes the earlier hold below for this release only. Publication/tag verification is recorded separately. Actual iPhone visual acceptance remains pending. Regenerate dashboard YAML after updating and restarting HA. No charging-control policy changes.
 
 - Owner requests a compact iPhone Markdown layout. Replace the long title with a short connection/status heading and three native table columns (meter kW, used energy, estimate) on one value row. Display-only rounding/scaling bounds high-value strings; source precision and charging/control calculations are untouched.
 - All cars disconnected: singular/plural no-car heading, shared meter/budget retained, redundant load sections and pair-distribution text hidden. Known mixed connections identify names and show a count heading. Unknown/unavailable does not imply connection. Per-load power, current recommendation/last sent and next-regulation time appear only for actual Easee charging status; waiting/paused/completed retain their reasons.
-- Both packaged cards and ready-made examples use the same Markdown content. Regenerate saved dashboard YAML after installing this future version. Manifest stays **0.1.1-beta.14**; no release or HA installation is authorized.
+- Both packaged cards and ready-made examples use the same Markdown content. At the draft stage, saved dashboard YAML regeneration was required and the manifest remained **0.1.1-beta.14**. Beta.15 was subsequently authorized and published as recorded above.
 - Local software validation: **87 pure tests**, **112 HA runtime tests** on both HA **2026.2.3/Python 3.13** and **2026.10.4/Python 3.14**, plus **1 Node test** pass (200 distinct tests). New tests cover singular/plural/mixed/unknown connections, suppressing idle details, retaining charging details, large values in three table cells and missing measurements. JSON/YAML, compilation and whitespace pass. Actual iPhone visual acceptance, including larger accessibility fonts, remains pending; structural tests alone cannot guarantee every display width.
 
 ## Approved beta.14 release preparation

@@ -553,3 +553,13 @@ Owner explicitly requests publishing the reviewed PR #10 as prerelease 0.1.1-bet
 ## 2026-10-29 — Beta.15 publication approval
 
 Owner explicitly requests release of the compact-card PR #11 as prerelease 0.1.1-beta.15. Code head 8e2345203202cb856b984169b60077d8fa82816c passes all four jobs in CI run 40873366785. This supersedes the earlier draft hold for this release. Preserve beta.14 and all prior tags, keep charging/control logic unchanged and require regenerated YAML for the presentation update. Actual iPhone rendering remains owner acceptance; publication does not install or enable control on any HA instance.
+
+## 2026-10-29 — Retrospective and development discipline
+
+Owner requests a candid review of beta.1–15 after stable 0.1.0 and expects
+predictable failures/UX omissions to be found before his hardware tests.
+`RETROSPECTIVE_BETA1_15.md` records every beta, avoidable shortcomings,
+whole-sequence validation and remaining physical acceptance boundaries.
+AGENTS.md now requires relevant scenario-based planning and evidence-based
+claims. This is an internal process/documentation change only; no runtime,
+release, HA installation or physical charger command changes.
