@@ -5,10 +5,10 @@ Updated: 2026-10-29
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.14** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.14)).
-- Published on 2026-10-29 after explicit owner approval. PR #10 merge/tag commit **b9c24ad747be4fd5d531060098ff2e87791c3a75**; release draft=false, prerelease=true and tagged manifest version verified.
-- Release-preparation CI run **40844254829** passes all four jobs for **6057479d461e0c06ed4c47db28d8cab392b2bd47**. The published merge tree equals tested preparation tree **c59c9bd1266303cd438b35fa1da0b6516586189b**. Completion code also passes run **40842357564**. All 195 distinct software tests pass, with runtime suites on both supported HA versions.
-- Restart HA, generate replacement Manual-card YAML with **smart_load_manager.get_dashboard**, inspect measurements and deliberately enable automatic control. No HA instance was installed or controlled by this publication. Physical beta.14 completion, wake/preheating and two-charger acceptance remain pending. Stable 0.1.0 and older release tags are unchanged.
+- Published beta: **0.1.1-beta.15** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.15)).
+- Published on 2026-10-29 after explicit owner approval. PR #11 merge/tag commit **74b7277b4217ca58d699fd56572dba76b9a08b95**; verified draft=false, prerelease=true and tagged manifest 0.1.1-beta.15.
+- Release-preparation CI run **40875261526** passed for **4a8d7efec633930342177e31464b4d00c88af8f9**. The published merge tree equals tested preparation tree **3fc990e71bdc4fcc425b290bf787073a56ef02d7**. Code CI **40873366785** also passed. 200 distinct tests pass, including runtime suites on both supported HA/Python versions.
+- Beta.15 changes presentation only; charging calculations, allocation and commands retain beta.14 behavior. Restart HA and regenerate the existing Manual-card YAML using **smart_load_manager.get_dashboard**. No HA instance was installed or controlled by publication. Actual iPhone visual acceptance remains pending. Beta.14 physical completion/wake/two-charger acceptance remains separate. Stable 0.1.0 and prior tags are unchanged.
 
 ## Approved beta.15 release preparation
 
