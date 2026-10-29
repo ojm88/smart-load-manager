@@ -10,7 +10,9 @@ Updated: 2026-10-29
 - Release-preparation CI run **40844254829** passes all four jobs for **6057479d461e0c06ed4c47db28d8cab392b2bd47**. The published merge tree equals tested preparation tree **c59c9bd1266303cd438b35fa1da0b6516586189b**. Completion code also passes run **40842357564**. All 195 distinct software tests pass, with runtime suites on both supported HA versions.
 - Restart HA, generate replacement Manual-card YAML with **smart_load_manager.get_dashboard**, inspect measurements and deliberately enable automatic control. No HA instance was installed or controlled by this publication. Physical beta.14 completion, wake/preheating and two-charger acceptance remain pending. Stable 0.1.0 and older release tags are unchanged.
 
-## Unreleased beta.15 preparation
+## Approved beta.15 release preparation
+
+Owner explicitly requests publishing beta.15 on 2026-10-29. PR #11 code head **8e2345203202cb856b984169b60077d8fa82816c** passes all four CI jobs in run **40873366785**. Prepare manifest **0.1.1-beta.15** and publish as a prerelease. This supersedes the earlier hold below for this release only. Publication/tag verification is recorded separately. Actual iPhone visual acceptance remains pending. Regenerate dashboard YAML after updating and restarting HA. No charging-control policy changes.
 
 - Owner requests a compact iPhone Markdown layout. Replace the long title with a short connection/status heading and three native table columns (meter kW, used energy, estimate) on one value row. Display-only rounding/scaling bounds high-value strings; source precision and charging/control calculations are untouched.
 - All cars disconnected: singular/plural no-car heading, shared meter/budget retained, redundant load sections and pair-distribution text hidden. Known mixed connections identify names and show a count heading. Unknown/unavailable does not imply connection. Per-load power, current recommendation/last sent and next-regulation time appear only for actual Easee charging status; waiting/paused/completed retain their reasons.

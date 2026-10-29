@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta.15
+## 0.1.1-beta.15
 
 - Compact Markdown headings and three measurement columns keep meter power, used energy and estimate on the same value row. Display meter power in kW, round displayed values and scale very large energy to MWh; calculation precision is unchanged.
 - Show no-car and known mixed-connection headings. Hide redundant per-charger sections when all cars are disconnected, and show power/current/next-regulation details only for Easee charging status. Keep waiting/completed explanations and actual raw states. Regenerate dashboard YAML after installing this future layout update.

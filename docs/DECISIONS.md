@@ -548,3 +548,8 @@ Owner explicitly requests publishing the reviewed PR #10 as prerelease 0.1.1-bet
 - All disconnected: use singular/plural no-car heading, keep household readings/budget, suppress redundant per-load sections and pair-distribution boilerplate. Mixed known connections: show count in the heading, identify connected/disconnected names, retain the disconnected row's short name/status only. Unknown/unavailable is never inferred to mean connected or disconnected.
 - Show per-charger power, recommended/last-set current and next-regulation time only for raw charging status. Waiting, paused and completed retain status/reason; no regulation or command policy changes. Keep both packaged templates and ready-made examples synchronized. Existing saved YAML must be regenerated after the future update.
 - Prepare beta.15 without changing published beta.14, manifest, tags, HA configuration or physical charger control. No publication is authorized by these suggestions.
+
+
+## 2026-10-29 — Beta.15 publication approval
+
+Owner explicitly requests release of the compact-card PR #11 as prerelease 0.1.1-beta.15. Code head 8e2345203202cb856b984169b60077d8fa82816c passes all four jobs in CI run 40873366785. This supersedes the earlier draft hold for this release. Preserve beta.14 and all prior tags, keep charging/control logic unchanged and require regenerated YAML for the presentation update. Actual iPhone rendering remains owner acceptance; publication does not install or enable control on any HA instance.
