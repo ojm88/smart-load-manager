@@ -1,6 +1,6 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-28
+Updated: 2026-10-29
 
 ## Version
 
@@ -11,6 +11,11 @@ Updated: 2026-10-28
 - Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Owner confirms beta.13 works with **one configured physical charger**. Two-charger physical acceptance remains pending.
 
 ## Unreleased beta.14 preparation
+
+- Completion feedback correction (2026-10-29): owner reports beta.13 raw Easee status cycling after completed under automatic control. Implemented budgeted idle allowances instead of a completion-triggered zero. Active sessions receive capacity first; remembered idle ceilings prevent pause-induced ready/waiting reports reclaiming priority. Raw status is never rewritten. Existing pause/schedule/fault/input stops and forecast reductions remain.
+- At exactly zero measured W, known idle states below 1 A no longer cause repeated zero writes. Paired stop confirmation still requires both current and power reports newer than the reduction; charging/unknown states, positive W and >=1 A retain the previous strict comparison. Completion state is cleared on actual charging/start/disconnect and unload.
+- Updated validation: **85 pure tests**, **109 HA runtime tests** on both HA **2026.2.3 / Python 3.13** and **2026.10.4 / Python 3.14**, plus **1 Node test**, all pass locally (195 distinct software tests). New completion regressions fail against the preceding implementation. Checks cover retained allowance across ticks/status changes, household risk reductions/recovery, paired measured stop before active-peer increase, both allocation modes, blocked inputs/controls and narrow standby tolerance. Compilation/JSON/YAML/whitespace pass. These supersede the earlier beta.14 counts below.
+- No physical charger command, beta.14 installation or release performed. Required owner acceptance: automatic completion remains quiet when capacity permits; legitimate budget/peer reductions remain effective; verify wake/preheating and completed-to-new-session behavior, then both chargers. Beta.13's earlier positive one-charger feedback does not resolve this newly reported completion fault.
 
 - Owner confirms beta.13 works with **one configured charger**. This confirms that tested installation only; two-charger physical operation is not yet confirmed. Keep beta.14 changes ready in the draft while the owner tests for further issues. Do not publish until separately requested.
 - Schedule opening/closing and explicit controls now trigger immediate validated allocation without waiting for the five-minute gate or coordinator refresh debounce. This includes pause/resume, automatic/schedule switches, start-time edits, phase selection and priority/distribution changes. Normal meter-driven recommendations and forecast reductions retain their cadence. Required measurements, budget/minimums, manual behavior and measured reduction-before-increase remain.

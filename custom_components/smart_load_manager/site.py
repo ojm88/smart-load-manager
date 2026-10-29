@@ -39,6 +39,7 @@ class SiteController:
         self.manual_requests = {}
         self.latest_samples = {}
         self._permissions = {}
+        self._completed_limits = {}
         self._control_requested = 0
         self._control_applied = 0
         self.cadence = RegulationCadence()
@@ -61,6 +62,18 @@ class SiteController:
                     return data
                 for key, controller in self.controllers.items():
                     samples[key] = await controller._async_sample()
+                self._completed_limits = {key: value for key, value in self._completed_limits.items()
+                                          if key in self.controllers}
+                for key, d in samples.items():
+                    status = normalize_status(d['status'])
+                    if status in {'disconnected', 'charging', 'start_charging'}:
+                        self._completed_limits.pop(key, None)
+                    elif status == 'completed' and key not in self._completed_limits:
+                        c = self.controllers[key]
+                        # Preserve the offered limit, not measured consumption.
+                        # Completion alone is not an instruction to pause Easee.
+                        self._completed_limits[key] = c.last_commanded_current or 0
+                        self.async_request_control()
                 # Permission/control transitions are independent of meter-driven
                 # regulation. Normal ready -> charging transitions stay steady.
                 self._permissions = {key: value for key, value in self._permissions.items()
@@ -68,7 +81,7 @@ class SiteController:
                 for key, d in samples.items():
                     c = self.controllers[key]
                     permission = (c.auto_control, c.charging_paused,
-                                  d['schedule_allowed'], allows_automatic_current(d['status']),
+                                  d['schedule_allowed'], self._can_offer(d['status']),
                                   d.get('phase_mode_code'))
                     previous = self._permissions.get(key)
                     self._permissions[key] = permission
@@ -111,22 +124,32 @@ class SiteController:
                         expected = manual_limit * d["kw_per_amp"]
                         capacity = max(0, capacity - max(0, expected - d["charger_power_w"] / 1000))
                 demands = []
+                standby = []
                 eligible = []
                 for key, d in samples.items():
                     c = self.controllers[key]
                     status = normalize_status(d["status"])
                     can_run = (c.auto_control and not c.charging_paused and d["schedule_allowed"]
-                               and allows_automatic_current(status))
+                               and self._can_offer(status))
                     if can_run:
                         if not d.get("kw_per_amp") or not d.get("control_minimum_current_a") or d["max_current_a"] <= 0:
                             raise MeasurementPending("Automatisk laststyring avventer fase, spenning eller strømgrense fra en lader.")
-                        demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], d["max_current_a"]))
+                        if key in self._completed_limits:
+                            standby.append(Demand(key, d['kw_per_amp'], d['control_minimum_current_a'],
+                                                  min(d['max_current_a'], self._completed_limits[key])))
+                        else:
+                            demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], d["max_current_a"]))
                         eligible.append(key)
                 priority = owner.options.get("priority_charger", owner.entry_id)
                 if priority not in {e.entry_id for e in configured}:
                     priority = owner.entry_id
                 mode = owner.options.get("allocation_mode", "both")
                 targets = allocate(demands, capacity, mode, priority)
+                # Active sessions get priority. Any retained idle allowance is
+                # budgeted in full, since the car may wake and draw it again.
+                remaining = max(0, capacity - sum(targets[d.key] * d.kw_per_amp for d in demands))
+                idle_capacity = 0 if mode == 'one_at_a_time' and any(targets.values()) else remaining
+                targets.update(allocate(standby, idle_capacity, mode, priority))
                 targets = {key: targets.get(key, 0) for key, c in self.controllers.items()
                            if c.auto_control or c.charging_paused}
                 for key, value in list(self.manual_requests.items()):
@@ -160,7 +183,7 @@ class SiteController:
                             else:
                                 d["control_reason"] = "Laderen venter på kapasitet eller på laderen med førsteprioritet."
                         if str(d["status"]).lower() in {"completed", "charged"}:
-                            d["control_reason"] = "Bilen har avsluttet ladingen. Kapasiteten kan brukes av den andre laderen."
+                            d["control_reason"] = "Bilen har avsluttet ladingen. En eventuell beholdt strømgrense regnes fortsatt med i boligens kapasitet."
                         if self.pending_reductions and key in eligible:
                             d["control_reason"] = "Avventer bekreftet reduksjon på laderne før mer strøm fordeles."
                     d["awaiting_reduction"] = bool(self.pending_reductions)
@@ -231,6 +254,21 @@ class SiteController:
     def async_request_control(self):
         """Request one immediate validated cycle, surviving awaited commands."""
         self._control_requested += 1
+
+    @staticmethod
+    def _can_offer(status):
+        return normalize_status(status) == 'completed' or allows_automatic_current(status)
+
+    @staticmethod
+    def _current_above_limit(data, limit):
+        # Some Easee units report sub-amp standby current at exactly zero W.
+        # Only tolerate this known idle combination, never charging/unknown
+        # states, positive measured power, or a reading of 1 A or more.
+        idle = (limit == 0 and data['charger_power_w'] == 0
+                and 0 <= data['charger_current_a'] < 1
+                and normalize_status(data.get('status')) in
+                {'completed', 'awaiting_start', 'ready_to_charge'})
+        return data['charger_current_a'] > limit + .5 and not idle
 
     @callback
     def async_cancel_check(self):
@@ -336,7 +374,7 @@ class SiteController:
                 c = self.controllers[key]
                 retry_due = now - c._last_command_at >= 60
                 if target != c.last_commanded_current or (
-                        samples[key]['charger_current_a'] > target + .5 and retry_due):
+                        self._current_above_limit(samples[key], target) and retry_due):
                     await c._async_send_current(target)
                 self.pending_reductions.pop(key, None)
         else:
@@ -371,15 +409,14 @@ class SiteController:
                 reported = min(getattr(current, "last_reported", current.last_updated).timestamp(),
                                getattr(power, "last_reported", power.last_updated).timestamp())
                 kw = d.get("kw_per_amp")
-                if (reported > sent_at and kw and d["charger_current_a"] <= limit + .5
+                if (reported > sent_at and kw and not self._current_above_limit(d, limit)
                         and d["charger_power_w"] <= limit * kw * 1000 + 100):
                     self.pending_reductions.pop(key)
         for key, target in targets.items():
             c = self.controllers[key]
-            measured = samples[key]["charger_current_a"]
             previous = c.last_commanded_current
             pending = self.pending_reductions.get(key)
-            needs_reduction = previous is None or target < previous or measured > target + .5
+            needs_reduction = previous is None or target < previous or self._current_above_limit(samples[key], target)
             if needs_reduction and (pending is None or target < pending[0]):
                 # At takeover there is no known command. Establish 0 A first.
                 reduction = 0 if previous is None else min(target, previous)
