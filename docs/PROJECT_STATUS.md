@@ -5,10 +5,10 @@ Updated: 2026-10-29
 ## Version
 
 - Stable: **0.1.0**.
-- Published beta: **0.1.1-beta.13** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.13)).
-- Release code: `e6fef3b7b9043ea0a7a7c9c599edcf85640dec2f`; merged PR #9. Tag/target and manifest version verified; draft=false, prerelease=true.
-- Release-preparation runs **40752938419** and **40752928920** passed all four jobs for e956bfa67d512c1e5c91c98068e277b670289b1d. The merge tree equals the tested release-preparation tree 8081a12ff5cddc2f0cd16d4ce05879dad6be54a8.
-- Restart HA and deliberately enable automatic control after reviewing measurements. Existing beta.12 YAML remains valid. Owner confirms beta.13 works with **one configured physical charger**. Two-charger physical acceptance remains pending.
+- Published beta: **0.1.1-beta.14** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.14)).
+- Published on 2026-10-29 after explicit owner approval. PR #10 merge/tag commit **b9c24ad747be4fd5d531060098ff2e87791c3a75**; release draft=false, prerelease=true and tagged manifest version verified.
+- Release-preparation CI run **40844254829** passes all four jobs for **6057479d461e0c06ed4c47db28d8cab392b2bd47**. The published merge tree equals tested preparation tree **c59c9bd1266303cd438b35fa1da0b6516586189b**. Completion code also passes run **40842357564**. All 195 distinct software tests pass, with runtime suites on both supported HA versions.
+- Restart HA, generate replacement Manual-card YAML with **smart_load_manager.get_dashboard**, inspect measurements and deliberately enable automatic control. No HA instance was installed or controlled by this publication. Physical beta.14 completion, wake/preheating and two-charger acceptance remain pending. Stable 0.1.0 and older release tags are unchanged.
 
 ## Approved beta.14 release preparation
 
