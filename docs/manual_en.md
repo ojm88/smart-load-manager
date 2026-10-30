@@ -118,3 +118,6 @@ Refined beta 17 policy: Preserve a budgeted offer after completion. A zero or un
 
 
 Beta 17: Update the integration and restart Home Assistant. Existing beta 16 dashboard YAML remains compatible; beta 17 does not change the card layout. Test renewed charging after raising the target in the car app and download diagnostics promptly if behavior differs.
+
+
+Beta 18 in preparation: A completed session measured at 0 W keeps its known offer when HAN value age is the only missing input. No MQTT configuration change is required. Measurement status can still show waiting; this does not establish a communication outage, and no new increase uses stale inputs. The attributes expose completed_offer_held. Invalid measurements, actual draw, pause, closed schedule and necessary budget/charger constraints can still require a command. Ended sessions are not automatically raised on each regular tick. New waiting status and user permission changes are assessed immediately. Physical acceptance remains pending.

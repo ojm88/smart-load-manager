@@ -7,7 +7,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 from .debug_trace import DebugTrace
 from .allocation import Demand, allocate, available_charging_kw
 from .budget import consumption_limit_value
-from .const import DOMAIN
+from .const import DOMAIN, HAN_MAX_AGE_SECONDS
 from .regulation import RegulationCadence
 from .charger_status import allows_automatic_current, normalize_status
 from homeassistant.util import dt as dt_util
@@ -44,6 +44,9 @@ class SiteController:
         self._completed_limits = {}
         self._observed_status = {}
         self._measurement_waiting = False
+        self._completion_resume = set()
+        self._completion_holds = set()
+        self._command_samples = None
         self._control_requested = 0
         self._control_applied = 0
         self.cadence = RegulationCadence()
@@ -53,6 +56,7 @@ class SiteController:
     async def refresh(self, requester):
         async with self.lock:
             samples = {}
+            self._command_samples = samples
             try:
                 configured = charger_entries(self.hass)
                 if any(e.entry_id not in self.controllers for e in configured):
@@ -66,6 +70,7 @@ class SiteController:
                     return data
                 for key, controller in self.controllers.items():
                     samples[key] = await controller._async_sample()
+                    samples[key]['completion_hold'] = False
                     samples[key]["last_sent_current_a"] = controller.last_commanded_current
                     self.debug_trace.record("sample", key, data=samples[key])
                 self._completed_limits = {key: value for key, value in self._completed_limits.items()
@@ -87,7 +92,10 @@ class SiteController:
                         # permanent zero ceiling or an invented nominal current.
                         self._completed_limits[key] = max(c.last_commanded_current or 0,
                                                          d.get('control_minimum_current_a') or 0)
-                        self.async_request_control()
+                        if any(other != key and self.controllers[other].auto_control
+                               and normalize_status(value['status']) not in {'completed', 'disconnected'}
+                               for other, value in samples.items()):
+                            self.async_request_control()  # Serve a waiting/active peer.
                     elif (key in self._completed_limits and status != previous_status
                           and status in {'awaiting_start', 'ready_to_charge'}):
                         # Source changes prompt a fresh assessment, but do NOT
@@ -109,6 +117,10 @@ class SiteController:
                     self._permissions[key] = permission
                     if previous is not None and permission != previous:
                         self.async_request_control()
+                        if ((not previous[0] and permission[0])
+                                or (previous[1] and not permission[1])
+                                or (not previous[2] and permission[2])):
+                            self._completion_resume.add(key)
                 owner = site_entry(self.hass)
                 reference = samples[owner.entry_id]
                 if not all(d.get("inputs_valid") and d.get("han_fresh") for d in samples.values()):
@@ -137,6 +149,7 @@ class SiteController:
                     self.async_request_control()
                     self.debug_trace.record('measurements_recovered')
                     self._measurement_waiting = False
+                self._completion_holds.clear()
                 managed = sum(d["charger_power_w"] for key, d in samples.items()
                               if self.controllers[key].auto_control)
                 capacity = available_charging_kw(
@@ -181,6 +194,14 @@ class SiteController:
                 remaining = max(0, capacity - sum(targets[d.key] * d.kw_per_amp for d in demands))
                 idle_capacity = 0 if mode == 'one_at_a_time' and any(targets.values()) else remaining
                 targets.update(allocate(standby, idle_capacity, mode, priority))
+                for key, target in targets.items():
+                    # Completion is not a request for more current. Keep its
+                    # offer steady or reduce for a real budget/peer constraint;
+                    # only renewed user permission or a new source state may
+                    # raise it again. Never hide or synthesize raw Easee status.
+                    if (normalize_status(samples[key]['status']) == 'completed'
+                            and key not in self._completion_resume):
+                        targets[key] = min(target, self.controllers[key].last_commanded_current or 0)
                 targets = {key: targets.get(key, 0) for key, c in self.controllers.items()
                            if c.auto_control or c.charging_paused}
                 for key, value in list(self.manual_requests.items()):
@@ -192,6 +213,9 @@ class SiteController:
                         # peer automatic currents are reduced and acknowledged.
                         targets[key] = self._manual_target(c, samples[key], value)
                 await self._regulated_apply(targets, samples, reference, owner, eligible)
+                self._completion_resume = {key for key in self._completion_resume
+                                           if key in self.controllers
+                                           and not self.controllers[key].last_commanded_current}
                 phase_advice = ""
                 if mode == "both" and len(demands) == 2 and any(targets.get(d.key, 0) == 0 for d in demands):
                     single_minimum = 0
@@ -237,7 +261,22 @@ class SiteController:
                 # Missing input is a control wait, not a loss of every diagnostic
                 # entity. Keep real samples visible; never allocate on old data.
                 stop_errors = []
+                age_only = self._only_han_age_missing(samples)
                 for key, c in self.controllers.items():
+                    d = samples.get(key, {})
+                    held = (age_only and c.auto_control and not c.charging_paused
+                            and d.get('schedule_allowed') and key not in self.manual_requests
+                            and self._quiet_completed(d)
+                            and c.last_commanded_current is not None
+                            and c.last_commanded_current <= d.get('max_current_a', 0))
+                    d['completion_hold'] = bool(held)
+                    if held:
+                        if key not in self._completion_holds:
+                            self.debug_trace.record('completed_age_hold', key, data=d,
+                                                    target=c.last_commanded_current)
+                        self._completion_holds.add(key)
+                        continue
+                    self._completion_holds.discard(key)
                     if c.auto_control or c.charging_paused or key in self.manual_requests:
                         # Do not reset an outstanding confirmation timestamp on
                         # every refresh; that could prevent recovery forever.
@@ -257,6 +296,9 @@ class SiteController:
                 for key, d in samples.items():
                     d["recommended_current_a"] = 0
                     d["control_reason"] = str(err)
+                    if d.get('completion_hold'):
+                        d['control_reason'] = ('Fullført lading beholdes urørt. HAN-målingen er gammel; '
+                                               'ny regulering avventer ferske målinger.')
                     d["site_control_ready"] = False
                     d["site_available_kw"] = None
                     d["phase_advice"] = "Faseråd avventer oppdaterte målinger."
@@ -283,6 +325,36 @@ class SiteController:
                     if c is not requester:
                         c.async_set_update_error(UpdateFailed(str(err)))
                 raise UpdateFailed(str(err)) from err
+            finally:
+                self._command_samples = None
+
+    @staticmethod
+    def _quiet_completed(data):
+        """Require both raw completion and measured no draw; tolerate standby A."""
+        power, current = data.get('charger_power_w'), data.get('charger_current_a')
+        return (normalize_status(data.get('status')) == 'completed'
+                and isinstance(power, (int, float)) and math.isfinite(power) and power == 0
+                and isinstance(current, (int, float)) and math.isfinite(current)
+                and 0 <= current < 1)
+
+    def _only_han_age_missing(self, samples):
+        """A stale timestamp cannot excuse missing numeric/peer/electrical inputs."""
+        if set(samples) != set(self.controllers) or not samples:
+            return False
+        for key, d in samples.items():
+            if not (d.get('han_value_valid') and d.get('tariff_valid')
+                    and d.get('electrical_ready') and d.get('kw_per_amp')
+                    and d.get('control_minimum_current_a') and d.get('max_current_a', 0) > 0):
+                return False
+            power = d.get('charger_power_w')
+            source = self.controllers[key].easee.power
+            state = self.hass.states.get(source) if source else None
+            if (not isinstance(power, (int, float)) or not math.isfinite(power) or power < 0
+                    or state is None or state.state in {'unknown', 'unavailable'}):
+                return False
+            if not d.get('han_fresh') and not ((d.get('han_age_seconds') or -1) > HAN_MAX_AGE_SECONDS):
+                return False
+        return any(not d.get('han_fresh') for d in samples.values())
 
     @callback
     def async_request_control(self):

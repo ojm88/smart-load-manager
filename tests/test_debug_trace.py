@@ -32,6 +32,20 @@ class DebugTraceTests(unittest.TestCase):
 
 
 class CommandTraceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_command_uses_current_cycle_instead_of_previous_published_han(self):
+        trace=DebugTrace()
+        c=NS(auto_control=True,charging_paused=False,last_commanded_current=16,
+             entry=NS(data={'charger_device':'device'}),
+             data={'han_fresh':True,'han_age_seconds':93})
+        site=NS(debug_trace=trace,controllers={'load':c},_command_samples={
+            'load':{'han_fresh':False,'han_age_seconds':123,'completion_hold':False}})
+        hass=NS(data={'smart_load_manager':{'site':site}},services=NS(async_call=AsyncMock()))
+        await async_send_dynamic_limit(hass,'device',0)
+        for event in trace.events:
+            self.assertFalse(event['sample']['han_fresh'])
+            self.assertEqual(event['sample']['han_age_seconds'],123)
+            self.assertEqual(event['sample']['last_sent_current_a'],16)
+
     async def test_service_failure_is_not_logged_as_success(self):
         trace = DebugTrace()
         c = NS(auto_control=True, charging_paused=False, last_commanded_current=16, entry=NS(data={'charger_device': 'secret_device'}), data={'han_power_w': 1000})

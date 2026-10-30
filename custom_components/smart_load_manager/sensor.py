@@ -281,6 +281,7 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
                 han_age_seconds=data.get("han_age_seconds"),
                 entity_id_migrations=getattr(getattr(self.coordinator.entry, "parent", None), "options", {}).get("entity_id_migrations", {}),
                 han_valid=data.get("han_fresh", False),
+                completed_offer_held=data.get("completion_hold", False),
                 inputs_valid=data.get("inputs_valid", False),
                 allocation_ready=data.get("site_control_ready", data.get("inputs_valid", False)),
             )

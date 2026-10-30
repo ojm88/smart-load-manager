@@ -456,6 +456,89 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
             self.assertEqual(data['status'], status)  # Never invent/pin source status.
             self.assertEqual(self.commands, [])
 
+    async def test_completed_stale_meter_recovery_does_not_generate_easee_feedback(self):
+        site = self.setup_regulation(single=True)
+        c = site.controllers['a']; d = c._async_sample.return_value
+        c.last_commanded_current = 16
+        d.update(status='completed', charger_power_w=0, charger_current_a=.02,
+                 han_power_w=307, han_value_valid=True, tariff_valid=True,
+                 electrical_ready=True)
+        original_send = c._async_send_current
+        async def feedback(value):
+            await original_send(value)
+            d['status'] = 'awaiting_start' if value == 0 else 'ready_to_charge'
+        c._async_send_current = feedback
+        await self.refresh_at(site, 1)
+        for seconds, age in [(123,123), (240,240), (300,0),
+                             (450,150), (600,300), (630,0), (21600,400)]:
+            d.update(han_age_seconds=age, han_fresh=age <= 120, inputs_valid=age <= 120)
+            result = await self.refresh_at(site, seconds)
+            self.assertEqual(result['status'], 'completed')
+            self.assertEqual(c.last_commanded_current, 16)
+            if age > 120:
+                self.assertTrue(result['completion_hold'])
+                self.assertFalse(result['site_control_ready'])
+        self.assertEqual(self.commands, [])
+        self.assertTrue(any(e['event']=='completed_age_hold' for e in site.debug_trace.events))
+
+    async def test_completed_budget_reduction_is_not_automatically_raised_on_ticks(self):
+        site = self.setup_regulation(single=True)
+        c = site.controllers['a']; d = c._async_sample.return_value
+        c.last_commanded_current = 16
+        d.update(status='completed', charger_power_w=0, charger_current_a=.02, han_power_w=1000)
+        await self.refresh_at(site,1)
+        # A real budget constraint can still reduce the standing offer.
+        d['energy_used_kwh'] = 8
+        await self.refresh_at(site,301)
+        held = c.last_commanded_current
+        self.assertLess(held,16)
+        writes = list(self.commands)
+        d['energy_used_kwh'] = 5
+        for seconds in (601,901,1201):
+            await self.refresh_at(site,seconds)
+            self.assertEqual(c.last_commanded_current,held)
+        self.assertEqual(self.commands,writes)
+        d['status'] = 'ready_to_charge'
+        await self.refresh_at(site,1202)
+        self.assertGreater(c.last_commanded_current,held)
+
+    async def test_stale_meter_keeps_completed_peer_but_stops_active_peer_once(self):
+        site=self.setup_regulation()
+        for c in site.controllers.values():
+            c._async_sample.return_value.update(han_fresh=False, inputs_valid=False,
+                han_age_seconds=150,han_value_valid=True,tariff_valid=True,electrical_ready=True)
+        a=site.controllers['a']._async_sample.return_value
+        a.update(status='completed',charger_power_w=0,charger_current_a=.02)
+        for seconds in (1,30,60):
+            await self.refresh_at(site,seconds)
+        self.assertEqual(self.commands,[('b',0)])
+        self.assertEqual(site.controllers['a'].last_commanded_current,10)
+        # A stale measurement cannot authorize new charging after car wake.
+        a['status']='charging'
+        await self.refresh_at(site,61)
+        self.assertEqual(self.commands,[('b',0),('a',0)])
+
+    async def test_completed_age_exception_does_not_mask_other_faults_or_controls(self):
+        for fault in ('han','tariff','electrical','power','draw','current','pause','schedule','limit'):
+            with self.subTest(fault=fault):
+                site=self.setup_regulation(single=True)
+                c=site.controllers['a']; d=c._async_sample.return_value
+                d.update(status='completed',charger_power_w=0,charger_current_a=.02,
+                    han_fresh=False,inputs_valid=False,han_age_seconds=180,
+                    han_value_valid=True,tariff_valid=True,electrical_ready=True)
+                if fault=='han': d['han_value_valid']=False
+                if fault=='tariff': d['tariff_valid']=False
+                if fault=='electrical': d['electrical_ready']=False
+                if fault=='power': self.states['a_power'].state='unavailable'
+                if fault=='draw': d['charger_power_w']=50
+                if fault=='current': d['charger_current_a']=2
+                if fault=='pause': c.charging_paused=True
+                if fault=='schedule': d['schedule_allowed']=False
+                if fault=='limit': d['max_current_a']=6
+                await self.refresh_at(site,1)
+                await self.refresh_at(site,30)
+                self.assertEqual(self.commands,[('a',0)])
+
     async def test_completed_peer_releases_capacity_only_after_measured_reduction(self):
         from datetime import timedelta
         site = self.setup_regulation()

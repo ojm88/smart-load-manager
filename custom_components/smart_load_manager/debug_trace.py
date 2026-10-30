@@ -10,7 +10,8 @@ NUMBER_FIELDS = ('han_power_w', 'han_age_seconds', 'energy_used_kwh',
     'last_sent_current_a', 'next_regulation_at', 'site_available_kw',
     'phase_code', 'phase_mode_code')
 BOOL_FIELDS = ('han_fresh', 'inputs_valid', 'electrical_ready', 'schedule_allowed',
-               'auto_control', 'charging_paused', 'site_control_ready', 'awaiting_reduction')
+               'auto_control', 'charging_paused', 'site_control_ready', 'awaiting_reduction',
+               'han_value_valid', 'tariff_valid', 'completion_hold')
 STATUSES = {'disconnected','charging','start_charging','completed','awaiting_start',
             'ready_to_charge','error','unknown','unavailable'}
 
@@ -69,7 +70,9 @@ def command_trace(hass, device_id, event, *, target=None, mode=None):
         return
     for key, controller in site.controllers.items():
         if controller.entry.data.get('charger_device') == device_id:
-            data = {**(controller.data or {}), 'auto_control': controller.auto_control,
+            cycle_sample = (getattr(site, '_command_samples', None) or {}).get(key)
+            data = {**(cycle_sample if cycle_sample is not None else controller.data or {}),
+                    'auto_control': controller.auto_control,
                     'charging_paused': controller.charging_paused,
                     'last_sent_current_a': controller.last_commanded_current}
             site.debug_trace.record(event, key, data=data, target=target, mode=mode)
