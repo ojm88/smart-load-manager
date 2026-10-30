@@ -4,8 +4,8 @@ Updated: 2026-10-30
 
 ## Version
 
-- Stable: **0.1.0**. Published beta before this preparation: **0.1.1-beta.15**.
-- Owner authorizes publication of **0.1.1-beta.16** on 2026-10-30. Manifest prepared; GitHub CI, merge/tag and publication verification are recorded after they complete.
+- Stable: **0.1.0**. Published beta: **0.1.1-beta.16** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.16)).
+- Published 2026-10-30 after owner approval. PR #12 merge/tag **e3d76cccc710f7c7611f6eabbfbea8bde787716f**. GitHub release visibly verified as Pre-release. Tagged tree **fbf4272760b5410b491b043cd0fbd0bc7f22826d** equals tested code tree; manifest 0.1.1-beta.16. All four jobs in CI run **41029232687** pass for code head **0145ecdc8a6a670fd96f5060774c1518497de7b4**.
 - Scope: validated manual-minimum handover; independent charging-category switch; concise grouped Markdown; report-based HAN freshness up to 120 seconds; native anonymous diagnostics with 4096 in-memory events. Existing ordinary five-minute regulation and paired measured reduction safeguards remain.
 - Local validation: **92 pure tests**, **124 HA runtime tests** on both **2026.2.3/Python 3.13** and **2026.10.4/Python 3.14**, plus **1 Node test** (217 distinct tests). Includes HA template-engine rendering, source-status/command timing, manual pause/schedule, completion/HAN regression and diagnostics privacy/order/failure tests. Actual iPhone rendering/download and overnight/two-charger hardware acceptance remain pending.
 - Update/restart HA, then regenerate YAML with **smart_load_manager.get_dashboard**. No HA instance has been installed or physically controlled during this preparation. Old tags and stable release remain unchanged.
