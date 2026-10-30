@@ -186,6 +186,9 @@
       },
       "charging_priority": {
         "name": "First priority"
+      },
+      "charging_automatic_control": {
+        "name": "Automatic load control – charging"
       }
     },
     "number": {

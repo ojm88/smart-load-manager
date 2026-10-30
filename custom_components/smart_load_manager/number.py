@@ -49,6 +49,9 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
 
     @property
     def native_value(self) -> float | None:
+        selected = getattr(self.coordinator, 'manual_current_setting', None)
+        if not self.coordinator.auto_control and selected is not None:
+            return float(selected)
         data = self.coordinator.data or {}
         commanded = self.coordinator.last_commanded_current
         if commanded is not None:
@@ -138,6 +141,7 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
             "zero_current": "0 A setter laderen på pause" if norwegian else "0 A pauses charging",
             "positive_current": "Setter dynamisk strømgrense på Easee-laderen" if norwegian else "Sets an Easee dynamic current limit",
             "automatic_control_active": self.coordinator.auto_control,
+            "last_sent_current_a": self.coordinator.last_commanded_current,
             "unavailable_reason": (
                 "Slå av automatisk laststyring før du endrer verdien"
                 if norwegian and self.coordinator.auto_control

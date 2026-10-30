@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from smart_load_manager.coordinator import ChargingCoordinator
 from smart_load_manager.entity_resolution import EaseeEntities
 from smart_load_manager.site import SiteController
-from smart_load_manager.switch import AutomaticLoadControl
+from smart_load_manager.switch import AutomaticLoadControl, ChargingAutomationControl
 from smart_load_manager.time import ChargingScheduleStartTime
 
 
@@ -35,6 +35,7 @@ class ControlEventTests(IsolatedAsyncioTestCase):
             patch('smart_load_manager.site.dt_util.now', side_effect=lambda: self.now),
             patch('smart_load_manager.coordinator.update_load', side_effect=self.save),
             patch('smart_load_manager.time.update_load', side_effect=self.save),
+            patch('smart_load_manager.installation.update_load', side_effect=self.save),
         ]
         for p in patches:
             p.start()
@@ -58,7 +59,7 @@ class ControlEventTests(IsolatedAsyncioTestCase):
         self.c._async_sample_real = self.c._async_sample
         async def sample(**kwargs):
             d = await self.c._async_sample_real(**kwargs)
-            d.update(han_fresh=True, inputs_valid=bool(d['electrical_ready']), han_power_w=1000)
+            d.update(han_fresh=True, inputs_valid=bool(d['electrical_ready'] and d.get('energy_used_kwh') is not None), han_power_w=1000)
             return d
         self.c._async_sample = sample
 
@@ -179,3 +180,149 @@ class ControlEventTests(IsolatedAsyncioTestCase):
             old_cancel.assert_called_once()
             self.assertEqual(timer.call_args.args[1], 20)
             self.assertEqual(self.commands, [0])
+
+    async def test_auto_off_starts_at_measured_minimum_immediately_and_number_follows(self):
+        from smart_load_manager.number import ChargingCurrentLimit
+        await self.refresh()
+        self.c.last_commanded_current = 0  # Waiting in automatic mode beforehand.
+        self.commands.clear()
+        entity=NS(coordinator=self.c, async_write_ha_state=Mock())
+        await AutomaticLoadControl.async_turn_off(entity)
+        self.assertFalse(self.c.auto_control)
+        self.assertEqual(self.commands,[6])
+        self.assertEqual(self.c.manual_current_setting,6)
+        self.assertEqual(self.c.data['last_sent_current_a'],6)
+        self.assertEqual(ChargingCurrentLimit.native_value.fget(NS(coordinator=self.c)),6)
+        # A later user choice remains; repeated off is idempotent.
+        await self.c.async_set_current(12)
+        await AutomaticLoadControl.async_turn_off(entity)
+        self.assertEqual(self.c.manual_current_setting,12)
+        self.assertEqual(self.commands,[6,12])
+
+    async def test_auto_off_on_it_three_phase_chooses_eleven_not_ten(self):
+        real=self.c._async_sample
+        async def sample(**kwargs):
+            d=await real(**kwargs)
+            d.update(control_minimum_current_a=11,kw_per_amp=.4)
+            return d
+        self.c._async_sample=sample
+        await self.refresh()
+        self.commands.clear()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c,async_write_ha_state=Mock()))
+        self.assertEqual(self.commands,[11])
+        self.assertEqual(self.c.manual_current_setting,11)
+
+    async def test_auto_off_respects_pause_and_resume_uses_selected_minimum(self):
+        await self.refresh()
+        await self.c.async_set_charging_paused(True)
+        self.commands.clear()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c,async_write_ha_state=Mock()))
+        self.assertEqual(self.commands,[])
+        self.assertEqual(self.c.manual_current_setting,6)
+        self.assertEqual(self.c.last_commanded_current,0)
+        await self.c.async_set_charging_paused(False)
+        self.assertEqual(self.commands,[6])
+
+    async def test_manual_handover_waits_for_schedule_and_starts_at_exact_open(self):
+        self.c.schedule_enabled=True
+        self.entry.options['schedule_start_time']='21:00:10'
+        with patch('smart_load_manager.site.async_call_later',return_value=Mock()) as timer:
+            await self.refresh()
+            await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c,async_write_ha_state=Mock()))
+            self.assertEqual(self.c.manual_current_setting,6)
+            self.assertEqual(self.commands,[0])
+            self.assertAlmostEqual(timer.call_args.args[1],10)
+            self.now+=timedelta(seconds=10)
+            timer.call_args.args[2](self.now)
+            await self.hass.async_block_till_done()
+            self.assertEqual(self.commands,[0,6])
+            self.assertFalse(self.c.auto_control)
+
+    async def test_manual_handover_invalid_sources_never_send_positive_and_recover(self):
+        await self.refresh()
+        self.hass.states.async_set('sensor.energy_used_this_hour','unavailable')
+        self.commands.clear()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c,async_write_ha_state=Mock()))
+        self.assertEqual(self.commands,[0])
+        self.assertEqual(self.c.manual_current_setting,6)
+        self.hass.states.async_set('sensor.energy_used_this_hour',1)
+        await self.refresh()
+        self.assertEqual(self.commands,[0,6])
+
+    async def test_manual_handover_never_exceeds_live_maximum(self):
+        real=self.c._async_sample
+        async def sample(**kwargs):
+            d=await real(**kwargs)
+            d.update(control_minimum_current_a=11,max_current_a=10,kw_per_amp=.4)
+            return d
+        self.c._async_sample=sample
+        self.c.last_commanded_current=16
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c,async_write_ha_state=Mock()))
+        self.assertEqual(self.commands,[0])
+        self.assertEqual(self.c.manual_current_setting,0)
+
+    async def test_charging_category_operates_both_and_preserves_individual_choice(self):
+        peer_entry=NS(entry_id='second',title='Carport',options={},data=dict(self.entry.data))
+        peer=ChargingCoordinator(self.hass,peer_entry)
+        peer.auto_control=True
+        peer.last_commanded_current=16
+        peer._async_sample=self.c._async_sample
+        sent=[]
+        async def send(value):
+            sent.append(value);peer.last_commanded_current=value;peer._last_command_at=self.now.timestamp()
+        peer._async_send_current=send
+        group=ChargingAutomationControl(self.c,self.entry)
+        group.hass=self.hass
+        group.async_write_ha_state=Mock()
+        self.c.last_commanded_current=16
+        with patch('smart_load_manager.site.charger_entries',return_value=[self.entry,peer_entry]):
+            await group.async_turn_off()
+            self.assertEqual(self.commands,[6])
+            self.assertEqual(sent,[6])
+            self.assertFalse(group.is_on)
+            self.assertFalse(self.c.auto_control)
+            self.assertFalse(peer.auto_control)
+            # Mixed state is explicit when an individual charger is enabled.
+            peer.auto_control=True
+            self.assertTrue(group.is_on)
+            self.assertEqual(group.extra_state_attributes['control_mode'],'mixed')
+        await peer.async_shutdown()
+
+    async def test_category_startup_off_does_not_start_manual_charging_on_its_own(self):
+        self.c.auto_control=False
+        group=ChargingAutomationControl(self.c,self.entry)
+        group.hass=self.hass
+        group.async_write_ha_state=Mock()
+        self.assertFalse(group.is_on)
+        self.assertIsNone(self.c.manual_current_setting)
+        self.assertEqual(self.commands,[])
+
+    async def test_unchanged_han_reports_keep_completed_session_quiet(self):
+        # Real sampler, fresh repeated report but an unchanged value for hours.
+        # Simulates the overnight sequence without overriding input validity.
+        self.c._async_sample = self.c._async_sample_real
+        self.c.auto_control = True
+        self.c.last_commanded_current = 16
+        self.hass.states.async_set('sensor.test_status', 'completed', {
+            'config_phaseMode': 1, 'state_outputPhase': 0, 'circuit_ratedCurrent': 16})
+        source_get = self.hass.states.get
+        han = source_get('sensor.test_han')
+        from types import SimpleNamespace as NS
+        from datetime import timedelta
+        for seconds in (1, 301, 601, 3601, 21601):
+            self.now = self.now + timedelta(seconds=seconds)
+            report = NS(state=han.state, attributes=han.attributes,
+                        last_updated=self.now-timedelta(hours=12), last_reported=self.now)
+            with patch.object(type(self.hass.states), 'get', new=lambda machine, key: report if key == 'sensor.test_han' else source_get(key)):
+                await self.refresh()
+            self.assertTrue(self.c.data['han_fresh'])
+            self.assertEqual(self.c.data['han_power_w'], 1000)
+            self.assertEqual(self.commands, [])
+        # A genuinely missing heartbeat still stops control, but keeps the last
+        # numerical reading visible, marked stale rather than silently current.
+        report.last_reported = self.now-timedelta(minutes=5)
+        with patch.object(type(self.hass.states), 'get', new=lambda machine, key: report if key == 'sensor.test_han' else source_get(key)):
+            await self.refresh()
+        self.assertFalse(self.c.data['han_fresh'])
+        self.assertEqual(self.c.data['han_power_w'], 1000)
+        self.assertEqual(self.commands, [0])

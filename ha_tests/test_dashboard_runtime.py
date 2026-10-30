@@ -109,8 +109,8 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
             card = yaml.safe_load((Path(__file__).parents[1] /
                 'custom_components/smart_load_manager/dashboard' / name).read_text())
             text = env.from_string(card['cards'][0]['content']).render()
-            self.assertIn('Anbefalt nå: **8 A**', text)
-            self.assertIn('Sist satt: **10 A**', text)
+            self.assertIn('Anbefalt: **8 A**', text)
+            self.assertIn('Satt: **10 A**', text)
             self.assertIn('18:05', text)
 
     async def test_markdown_shows_name_and_independent_status_for_both_chargers(self):
@@ -129,8 +129,8 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
             card = yaml.safe_load((Path(__file__).parents[1] /
                 'custom_components/smart_load_manager/dashboard' / name).read_text())
             text = env.from_string(card['cards'][0]['content']).render()
-            self.assertIn('Garasje – Lader', text)
-            self.assertIn('Carport – Pauset', text)
+            self.assertIn('Garasje · **Lader**', text)
+            self.assertIn('Carport · **Pauset**', text)
             self.assertIn('Slå av ladepause', text)
 
     async def test_charger_name_prefers_slm_user_name_to_generic_easee_name(self):
@@ -192,14 +192,14 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                 card=yaml.safe_load((Path(__file__).parents[1]/
                     'custom_components/smart_load_manager/dashboard'/name).read_text())
                 text=env.from_string(card['cards'][0]['content']).render()
-                self.assertIn('Garasje – Lader', text)
-                self.assertIn('Tesla –', text)
-                self.assertEqual(text.count('Ladeeffekt:'),1)
-                self.assertEqual(text.count('Neste ordinære regulering:'),1)
-                self.assertEqual(text.count('Anbefalt nå:'),1)
+                self.assertIn('Garasje · **Lader**', text)
+                self.assertIn('Tesla · **', text)
+                self.assertEqual(text.count('Effekt:'),1)
+                self.assertEqual(text.count('Regulering:'),1)
+                self.assertEqual(text.count('Strømgrense:'),1)
                 if second_status == 'disconnected':
-                    self.assertIn('Bil tilkoblet: Garasje. Frakoblet: Tesla.', text)
-                    self.assertIn('1 av 2 biler tilkoblet', text)
+                    self.assertIn('Tesla · **Frakoblet**', text)
+                    self.assertNotIn('Bilen er koblet til', text)
 
     async def test_high_meter_values_stay_in_three_separate_value_cells(self):
         from pathlib import Path
@@ -225,3 +225,50 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                 self.assertEqual(len(parser.cells),3)
                 self.assertTrue(all(len(cell.strip())<=9 for cell in parser.cells),parser.cells)
                 self.assertNotIn('None',text)
+
+    async def test_short_status_and_stale_han_warning_render_once(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from smart_load_manager.household_status import build_household_status
+        for status, extra, label in [('awaiting_start', {'charging_paused':True}, 'Pauset'),
+                ('awaiting_start', {'schedule_allowed':False, 'schedule_start_time':'22:00'}, 'Venter på starttid'),
+                ('completed', {}, 'Fullført')]:
+            data = dict(status=status, auto_control=True, inputs_valid=True, han_fresh=True,
+                        electrical_ready=True, kw_per_amp=.23, max_current_a=16, recommended_current_a=6)
+            data.update(extra)
+            state, payload=build_household_status([dict(id='a',name='Tesla',data=data)],limit_kwh=10)
+            payload.update(han_power_w=1000,han_fresh=False)
+            env=Environment();env.globals.update(states=lambda _:state,state_attr=lambda _,k:payload.get(k))
+            for name in ('one.yaml','two.yaml'):
+                card=yaml.safe_load((Path(__file__).parents[1]/'custom_components/smart_load_manager/dashboard'/name).read_text())
+                text=env.from_string(card['cards'][0]['content']).render()
+                self.assertEqual(text.count('Tesla · **'+label+'**'),1)
+                self.assertEqual(text.count('HAN-målingen er ikke oppdatert'),1)
+                self.assertNotIn('Bilen er koblet til',text)
+                self.assertNotIn('Regulering:',text)
+                self.assertIn('1.0&nbsp;kW',text)
+
+    async def test_card_renders_in_actual_home_assistant_template_engine(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+        from homeassistant.core import HomeAssistant
+        from homeassistant.helpers.template import Template
+        from smart_load_manager.household_status import build_household_status
+        with TemporaryDirectory() as directory:
+            hass=HomeAssistant(directory)
+            try:
+                _, payload=build_household_status([dict(id='a',name='Tesla',data=dict(
+                    status='charging', auto_control=True, inputs_valid=True, han_fresh=True,
+                    electrical_ready=True, kw_per_amp=.23, max_current_a=16,
+                    charger_power_w=2300, recommended_current_a=10, last_sent_current_a=10))],limit_kwh=10)
+                payload.update(han_power_w=99999, energy_used_kwh=999.9,
+                               energy_estimate_kwh=1000,han_fresh=True)
+                hass.states.async_set('sensor.slm_status','automatic',payload)
+                for name in ('one.yaml','two.yaml'):
+                    content=yaml.safe_load((Path(__file__).parents[1]/'custom_components/smart_load_manager/dashboard'/name).read_text())['cards'][0]['content']
+                    rendered=Template(content,hass).async_render(parse_result=False)
+                    self.assertIn('Tesla · **Lader** · Auto',rendered)
+                    self.assertIn('Strømgrense: **10 A**',rendered)
+                    self.assertNotIn('HAN-målingen er ikke oppdatert',rendered)
+            finally:
+                await hass.async_stop(force=True)

@@ -5,7 +5,7 @@ from datetime import timedelta
 DOMAIN = "smart_load_manager"
 PLATFORMS = ["sensor", "select", "number", "switch", "time"]
 UPDATE_INTERVAL = timedelta(seconds=30)
-HAN_MAX_AGE_SECONDS = 60
+HAN_MAX_AGE_SECONDS = 120
 SCHEDULE_WINDOW_HOURS = 12
 
 CONF_CHARGER_DEVICE = "charger_device"

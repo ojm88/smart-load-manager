@@ -4,6 +4,7 @@ from .installation import charger_entries
 import asyncio
 import math
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from .debug_trace import DebugTrace
 from .allocation import Demand, allocate, available_charging_kw
 from .budget import consumption_limit_value
 from .const import DOMAIN
@@ -33,6 +34,7 @@ def get_site(hass):
 class SiteController:
     def __init__(self, hass):
         self.hass = hass
+        self.debug_trace = DebugTrace()
         self.controllers = {}
         self.lock = asyncio.Lock()
         self.pending_reductions = {}
@@ -55,13 +57,14 @@ class SiteController:
                     data = await requester._async_sample()
                     data["recommended_current_a"] = 0
                     data["control_reason"] = "Avventer at alle konfigurerte ladere blir tilgjengelige."
-                    for c in self.controllers.values():
-                        if c.auto_control or c.charging_paused:
+                    for key, c in self.controllers.items():
+                        if c.auto_control or c.charging_paused or key in self.manual_requests:
                             await c._async_send_current(0)
                             self.pending_reductions[c.entry.entry_id] = (0, c._last_command_at)
                     return data
                 for key, controller in self.controllers.items():
                     samples[key] = await controller._async_sample()
+                    self.debug_trace.record("sample", key, data=samples[key])
                 self._completed_limits = {key: value for key, value in self._completed_limits.items()
                                           if key in self.controllers}
                 for key, d in samples.items():
@@ -120,6 +123,8 @@ class SiteController:
                 for key, d in samples.items():
                     c = self.controllers[key]
                     manual_limit = self.manual_requests.get(key, c.last_commanded_current)
+                    if key in self.manual_requests:
+                        manual_limit = self._manual_target(c, d, manual_limit)
                     if not c.auto_control and manual_limit and d.get("kw_per_amp"):
                         expected = manual_limit * d["kw_per_amp"]
                         capacity = max(0, capacity - max(0, expected - d["charger_power_w"] / 1000))
@@ -156,10 +161,10 @@ class SiteController:
                     c = self.controllers.get(key)
                     if c is None or c.auto_control:
                         self.manual_requests.pop(key)
-                    elif not c.charging_paused:
+                    else:
                         # A pending manual increase reserves capacity before
                         # peer automatic currents are reduced and acknowledged.
-                        targets[key] = value
+                        targets[key] = self._manual_target(c, samples[key], value)
                 await self._regulated_apply(targets, samples, reference, owner, eligible)
                 phase_advice = ""
                 if mode == "both" and len(demands) == 2 and any(targets.get(d.key, 0) == 0 for d in demands):
@@ -201,11 +206,12 @@ class SiteController:
                         self._publish(c, d)
                 return samples[requester.entry.entry_id]
             except MeasurementPending as err:
+                self.debug_trace.record("measurement_wait")
                 # Missing input is a control wait, not a loss of every diagnostic
                 # entity. Keep real samples visible; never allocate on old data.
                 stop_errors = []
                 for key, c in self.controllers.items():
-                    if c.auto_control or c.charging_paused:
+                    if c.auto_control or c.charging_paused or key in self.manual_requests:
                         # Do not reset an outstanding confirmation timestamp on
                         # every refresh; that could prevent recovery forever.
                         if c.last_commanded_current != 0:
@@ -237,10 +243,11 @@ class SiteController:
                         self._publish(self.controllers[key], d)
                 return samples[requester.entry.entry_id]
             except Exception as err:
+                self.debug_trace.record("control_failure")
                 # Do not keep a peer on an old positive command after a failed
                 # sample or command. Never let a failed reduction enable a rise.
-                for c in self.controllers.values():
-                    if (c.auto_control or c.charging_paused) and c.last_commanded_current != 0:
+                for key, c in self.controllers.items():
+                    if (c.auto_control or c.charging_paused or key in self.manual_requests) and c.last_commanded_current != 0:
                         try:
                             await c._async_send_current(0)
                             self.pending_reductions[c.entry.entry_id] = (0, c._last_command_at)
@@ -258,6 +265,19 @@ class SiteController:
     @staticmethod
     def _can_offer(status):
         return normalize_status(status) == 'completed' or allows_automatic_current(status)
+
+    @classmethod
+    def _manual_target(cls, controller, data, requested):
+        """Manual ownership bypasses hourly allocation, not source/charger guards."""
+        minimum = data.get('control_minimum_current_a')
+        maximum = data.get('max_current_a', 0)
+        if (controller.charging_paused or not data.get('schedule_allowed', True)
+                or not data.get('inputs_valid') or not data.get('han_fresh')
+                or not cls._can_offer(data.get('status')) or not data.get('kw_per_amp')
+                or minimum is None or not maximum):
+            return 0
+        target = min(int(requested), int(maximum))
+        return target if target >= minimum else 0
 
     @staticmethod
     def _current_above_limit(data, limit):
@@ -292,7 +312,7 @@ class SiteController:
         now = dt_util.now().timestamp()
         future = [value for value in deadlines if value > now]
         deadline = min(future) if future else None
-        if (not any(c.auto_control for c in self.controllers.values())
+        if (not (any(c.auto_control for c in self.controllers.values()) or any(self.manual_requests.values()))
                 or deadline is None or deadline <= now):
             self.async_cancel_check()
             return  # Pending acknowledgements retain the 30-second watchdog.
@@ -366,6 +386,8 @@ class SiteController:
             minimum = d.get('control_minimum_current_a')
             if allowed[key] and (minimum is None or allowed[key] < minimum):
                 allowed[key] = 0
+        for key, target in allowed.items():
+            self.debug_trace.record("decision", key, data=samples[key], target=target, mode=mode)
         before = {key: self.controllers[key].last_commanded_current for key in allowed}
         if len(self.controllers) == 1:
             # No peer receives released capacity: retain the original single-

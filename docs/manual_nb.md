@@ -29,7 +29,8 @@ Ingen egne hjelpere eller YAML-automasjoner trengs. Varmtvann og gulvvarme vises
 
 | Betjening | Funksjon |
 | --- | --- |
-| Automatisk laststyring | Lar SLM regulere laderen. Starter avslått etter omstart. |
+| Automatisk laststyring | Lar SLM regulere laderen. Starter avslått etter omstart. Når du slår den av, velges laveste tillatte manuelle strøm; pause, starttid og gyldige målinger respekteres. |
+| Automatisk laststyring – lading | Slår automatikk av/på for alle laderne samlet. Hver lader kan fortsatt styres individuelt; andre fremtidige lasttyper påvirkes ikke. |
 | Ladepause | Sender 0 A. Ved gjenopptak beregnes ny strøm automatisk, eller tidligere manuell grense gjenopprettes når målinger og grenser tillater det. |
 | Manuell ladestrøm | Tilgjengelig når automatikk og ladepause er av. Easees rapporterte øvre grense gjelder. |
 | Fasevalg | Endrer Easees faseinnstilling. SLM bytter ikke automatisk mellom én og tre faser. |
@@ -76,7 +77,7 @@ De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](
 
 ## Hvis lading venter
 
-Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv Easee-spenningssensor, rapportert strømgrense, pause og tidsvindu. HAN må være gyldig og høyst 60 sekunder gammel. En uendret, tilgjengelig Easee-effektverdi er gyldig selv med gammelt tidsstempel. Fordeling venter på nye målinger som bekrefter en reduksjon før mer strøm gis til den andre laderen.
+Les først boligens status og Målegrunnlag. Kontroller HAN, EnergyTariff, aktiv Easee-spenningssensor, rapportert strømgrense, pause og tidsvindu. HAN må være gyldig og høyst 120 sekunder gammel. En uendret, tilgjengelig Easee-effektverdi er gyldig selv med gammelt tidsstempel. Fordeling venter på nye målinger som bekrefter en reduksjon før mer strøm gis til den andre laderen.
 
 SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automatikk av betyr at SLM slutter å regulere; Easee beholder siste dynamiske grense. Bruk Ladepause for en uttrykkelig 0 A-kommando.
 
@@ -93,3 +94,19 @@ Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Eks
 Kjør `smart_load_manager.get_dashboard` og erstatt YAML-en i det eksisterende manuelle kortet når du legger til, fjerner eller bytter lader, endrer HAN-kilde eller entitets-ID-er som kortet bruker, endrer ladernavn som står i kortoverskriftene, eller tar i bruk en funksjon med endret kortoppsett. Kortets YAML oppdateres ikke automatisk. Vanlige endringer i forbruksgrense, sikkerhetsmargin, prioritet, lademåte, tidsplan, fasevalg og pause krever ikke nytt kort; verdiene oppdateres i visningen. Ta vare på egne manuelle korttilpasninger før du erstatter YAML-en.
 
 Kortet bruker en kort overskrift og tre kompakte kolonner: målereffekt i kW, brukt energi og estimat. Verdiene avrundes bare i visningen; beregningene beholder presisjonen. Ved svært høye energiverdier vises MWh. Når ingen bil er tilkoblet, skjules de gjentatte laderavsnittene. Ved blandet tilkobling vises hvilken lader som har bil og hvilken som er frakoblet. Effekt, anbefalt/sist satt ampere og neste regulering vises bare når Easee melder lading. Ventende, pauset og fullført beholder forklaringen. Generer YAML-kortet på nytt for dette oppsettet.
+
+
+## Statuskortet i beta 16
+
+Kortet viser boligens målinger og grense øverst, deretter lasttype og navnet på hver last. Hver last har én status og Auto/Manuell. En kort årsak eller handling vises bare når den er relevant. Skillelinjer deler lasttypene; bare kategorier som er satt opp vises. Effekt, strømgrense og neste regulering vises under aktiv lading. Varmekabler og varmtvann i forhåndsskissene er planlagt funksjonalitet. Hent nytt YAML-kort med `smart_load_manager.get_dashboard` etter den kommende oppdateringen.
+
+
+En uendret HAN-verdi er fortsatt fersk når måleren rapporterer den på nytt. Hvis rapportene stopper, stanser automatisk regulering etter den gjeldende aldersgrensen. Kortet beholder en lesbar tallverdi med varsel om at målingen ikke er oppdatert; verdien brukes ikke som ferskt reguleringsgrunnlag. Ukjent/utilgjengelig kilde vises uten tall. Status fra Easee beholdes uendret.
+
+
+## Feilsøkingsfil i beta 16
+
+Åpne **Innstillinger → Enheter og tjenester → Smart Load Manager OJM → integrasjonsoppføringen → ⋮ → Last ned diagnostikk**. Last ned filen mens feilen er aktuell, før omstart eller omlasting, og legg den ved feilrapporten med tidspunktet du observerte problemet. Filen viser anonyme laster, målegrunnlag, reguleringsvalg og forsøk/resultat for strøm- og fasekommandoer. Den lagrer de siste 4096 hendelsene i minnet og oppgir antall overskrevne hendelser. Ingen fast tidsperiode er garantert. Historikken nullstilles ved omstart/omlasting og kan ikke hente eldre hendelser. Et vellykket tjenestekall bekrefter ikke fysisk lading. Innloggingsdata, navn og kilde-ID-er utelates. Funksjonen er tilgjengelig fra beta 16.
+
+
+I beta 16 godtas gyldige HAN-rapporter opptil **120 sekunder** gamle, inkludert nøyaktig 120 sekunder. Beta 15 brukte 60 sekunder. Ferskhet måles fra siste rapportering, også når verdien er uendret. Eldre eller ugyldige målinger holder automatisk lading igjen ved neste kontroll.

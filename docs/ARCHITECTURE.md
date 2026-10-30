@@ -53,3 +53,10 @@ sensors are retained as compatibility diagnostics with their identities intact.
 Both YAML examples and packaged templates use the same household sensor. The
 Get dashboard action resolves registry IDs and source entity names; no data is
 copied from EnergyTariff solely for graphs. Generated IDs include saved charger-name identities from the first load. Registry migration preserves unique IDs and user customizations, records old/new mappings, and leaves external YAML edits to the owner.
+
+
+## Beta.16 category controls and diagnostics
+
+Charging-category commands batch existing EV controller flags under the site lock. Switching automatic charging off stages the validated allowed manual minimum. Manual requests use fresh site sampling, schedule/input guards and paired measured reduction before increases; they do not use the automatic hourly allocation target. Startup still never sends a positive manual default. The dashboard groups normalized rows by configured load category and keeps household measurements separate. Thermal control adapters remain future work.
+
+DebugTrace keeps 4096 allowlisted anonymous events in memory, covering sampling, regulation decisions and command service outcomes. Native HA diagnostics exports these plus current load state and versions. No raw configuration/errors/registry fields are exported. New functionality must extend the relevant event and snapshot contracts and privacy/failure-sequence tests. Diagnostic success records describe HA service completion, not physical acknowledgement.

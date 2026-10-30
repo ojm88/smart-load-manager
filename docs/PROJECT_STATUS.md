@@ -1,14 +1,40 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 ## Version
+
+- Stable: **0.1.0**. Published beta before this preparation: **0.1.1-beta.15**.
+- Owner authorizes publication of **0.1.1-beta.16** on 2026-10-30. Manifest prepared; GitHub CI, merge/tag and publication verification are recorded after they complete.
+- Scope: validated manual-minimum handover; independent charging-category switch; concise grouped Markdown; report-based HAN freshness up to 120 seconds; native anonymous diagnostics with 4096 in-memory events. Existing ordinary five-minute regulation and paired measured reduction safeguards remain.
+- Local validation: **92 pure tests**, **124 HA runtime tests** on both **2026.2.3/Python 3.13** and **2026.10.4/Python 3.14**, plus **1 Node test** (217 distinct tests). Includes HA template-engine rendering, source-status/command timing, manual pause/schedule, completion/HAN regression and diagnostics privacy/order/failure tests. Actual iPhone rendering/download and overnight/two-charger hardware acceptance remain pending.
+- Update/restart HA, then regenerate YAML with **smart_load_manager.get_dashboard**. No HA instance has been installed or physically controlled during this preparation. Old tags and stable release remain unchanged.
+
+## Earlier release and preparation records
+
+### Beta.15 publication record
 
 - Stable: **0.1.0**.
 - Published beta: **0.1.1-beta.15** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.15)).
 - Published on 2026-10-29 after explicit owner approval. PR #11 merge/tag commit **74b7277b4217ca58d699fd56572dba76b9a08b95**; verified draft=false, prerelease=true and tagged manifest 0.1.1-beta.15.
 - Release-preparation CI run **40875261526** passed for **4a8d7efec633930342177e31464b4d00c88af8f9**. The published merge tree equals tested preparation tree **3fc990e71bdc4fcc425b290bf787073a56ef02d7**. Code CI **40873366785** also passed. 200 distinct tests pass, including runtime suites on both supported HA/Python versions.
 - Beta.15 changes presentation only; charging calculations, allocation and commands retain beta.14 behavior. Restart HA and regenerate the existing Manual-card YAML using **smart_load_manager.get_dashboard**. No HA instance was installed or controlled by publication. Actual iPhone visual acceptance remains pending. Beta.14 physical completion/wake/two-charger acceptance remains separate. Stable 0.1.0 and prior tags are unchanged.
+
+## HAN tolerance — 2026-10-30
+
+Owner requests two-minute tolerance. Beta.16 accepts reports up to 120 seconds old inclusive, using last_reported; beta.15 used 60 seconds with last_updated. Boundary tests cover 120 and just above 120. Five-minute ordinary dispatch remains unchanged.
+
+## Beta.16 diagnostics preparation — 2026-10-30
+
+Native HA Download diagnostics now exposes versioned, allowlisted anonymous state and a 4096-event memory recorder: samples, decisions, measurement waits/failures and current/phase command attempts/results. Tests cover privacy, bounded ordering, copy isolation, failure-versus-success and the HA diagnostics entry point. Runtime collection resets on reload/restart; not a full historical cloud log. Actual UI download remains unverified; beta.16 not published.
+
+## Completion/HAN investigation — 2026-10-30
+
+Owner confirms beta.14/15 did not resolve overnight source-status cycling. Corrected a reproducible false-staleness path: use HAN last_reported rather than last_updated, retain numeric stale readings for display with explicit freshness warning, preserve real input-failure stops. Regression fails against old timestamp logic and passes against corrected sampler. Local checks: 89 pure tests; 18 control-event, 35 site, 10 live-telemetry and 13 sensor tests in HA 2026.10.4 pass. Full beta.16/dashboard compatibility validation and physical overnight acceptance remain pending. No new release or HA command.
+
+## Beta.16 preparation — approved presentation
+
+Owner approves the concise status-card design: household → category → named load, clear category separators, aligned measurements, one status and relevant short explanation. Packaged templates and examples include this hierarchy. Future hot-water/floor-heating groups are design scope only; current configured chargers remain the actual content. Beta.16 control changes and regression validation are still in progress, not published or hardware tested. Regenerate dashboard YAML when the future update is installed.
 
 ## Development review — 2026-10-29
 

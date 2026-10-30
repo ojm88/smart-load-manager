@@ -7,18 +7,22 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ChargingCoordinator
-from .control import async_refresh_control
+from .control import async_refresh_control, async_set_charging_automation, charging_controllers
 from .entity_ids import suggested_entity_id
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     from .installation import platform_loads, add_grouped, charger_entries
-    for load in platform_loads(entry):
+    loads = platform_loads(entry)
+    for load in loads:
         c = load.runtime_data
         entities = [AutomaticLoadControl(c, load), ChargingPauseControl(c, load), ChargingScheduleControl(c, load)]
         if len(charger_entries(hass)) == 2:
             entities.append(ChargingPriorityControl(c, load))
         add_grouped(hass, entry, async_add_entities, entities, "charging")
+    if loads:
+        add_grouped(hass, entry, async_add_entities,
+                    [ChargingAutomationControl(loads[0].runtime_data, loads[0])], 'charging')
 
 
 class AutomaticLoadControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SwitchEntity):
@@ -45,10 +49,45 @@ class AutomaticLoadControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
-        self.coordinator.auto_control = False
-        # Refresh coordinator listeners so the manual current number becomes
-        # available immediately when automatic control releases ownership.
-        await async_refresh_control(self.coordinator)
+        await async_set_charging_automation([self.coordinator], False)
+        self.async_write_ha_state()
+
+
+class ChargingAutomationControl(CoordinatorEntity[ChargingCoordinator], SwitchEntity):
+    """Category control, independent of future water/floor heating categories."""
+    _attr_icon = 'mdi:ev-station'
+    _attr_has_entity_name = True
+    _attr_translation_key = 'charging_automatic_control'
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator)
+        from .installation import shared_identity
+        from .const import DOMAIN
+        from homeassistant.helpers.device_registry import DeviceInfo
+        self._attr_unique_id = f'{shared_identity(entry)}_charging_automatic_control'
+        self.entity_id = 'switch.slm_charging_auto_control'
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, 'charging_category')}, name='SLM – Lading',
+            manufacturer='Smart Load Manager OJM', model='Charging category control')
+
+    @property
+    def is_on(self):
+        return any(c.auto_control for c in charging_controllers(self.coordinator.site))
+
+    @property
+    def extra_state_attributes(self):
+        members = charging_controllers(self.coordinator.site)
+        enabled = sum(c.auto_control for c in members)
+        return {'load_type': 'ev_charger', 'charger_count': len(members),
+                'automatic_chargers': enabled,
+                'control_mode': 'off' if not enabled else 'all' if enabled == len(members) else 'mixed'}
+
+    async def async_turn_on(self, **kwargs):
+        await async_set_charging_automation(charging_controllers(self.coordinator.site), True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        await async_set_charging_automation(charging_controllers(self.coordinator.site), False)
         self.async_write_ha_state()
 
 

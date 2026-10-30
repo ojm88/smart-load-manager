@@ -117,12 +117,42 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             label = tr('Avventer målinger', 'Waiting for measurements')
         else:
             label = tr('Venter', 'Waiting')
+        # One status per load. The compact detail adds a cause/action only;
+        # generic repeated stage and connection sentences stay out of Markdown.
+        detail = ''
+        if status not in {'disconnected', 'completed'}:
+            if not data or not load.get('available', True):
+                detail = tr('Kontroller tilkoblingen til laderen.', 'Check the charger connection.')
+            elif data.get('electrical_ready') is False:
+                detail = explanation
+            elif paused:
+                detail = (tr('Ladepause er aktiv; avventer at laderen stanser.', 'Pause is active; waiting for the charger to stop.')
+                          if status == 'charging' else
+                          tr('Slå av ladepause for å fortsette.', 'Turn off charging pause to continue.'))
+            elif not ready:
+                detail = data.get('control_reason') or tr('Avventer gyldige målinger.', 'Waiting for valid measurements.')
+            elif not data.get('schedule_allowed', True):
+                start = str(data.get('schedule_start_time', ''))[:5]
+                detail = tr(f'Starttid kl. {start}.' if start else 'Kontroller valgt ladetid.',
+                            f'Start time {start}.' if start else 'Check the selected schedule.')
+            elif data.get('awaiting_reduction'):
+                detail = tr('Avventer bekreftet reduksjon før mer strøm tildeles.',
+                            'Waiting for confirmed reduction before assigning more current.')
+            elif not allows_automatic_current(status):
+                detail = explanation
+            elif automatic and recommended is not None and recommended <= 0 and status != 'charging':
+                detail = explanation
+            elif status != 'charging':
+                detail = tr('Venter på at bilen starter.', 'Waiting for the car to start.')
         advice = str(data.get("phase_advice", ""))
         any_advice |= advice.startswith("Enfase på begge")
         rows.append({
             "id": load["id"], "name": load["name"], "load_type": load.get("load_type", "ev_charger"),
             "stage": stage, "status": status, "status_label": label, "explanation": explanation,
             "automatic_control": automatic, "paused": paused,
+            "mode_label": tr("Auto", "Auto") if automatic else tr("Manuell", "Manual"),
+            "detail": detail, "show_charging_details": status == "charging",
+            "manual_current_setting_a": data.get("manual_current_setting_a"),
             "first_priority": load["id"] == priority if len(loads) > 1 else None,
             "current_a": data.get("charger_current_a"),
             "power_w": data.get("charger_power_w"),
@@ -187,4 +217,33 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                    "charging_mode": mode if len(rows) > 1 else None,
                    "priority_charger": priority_name if len(rows) > 1 else None,
                    "distribution_explanation": distribution, "phase_advice": advice,
-                   "controlled_loads": rows}
+                   "controlled_loads": rows, "load_groups": group_load_rows(rows, norwegian=norwegian)}
+
+
+def group_load_rows(rows, *, norwegian=True):
+    """Group normalized presentation rows; future adapters supply their own rows.
+
+    This is presentation only. It neither creates heating loads nor decides
+    heating status or control permissions from EV states.
+    """
+    labels = {
+        'ev_charger': ('Lading', 'Charging'),
+        'water_heater': ('Varmtvann', 'Hot water'),
+        'floor_heating': ('Gulvvarme', 'Floor heating'),
+    }
+    grouped = {}
+    for row in rows:
+        kind = row.get('load_type', 'ev_charger')
+        grouped.setdefault(kind, []).append(row)
+    result = []
+    for kind in list(labels) + sorted(set(grouped) - set(labels)):
+        if kind not in grouped:
+            continue
+        members = grouped[kind]
+        empty_message = ''
+        if kind == 'ev_charger' and all(r['status'] == 'disconnected' for r in members):
+            empty_message = (('Ingen bil tilkoblet' if len(members) == 1 else 'Ingen biler tilkoblet')
+                             if norwegian else 'No cars connected')
+        result.append({'load_type': kind, 'name': labels.get(kind, ('Andre laster', 'Other loads'))[0 if norwegian else 1],
+                       'loads': members, 'empty_message': empty_message})
+    return result

@@ -11,6 +11,12 @@
 
 The owner's target is a stable version 2 after successful two-charger acceptance. There is no fixed release date. The release must retain one-charger behavior and have no known blocking setup or load-control faults. Physical acceptance and release approval remain separate steps.
 
+## Load-category design
+
+- Charging automation is independent of future hot-water and floor-heating automation. Keep per-load controls, category controls and the shared household budget distinct. Manual loads remain visible and consume capacity.
+- Status cards follow household → configured category → named load, with one status and a short useful reason. Do not label the whole home paused because a charger is paused.
+- Every future load adapter must extend native diagnostics and the bounded decision/command recorder, including source validity, control mode, reasons and actual service outcomes; add corresponding privacy and scenario tests.
+
 ## Later functionality
 
 - More than two chargers sharing the household budget.
