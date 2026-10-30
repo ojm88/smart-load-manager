@@ -481,26 +481,24 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(self.commands, [])
         self.assertTrue(any(e['event']=='completed_age_hold' for e in site.debug_trace.events))
 
-    async def test_completed_budget_reduction_is_not_automatically_raised_on_ticks(self):
+    async def test_completed_budget_changes_do_not_send_commands(self):
         site = self.setup_regulation(single=True)
         c = site.controllers['a']; d = c._async_sample.return_value
         c.last_commanded_current = 16
         d.update(status='completed', charger_power_w=0, charger_current_a=.02, han_power_w=1000)
-        await self.refresh_at(site,1)
-        # A real budget constraint can still reduce the standing offer.
-        d['energy_used_kwh'] = 8
-        await self.refresh_at(site,301)
-        held = c.last_commanded_current
-        self.assertLess(held,16)
-        writes = list(self.commands)
-        d['energy_used_kwh'] = 5
-        for seconds in (601,901,1201):
-            await self.refresh_at(site,seconds)
-            self.assertEqual(c.last_commanded_current,held)
-        self.assertEqual(self.commands,writes)
-        d['status'] = 'ready_to_charge'
-        await self.refresh_at(site,1202)
-        self.assertGreater(c.last_commanded_current,held)
+        for seconds, used in [(1,5),(301,8),(601,9.69),(901,5)]:
+            d['energy_used_kwh'] = used
+            result = await self.refresh_at(site, seconds)
+            self.assertEqual(c.last_commanded_current,16)
+            self.assertEqual(result['recommended_current_a'],0)
+            self.assertTrue(result['completion_released'])
+        self.assertEqual(self.commands,[])
+        d['status']='ready_to_charge'
+        await self.refresh_at(site,902)
+        self.assertEqual(c.last_commanded_current,6)
+        d.update(status='charging',charger_current_a=6,charger_power_w=1380)
+        await self.refresh_at(site,903)
+        self.assertEqual(c.last_commanded_current,16)
 
     async def test_stale_meter_keeps_completed_peer_but_stops_active_peer_once(self):
         site=self.setup_regulation()
@@ -539,43 +537,33 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
                 await self.refresh_at(site,30)
                 self.assertEqual(self.commands,[('a',0)])
 
-    async def test_completed_peer_releases_capacity_only_after_measured_reduction(self):
-        from datetime import timedelta
+    async def test_completed_peer_releases_capacity_without_a_zero_command(self):
         site = self.setup_regulation()
         a = site.controllers['a']._async_sample.return_value
         a.update(status='completed', charger_power_w=0, charger_current_a=.65)
-        # Capacity admits one active charger, not both commanded allowances.
         for c in site.controllers.values():
-            c._async_sample.return_value['han_power_w'] = 7500
-        await self.refresh_at(site, 1)
-        self.assertEqual(self.commands, [('a', 0)])
-        await self.refresh_at(site, 2)
-        self.assertEqual(self.commands, [('a', 0)])
-        for suffix in ('power', 'current'):
-            self.states['a_'+suffix] = NS(state='0', last_updated=self.now+timedelta(seconds=3))
-        a['status'] = 'awaiting_start'
-        await self.refresh_at(site, 3)
-        self.assertEqual(self.commands, [('a', 0), ('b', 16)])
-        await self.refresh_at(site, 303)
-        await self.refresh_at(site, 603)
-        self.assertEqual(self.commands, [('a', 0), ('b', 16)])
+            c._async_sample.return_value['han_power_w']=7500
+        for seconds in (1,2,301,601):
+            await self.refresh_at(site,seconds)
+        self.assertEqual(self.commands,[('b',16)])
+        self.assertEqual(site.controllers['a'].last_commanded_current,10)
+        self.assertEqual(self.delivered['b']['recommended_current_a'],16)
+        self.assertFalse(site.pending_reductions)
 
-    async def test_completed_allowance_remains_budgeted_and_reduces_for_household(self):
+    async def test_completed_does_not_reserve_household_budget_but_wake_does(self):
         site = self.setup_regulation(single=True)
-        d = site.controllers['a']._async_sample.return_value
-        d.update(status='completed', charger_power_w=0, charger_current_a=.65,
-                 han_power_w=1000)
-        await self.refresh_at(site, 1)
-        self.assertEqual(self.commands, [])
-        d['energy_used_kwh'] = 9.69
-        await self.refresh_at(site, 2)
-        self.assertEqual(self.commands, [('a', 0)])
-        d['status'] = 'awaiting_start'
-        await self.refresh_at(site, 62)
-        self.assertEqual(self.commands, [('a', 0)])
-        d['energy_used_kwh'] = 5
-        await self.refresh_at(site, 302)
-        self.assertEqual(self.commands, [('a', 0), ('a', 10)])
+        d=site.controllers['a']._async_sample.return_value
+        d.update(status='completed',charger_power_w=0,charger_current_a=.65,han_power_w=1000)
+        await self.refresh_at(site,1)
+        d['energy_used_kwh']=9.69
+        await self.refresh_at(site,2)
+        self.assertEqual(self.commands,[])
+        d['status']='awaiting_start'
+        await self.refresh_at(site,3)
+        self.assertEqual(self.commands,[('a',0)])
+        d['energy_used_kwh']=5
+        await self.refresh_at(site,303)
+        self.assertEqual(self.commands,[('a',0),('a',6)])
 
     async def test_completion_does_not_override_pause_schedule_or_invalid_inputs(self):
         for block in ('pause', 'schedule', 'inputs', 'voltage'):
@@ -622,24 +610,30 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
                 data = await self.refresh_at(site, 1)
                 peer = self.delivered['b']
                 self.assertEqual(peer['recommended_current_a'], 16)
-                expected_idle = 10 if mode == 'both' else 0
+                expected_idle = 0
                 self.assertEqual(data['recommended_current_a'], expected_idle)
                 self.assertLessEqual((expected_idle + 16) * .23, data['site_available_kw'])
 
-    async def test_full_completion_cycle_does_not_regrant_finished_peer_priority(self):
-        site = self.setup_regulation()
-        self.entries[0].options['allocation_mode'] = 'one_at_a_time'
-        a = site.controllers['a']._async_sample.return_value
-        a.update(status='completed', charger_power_w=0, charger_current_a=0)
-        for c in site.controllers.values():
-            c._async_sample.return_value['han_power_w'] = 5000
-        await self.refresh_at(site, 1)
-        # The pause caused by transferring the turn must not create a new demand.
-        a['status'] = 'awaiting_start'
-        data = await self.refresh_at(site, 301)
-        self.assertEqual(data['recommended_current_a'], 0)
-        self.assertEqual(self.delivered['b']['recommended_current_a'], 16)
-        self.assertNotIn(('a', 10), self.commands)
+    async def test_new_request_reenters_priority_and_keeps_measured_transfer_guard(self):
+        from datetime import timedelta
+        site=self.setup_regulation()
+        self.entries[0].options['allocation_mode']='one_at_a_time'
+        site.controllers['a'].last_commanded_current=0
+        a=site.controllers['a']._async_sample.return_value
+        a.update(status='completed',charger_power_w=0,charger_current_a=.02)
+        for c in site.controllers.values():c._async_sample.return_value['han_power_w']=5000
+        await self.refresh_at(site,1)
+        self.assertEqual(self.commands,[('b',16)])
+        a['status']='awaiting_start'
+        await self.refresh_at(site,2)
+        self.assertEqual(self.commands,[('b',16),('b',0)])
+        b=site.controllers['b']._async_sample.return_value
+        b.update(charger_power_w=0,charger_current_a=0)
+        stamp=self.now+timedelta(seconds=3)
+        for suffix in ('power','current'):
+            self.states['b_'+suffix]=NS(state='0',last_updated=stamp,last_reported=stamp)
+        await self.refresh_at(site,3)
+        self.assertEqual(self.commands,[('b',16),('b',0),('a',6)])
 
     async def test_schedule_open_restores_standby_offer_after_unknown_completion(self):
         site = self.setup_regulation(single=True)
@@ -744,3 +738,49 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         d['status']='charging'
         await self.refresh_at(site,10)
         self.assertEqual(self.commands,[('a',6),('a',16)])
+
+    async def test_completed_trace_budget_shortfall_never_causes_pause(self):
+        site=self.setup_regulation(single=True)
+        c=site.controllers['a'];d=c._async_sample.return_value
+        c.last_commanded_current=16
+        d.update(status='completed',charger_power_w=0,charger_current_a=.8,
+                 han_power_w=6385,energy_used_kwh=.51,minutes_left=55.2664,
+                 seconds_to_hour=3315.984,kw_per_amp=.708)
+        for seconds in (1,30,300,600,1800,3600,21600):
+            result=await self.refresh_at(site,seconds)
+            self.assertTrue(result['site_control_ready'])
+            self.assertEqual(self.commands,[])
+            self.assertEqual(result['recommended_current_a'],0)
+            self.assertEqual(result['last_sent_current_a'],16)
+            self.assertEqual(result['status'],'completed')
+        self.assertEqual(self.commands,[])
+        self.assertEqual([e['event'] for e in site.debug_trace.events].count(
+            'completed_capacity_released'),1)
+        # A real new request must obey the same insufficient capacity.
+        d['status']='ready_to_charge'
+        await self.refresh_at(site,21601)
+        self.assertEqual(self.commands,[('a',0)])
+        d.update(han_power_w=1000,energy_used_kwh=0)
+        d['status']='awaiting_start'
+        await self.refresh_at(site,21602)
+        self.assertEqual(self.commands,[('a',0),('a',6)])
+        d.update(status='charging',charger_current_a=6,charger_power_w=4248)
+        await self.refresh_at(site,21603)
+        self.assertGreater(c.last_commanded_current,6)
+
+    async def test_completed_keeps_draw_guard_until_zero_power_arrives(self):
+        site=self.setup_regulation(single=True)
+        c=site.controllers['a'];d=c._async_sample.return_value
+        c.last_commanded_current=16
+        d.update(status='completed',charger_power_w=9390,charger_current_a=14.63,
+                 han_power_w=17151,energy_used_kwh=6.4,minutes_left=6.616,
+                 seconds_to_hour=396.96,kw_per_amp=.708)
+        result=await self.refresh_at(site,1)
+        self.assertFalse(result['completion_released'])
+        d.update(charger_power_w=0,charger_current_a=.8,han_power_w=6385,
+                 energy_used_kwh=.51,minutes_left=55.2664,seconds_to_hour=3315.984)
+        self.commands.clear()
+        result=await self.refresh_at(site,2)
+        self.assertTrue(result['completion_released'])
+        for seconds in (300,600,1800):await self.refresh_at(site,seconds)
+        self.assertEqual(self.commands,[])
