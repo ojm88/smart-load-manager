@@ -639,3 +639,8 @@ Keep han_fresh/inputs_valid/site_control_ready false during the idle age hold. M
 ## 2026-10-30 — Beta.18 publication authorized with known measurement limitation
 
 Owner explicitly requests publishing beta.18 now for further testing. This supersedes the implementation-only publication hold. Release the bounded quiet-completion correction with the existing active 120-second guard, without claiming a universal fix for change-based HAN freshness or stable ready in all normal MQTT setups. A second ten-minute live observation did not reproduce the wait and does not establish a fix. Preserve truthful measurement status and existing beta.16/17 dashboard YAML compatibility. No HA installation or physical actuation is implied.
+
+
+## 2026-10-30 — Beta.18 publication verified
+
+Published 0.1.1-beta.18 as Pre-release from PR #14 merge/tag efd001e9691c4926f6cad7546676e88baa2d76e8. Tree 956f40e3098b2ebe4e582b92ce8257dd1395663f matches final tested preparation tree; final CI 41130412214 passed all four jobs. Existing beta.16/17 YAML can remain. Installation and physical acceptance are separate; general change-based HAN measurement-status waits remain explicitly unresolved. Prior tags and stable 0.1.0 are unchanged.

@@ -2,13 +2,13 @@
 
 Updated: 2026-10-30
 
-## Beta.18 release preparation — quiet completed sessions
+## Current release — 0.1.1-beta.18
 
 Implemented the owner's approved limited correction: no automatic current restoration while raw completed, age-only HAN holds preserve measured idle completed offers without claiming freshness, source/control restart remains immediate with valid inputs. Real faults and active freshness guards remain; paired capacity transfer remains measured. No MQTT configuration changes. Diagnostic records now use the actual command-cycle sample and expose completion holds.
 
-Validation passes: **93 pure**, **133 runtime** on each supported HA/Python version, plus **1 Node test**. Two new regressions reject beta.17. Details and remaining physical acceptance are in [BETA18_VERIFICATION.md](BETA18_VERIFICATION.md). Owner authorized publication for testing; manifest is beta.18 and final release checks are pending. Not installed. Physical overnight completion, car-app target increase and two-charger acceptance remain pending. Measurement status is not pinned to ready when inputs are stale.
+Validation passes: **93 pure**, **133 runtime** on each supported HA/Python version, plus **1 Node test**. Two new regressions reject beta.17. Details and remaining physical acceptance are in [BETA18_VERIFICATION.md](BETA18_VERIFICATION.md). Published 2026-10-30 after owner approval: [0.1.1-beta.18](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.18), visibly verified as Pre-release. PR #14 merge/tag commit efd001e9691c4926f6cad7546676e88baa2d76e8, tree 956f40e3098b2ebe4e582b92ce8257dd1395663f equals tested preparation tree. Final CI 41130412214 passed all four jobs for edea81d912de507480ba034b9189bec13488903a; code CI 41111748910 also passed. Manifest beta.18. Not installed. Existing beta.16/17 dashboard YAML remains compatible. General change-based HAN freshness remains unresolved; the owner accepts this beta for further testing. Physical overnight completion, car-app target increase and two-charger acceptance remain pending. Measurement status is not pinned to ready when inputs are stale.
 
-## Current release — 0.1.1-beta.17
+## Previous release — 0.1.1-beta.17
 
 Published **2026-10-30** after owner approval: [0.1.1-beta.17](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.17), visibly verified as **Pre-release**. Stable remains **0.1.0**.
 

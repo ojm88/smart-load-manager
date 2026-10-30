@@ -1,6 +1,6 @@
 # Beta.18 — quiet completion verification
 
-Release preparation authorized 2026-10-30. Manifest 0.1.1-beta.18; publication verification pending. No HA installation or physical control performed.
+Published 2026-10-30 as Pre-release after owner approval. Manifest 0.1.1-beta.18. PR #14 merge/tag efd001e9691c4926f6cad7546676e88baa2d76e8; tree 956f40e3098b2ebe4e582b92ce8257dd1395663f matches final tested preparation tree. CI 41130412214 passed all four jobs for edea81d912de507480ba034b9189bec13488903a. No HA installation or physical control performed.
 
 Owner accepts testing this bounded correction as beta.18. It does not resolve every measurement-status wait with change-based HAN sources. A further ten-minute read-only observation (61 snapshots, 35 entities) showed ready throughout, matching raw/template power and observed power age at most 59.9 s; the car was disconnected. This did not reproduce or close the general freshness issue. Private observations are not committed.
 
