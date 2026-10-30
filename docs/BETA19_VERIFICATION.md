@@ -1,6 +1,9 @@
 # Beta.19 — release completed capacity
 
-Owner authorizes tests and publication, 2026-10-30. Manifest 0.1.1-beta.19.
+Published 2026-10-30 as Pre-release after owner approval. Manifest 0.1.1-beta.19.
+PR #15 merge/tag dc253af94c2a40a77579e2771b7fbf4b98871c9d; tagged tree
+e064018c52f3ef0df7b8fa1d975b3615d66f33b7 equals tested tree. All four jobs passed
+in CI 41139627386 for 60a86e30c2ea4714b8f7ee732031997d4c39f4d1.
 
 ## Contract
 

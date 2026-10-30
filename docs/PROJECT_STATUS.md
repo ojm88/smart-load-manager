@@ -2,9 +2,9 @@
 
 Updated: 2026-10-30
 
-## Beta.19 release preparation — completed capacity release
+## Current release — 0.1.1-beta.19
 
-Owner requests tests and publication of the new completed-session policy. Verified zero-W/sub-amp automatic completed sessions leave capacity allocation and held-offer forecast, and receive no ordinary budget writes. New waiting/ready requests assess the validated minimum immediately; actual charging restores normal allocation. Source feedback latency and retained-limit wake are accepted by the owner. Explicit controls, real faults and active-transfer acknowledgements remain. See BETA19_VERIFICATION.md. Not installed or physically tested; software/release validation in progress. Existing YAML remains compatible.
+Owner requests tests and publication of the new completed-session policy. Verified zero-W/sub-amp automatic completed sessions leave capacity allocation and held-offer forecast, and receive no ordinary budget writes. New waiting/ready requests assess the validated minimum immediately; actual charging restores normal allocation. Source feedback latency and retained-limit wake are accepted by the owner. Explicit controls, real faults and active-transfer acknowledgements remain. See BETA19_VERIFICATION.md. Published 2026-10-30 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.19) after owner approval. PR #15 merge/tag dc253af94c2a40a77579e2771b7fbf4b98871c9d; tagged tree e064018c52f3ef0df7b8fa1d975b3615d66f33b7 equals tested tree. All four CI jobs passed in run 41139627386 for 60a86e30c2ea4714b8f7ee732031997d4c39f4d1. 93 pure, 135 runtime tests on each supported HA/Python version and one Node test pass. Two regressions reject beta.18. No HA installation or physical commands performed. Existing YAML remains compatible.
 
 ## Previous release — 0.1.1-beta.18
 
