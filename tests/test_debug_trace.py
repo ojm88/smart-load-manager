@@ -34,7 +34,7 @@ class DebugTraceTests(unittest.TestCase):
 class CommandTraceTests(unittest.IsolatedAsyncioTestCase):
     async def test_service_failure_is_not_logged_as_success(self):
         trace = DebugTrace()
-        c = NS(entry=NS(data={'charger_device': 'secret_device'}), data={'han_power_w': 1000})
+        c = NS(auto_control=True, charging_paused=False, last_commanded_current=16, entry=NS(data={'charger_device': 'secret_device'}), data={'han_power_w': 1000})
         service = AsyncMock(side_effect=RuntimeError('SECRET credential failure'))
         hass = NS(data={'smart_load_manager': {'site': NS(debug_trace=trace, controllers={'private_load': c})}},
                   services=NS(async_call=service))

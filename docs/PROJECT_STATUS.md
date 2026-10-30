@@ -2,6 +2,24 @@
 
 Updated: 2026-10-30
 
+## Beta.17 publication preparation — 2026-10-30
+
+Owner explicitly authorized publishing **0.1.1-beta.17**. PR #13 code head **4428d5f8bcda664f22385f965bd6440853ee09c2** passed CI run **41050713570**. Final preparation updates manifest/release records only. Preserve stable 0.1.0 and prior tags. Existing beta.16 dashboard YAML remains compatible; this release changes no card layout. Physical SOC-target restart, overnight completion and two-charger acceptance remain pending. Publication/tag verification will be recorded after release.
+
+## Beta.17 refined-offer verification — 2026-10-30
+
+[Verification record](BETA17_VERIFICATION.md): 92 pure and 129 runtime tests pass on both supported HA/Python versions. The final policy supersedes status-origin inference: no permanent zero completion ceiling; standby offers use the validated minimum/known allowance and only remaining budget. Waiting transitions assess immediately without gaining active-peer priority. Actual charging restores active allocation; unchanged assessments neither resend current nor move the regular deadline. New recovery regression fails against the old policy. Software checks pass; physical SOC-target restart, overnight and two-charger acceptance remain pending. Beta.17 publication is authorized; final publication is recorded above.
+
+## Earlier beta.17 preparation records (superseded where noted)
+
+## Beta.17 input recovery clarification
+
+A successful input-wait zero is not repeated. Newly valid measurements now explicitly request immediate regulation. One/two-charger regressions pass in the 38-test site suite; no publication or physical command.
+
+## Beta.17 investigation — 2026-10-30
+
+Owner trace/video confirms zero completion ceiling survives schedule opening and pause resume, preventing automatic restart despite valid 16 A recommendation. Local correction releases ceiling only on explicit renewed permission and avoids recapturing repeated completed feedback. Added sequence regressions; 92 pure and 126 runtime tests pass on both supported HA/Python versions. Physical acceptance pending; beta.16 remains published, no beta.17 release authorized. Uploaded trace also contains real HAN gaps and an initial brief invalid value, so earlier freshness theory is not a proven explanation of every transition.
+
 ## Version
 
 - Stable: **0.1.0**. Published beta: **0.1.1-beta.16** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.16)).
