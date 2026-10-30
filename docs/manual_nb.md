@@ -125,3 +125,6 @@ Raffinert beta 17-løsning: Etter fullført lading beholdes et budsjettert strø
 
 
 Beta 17: Oppdater integrasjonen og start Home Assistant på nytt. Kort fra beta 16 kan beholdes; beta 17 endrer ikke kortoppsettet. Test ny lading etter økt ladegrense i bilappen og last ned diagnostikk straks ved avvik.
+
+
+Beta 18 under klargjøring: En avsluttet økt med målt 0 W beholdes urørt når bare alderen på HAN-verdien er for høy. Det krever ikke endring i MQTT-oppsettet. Målegrunnlag kan fortsatt vise venting; dette er ikke en bekreftelse på kommunikasjonsbortfall, og nye strømøkninger avventer gyldige målinger. I attributtene vises completed_offer_held. Ved ugyldige målinger, faktisk effektuttak, pause, stengt tidsvindu eller nødvendige budsjett-/laderbegrensninger kan SLM fortsatt sende en kommando. Avsluttede økter økes ikke automatisk ved hver regulering. Ny ventestatus eller brukerbetjening vurderes straks. Fysisk testing gjenstår.

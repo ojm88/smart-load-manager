@@ -2,6 +2,12 @@
 
 Updated: 2026-10-30
 
+## Beta.18 preparation — quiet completed sessions
+
+Implemented the owner's approved limited correction: no automatic current restoration while raw completed, age-only HAN holds preserve measured idle completed offers without claiming freshness, source/control restart remains immediate with valid inputs. Real faults and active freshness guards remain; paired capacity transfer remains measured. No MQTT configuration changes. Diagnostic records now use the actual command-cycle sample and expose completion holds.
+
+Validation passes: **93 pure**, **133 runtime** on each supported HA/Python version, plus **1 Node test**. Two new regressions reject beta.17. Details and remaining physical acceptance are in [BETA18_VERIFICATION.md](BETA18_VERIFICATION.md). Not published or installed; manifest remains beta.17. Physical overnight completion, car-app target increase and two-charger acceptance remain pending. Measurement status is not pinned to ready when inputs are stale.
+
 ## Current release — 0.1.1-beta.17
 
 Published **2026-10-30** after owner approval: [0.1.1-beta.17](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.17), visibly verified as **Pre-release**. Stable remains **0.1.0**.

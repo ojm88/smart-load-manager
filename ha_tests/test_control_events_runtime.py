@@ -318,11 +318,26 @@ class ControlEventTests(IsolatedAsyncioTestCase):
             self.assertTrue(self.c.data['han_fresh'])
             self.assertEqual(self.c.data['han_power_w'], 1000)
             self.assertEqual(self.commands, [])
-        # A genuinely missing heartbeat still stops control, but keeps the last
-        # numerical reading visible, marked stale rather than silently current.
+        # A timestamp alone is not proof of a missing device heartbeat.
+        # Keep raw completed and its offer quiet, while honestly marking the
+        # numeric reading stale and withholding new allocation.
         report.last_reported = self.now-timedelta(minutes=5)
         with patch.object(type(self.hass.states), 'get', new=lambda machine, key: report if key == 'sensor.test_han' else source_get(key)):
             await self.refresh()
         self.assertFalse(self.c.data['han_fresh'])
         self.assertEqual(self.c.data['han_power_w'], 1000)
+        self.assertTrue(self.c.data['completion_hold'])
+        self.assertFalse(self.c.data['site_control_ready'])
+        self.assertEqual(self.commands, [])
+        # Actual wake cannot use the idle exception while HAN is still stale.
+        attrs={'config_phaseMode':1,'state_outputPhase':0,'circuit_ratedCurrent':16}
+        self.hass.states.async_set('sensor.test_status','charging',attrs)
+        with patch.object(type(self.hass.states), 'get', new=lambda machine, key: report if key == 'sensor.test_han' else source_get(key)):
+            await self.refresh()
         self.assertEqual(self.commands, [0])
+        report.last_reported=self.now
+        self.hass.states.async_set('sensor.test_status','ready_to_charge',attrs)
+        with patch.object(type(self.hass.states), 'get', new=lambda machine, key: report if key == 'sensor.test_han' else source_get(key)):
+            await self.refresh()
+        self.assertGreater(self.commands[-1],0)
+        self.assertTrue(self.c.data['site_control_ready'])

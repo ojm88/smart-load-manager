@@ -408,6 +408,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "han_power_w": round(han_w, 1) if han_w is not None else None,
                 "han_age_seconds": round(han_age, 1) if han_age is not None else None,
                 "han_fresh": han_fresh,
+                "han_value_valid": han_w is not None and math.isfinite(han_w) and han_w > 0,
+                "tariff_valid": not bool(tariff_error),
                 "energy_used_kwh": energy_used,
                 "energy_estimate_kwh": energy_estimate,
                 "hourly_limit_kwh": hourly_limit,
