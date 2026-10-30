@@ -11,7 +11,7 @@ NUMBER_FIELDS = ('han_power_w', 'han_age_seconds', 'energy_used_kwh',
     'phase_code', 'phase_mode_code')
 BOOL_FIELDS = ('han_fresh', 'inputs_valid', 'electrical_ready', 'schedule_allowed',
                'auto_control', 'charging_paused', 'site_control_ready', 'awaiting_reduction',
-               'han_value_valid', 'tariff_valid', 'completion_hold')
+               'han_value_valid', 'tariff_valid', 'completion_hold', 'completion_released')
 STATUSES = {'disconnected','charging','start_charging','completed','awaiting_start',
             'ready_to_charge','error','unknown','unavailable'}
 

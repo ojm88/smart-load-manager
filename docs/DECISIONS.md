@@ -644,3 +644,12 @@ Owner explicitly requests publishing beta.18 now for further testing. This super
 ## 2026-10-30 — Beta.18 publication verified
 
 Published 0.1.1-beta.18 as Pre-release from PR #14 merge/tag efd001e9691c4926f6cad7546676e88baa2d76e8. Tree 956f40e3098b2ebe4e582b92ce8257dd1395663f matches final tested preparation tree; final CI 41130412214 passed all four jobs. Existing beta.16/17 YAML can remain. Installation and physical acceptance are separate; general change-based HAN measurement-status waits remain explicitly unresolved. Prior tags and stable 0.1.0 are unchanged.
+
+
+## 2026-10-30 — Release completed capacity, beta.19 authorized
+
+Owner beta.18 trace shows a valid HAN reading (11.2 seconds old), completed at 0 W, followed by the regular 0 A budget command at 23:04:44 local and awaiting_start at 23:06:22. The hourly capacity was below the 6 A three-phase minimum. No private uploaded trace or installation IDs are committed.
+
+Owner explicitly selects release of unused completed capacity to other SLM loads, accepting delayed vehicle-wake feedback and the retained physical limit. Supersede beta.17/18 full standby reservation: known completed zero-W/sub-amp offers leave normal allocation and command targets; exclude that unused offer from held-power forecast. A new waiting/ready source request immediately assesses a budgeted minimum, actual start/charging clears completion memory and restores normal allocation. Explicit renewed user permission can assess minimum while raw completed. No new positive minimum is promised without capacity.
+
+Retain real invalid-input stops, explicit pause/schedule closure, physical caps, unknown/drawing-state guards and paired measured reductions for active transfer. Existing age-only completed hold remains; no HAN timeout change or fabricated ready state. No ordinary command is sent just to release capacity. A retained limit can be drawn before delayed source feedback; 0.3 kWh is energy margin, not an instantaneous power reserve or guaranteed latency coverage. Owner authorizes tests and publication of beta.19, not HA installation or live commands.

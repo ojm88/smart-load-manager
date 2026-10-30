@@ -46,6 +46,7 @@ class SiteController:
         self._measurement_waiting = False
         self._completion_resume = set()
         self._completion_holds = set()
+        self._released_completed = set()
         self._command_samples = None
         self._control_requested = 0
         self._control_applied = 0
@@ -71,6 +72,7 @@ class SiteController:
                 for key, controller in self.controllers.items():
                     samples[key] = await controller._async_sample()
                     samples[key]['completion_hold'] = False
+                    samples[key]['completion_released'] = False
                     samples[key]["last_sent_current_a"] = controller.last_commanded_current
                     self.debug_trace.record("sample", key, data=samples[key])
                 self._completed_limits = {key: value for key, value in self._completed_limits.items()
@@ -98,9 +100,7 @@ class SiteController:
                             self.async_request_control()  # Serve a waiting/active peer.
                     elif (key in self._completed_limits and status != previous_status
                           and status in {'awaiting_start', 'ready_to_charge'}):
-                        # Source changes prompt a fresh assessment, but do NOT
-                        # promote an ended session ahead of active peers. Whether
-                        # caused by the car or our command no longer matters.
+                        # A new source request returns this car to active allocation.
                         self.async_request_control()
                         self.debug_trace.record('standby_status_assessment', key)
                 self._observed_status = {key: normalize_status(d['status']) for key, d in samples.items()}
@@ -121,6 +121,29 @@ class SiteController:
                                 or (previous[1] and not permission[1])
                                 or (not previous[2] and permission[2])):
                             self._completion_resume.add(key)
+                # Completion releases the unused offer, without writing a new
+                # limit. The owner accepts source-report latency on vehicle wake.
+                released = set()
+                for key, d in samples.items():
+                    c = self.controllers[key]
+                    quiet = (c.auto_control and not c.charging_paused
+                             and d.get('schedule_allowed') and d.get('inputs_valid')
+                             and d.get('han_fresh') and self._quiet_completed(d)
+                             and d.get('kw_per_amp') and d.get('control_minimum_current_a')
+                             and c.last_commanded_current is not None
+                             and c.last_commanded_current <= d.get('max_current_a', 0)
+                             and key not in self._completion_resume)
+                    d['completion_released'] = bool(quiet)
+                    if quiet:
+                        released.add(key)
+                        if key not in self._released_completed:
+                            self.debug_trace.record('completed_capacity_released', key, data=d)
+                            self.async_request_control()
+                        self.pending_reductions.pop(key, None)
+                    elif key in self._released_completed:
+                        self.debug_trace.record('completed_control_resumed', key, data=d)
+                        self.async_request_control()
+                self._released_completed = released
                 owner = site_entry(self.hass)
                 reference = samples[owner.entry_id]
                 if not all(d.get("inputs_valid") and d.get("han_fresh") for d in samples.values()):
@@ -167,43 +190,29 @@ class SiteController:
                         expected = manual_limit * d["kw_per_amp"]
                         capacity = max(0, capacity - max(0, expected - d["charger_power_w"] / 1000))
                 demands = []
-                standby = []
                 eligible = []
                 for key, d in samples.items():
                     c = self.controllers[key]
                     status = normalize_status(d["status"])
                     can_run = (c.auto_control and not c.charging_paused and d["schedule_allowed"]
                                and self._can_offer(status))
-                    if can_run:
+                    if can_run and key not in self._released_completed:
                         if not d.get("kw_per_amp") or not d.get("control_minimum_current_a") or d["max_current_a"] <= 0:
                             raise MeasurementPending("Automatisk laststyring avventer fase, spenning eller strømgrense fra en lader.")
-                        if key in self._completed_limits:
-                            standby.append(Demand(key, d['kw_per_amp'], d['control_minimum_current_a'],
-                                                  min(d['max_current_a'], max(self._completed_limits[key],
-                                                      d['control_minimum_current_a']))))
-                        else:
-                            demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], d["max_current_a"]))
+                        # A renewed request starts at the validated minimum.
+                        # Actual charging clears completion memory above.
+                        maximum = (d["control_minimum_current_a"] if key in self._completed_limits
+                                   else d["max_current_a"])
+                        demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], maximum))
                         eligible.append(key)
                 priority = owner.options.get("priority_charger", owner.entry_id)
                 if priority not in {e.entry_id for e in configured}:
                     priority = owner.entry_id
                 mode = owner.options.get("allocation_mode", "both")
                 targets = allocate(demands, capacity, mode, priority)
-                # Active sessions get priority. Any retained idle allowance is
-                # budgeted in full, since the car may wake and draw it again.
-                remaining = max(0, capacity - sum(targets[d.key] * d.kw_per_amp for d in demands))
-                idle_capacity = 0 if mode == 'one_at_a_time' and any(targets.values()) else remaining
-                targets.update(allocate(standby, idle_capacity, mode, priority))
-                for key, target in targets.items():
-                    # Completion is not a request for more current. Keep its
-                    # offer steady or reduce for a real budget/peer constraint;
-                    # only renewed user permission or a new source state may
-                    # raise it again. Never hide or synthesize raw Easee status.
-                    if (normalize_status(samples[key]['status']) == 'completed'
-                            and key not in self._completion_resume):
-                        targets[key] = min(target, self.controllers[key].last_commanded_current or 0)
                 targets = {key: targets.get(key, 0) for key, c in self.controllers.items()
-                           if c.auto_control or c.charging_paused}
+                           if (c.auto_control or c.charging_paused)
+                           and key not in self._released_completed}
                 for key, value in list(self.manual_requests.items()):
                     c = self.controllers.get(key)
                     if c is None or c.auto_control:
@@ -237,8 +246,9 @@ class SiteController:
                                 d["control_reason"] = "Laderen får sin andel av boligens ledige ladekapasitet." if mode == "both" else "Laderen har tur og får boligens ledige ladekapasitet."
                             else:
                                 d["control_reason"] = "Laderen venter på kapasitet eller på laderen med førsteprioritet."
-                        if str(d["status"]).lower() in {"completed", "charged"}:
-                            d["control_reason"] = "Bilen har avsluttet ladingen. En eventuell beholdt strømgrense regnes fortsatt med i boligens kapasitet."
+                        if key in self._released_completed:
+                            d["control_reason"] = "Bilen har avsluttet ladingen. Ledig kapasitet er frigjort til andre laster."
+                            d['regulation_reason'] = "Fullført lading reguleres ikke; avventer ny ladeforespørsel."
                         if self.pending_reductions and key in eligible:
                             d["control_reason"] = "Avventer bekreftet reduksjon på laderne før mer strøm fordeles."
                     d["awaiting_reduction"] = bool(self.pending_reductions)
@@ -446,7 +456,8 @@ class SiteController:
         for key, controller in self.controllers.items():
             d = samples[key]
             factor = d.get('kw_per_amp')
-            if factor and controller.last_commanded_current is not None:
+            if (factor and controller.last_commanded_current is not None
+                    and key not in self._released_completed):
                 held_kw += max(0, controller.last_commanded_current * factor
                                - d['charger_power_w'] / 1000)
         mode = self.cadence.decide(

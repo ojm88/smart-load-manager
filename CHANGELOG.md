@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1-beta.19
+
+- Release unused capacity after automatic charging reports completed and measured zero power with sub-amp standby current. Stop ordinary budget-driven commands to that charger, leaving its last limit untouched even when less than minimum charging capacity remains. This supersedes the reserved completed-offer policy in beta.17/18.
+- Reassess a renewed waiting/ready request immediately at the validated minimum with current measurements and available capacity; actual charging resumes normal allocation. Keep explicit pause/schedule, real input faults, physical limits and measured reduction confirmation between active loads.
+- Expose completion-capacity release and control-resume events in diagnostics. The owner accepts that the retained physical limit can be used before delayed source reporting triggers reallocation; the configured hourly margin is energy, not an instantaneous interlock. Existing dashboard YAML remains compatible.
+
 ## 0.1.1-beta.18
 
 - Keep a measured zero-draw completed session quiet when only the HAN timestamp is old. Retain its known current offer; do not mark the stale measurement fresh or allocate new capacity from it. Active/waking sessions still stop once on invalid/stale input. Numeric HAN/tariff, electrical and charger-power faults, pause, schedule and reduced physical limits retain stop behavior. No MQTT reporting changes are required.

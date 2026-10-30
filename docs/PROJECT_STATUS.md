@@ -2,7 +2,11 @@
 
 Updated: 2026-10-30
 
-## Current release — 0.1.1-beta.18
+## Beta.19 release preparation — completed capacity release
+
+Owner requests tests and publication of the new completed-session policy. Verified zero-W/sub-amp automatic completed sessions leave capacity allocation and held-offer forecast, and receive no ordinary budget writes. New waiting/ready requests assess the validated minimum immediately; actual charging restores normal allocation. Source feedback latency and retained-limit wake are accepted by the owner. Explicit controls, real faults and active-transfer acknowledgements remain. See BETA19_VERIFICATION.md. Not installed or physically tested; software/release validation in progress. Existing YAML remains compatible.
+
+## Previous release — 0.1.1-beta.18
 
 Implemented the owner's approved limited correction: no automatic current restoration while raw completed, age-only HAN holds preserve measured idle completed offers without claiming freshness, source/control restart remains immediate with valid inputs. Real faults and active freshness guards remain; paired capacity transfer remains measured. No MQTT configuration changes. Diagnostic records now use the actual command-cycle sample and expose completion holds.
 
