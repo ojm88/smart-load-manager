@@ -618,3 +618,8 @@ Owner requests a working refined solution, treating observations as evidence rat
 All completed→awaiting/ready changes request immediate assessment without promoting idle demand or clearing completion memory. Actual start/charging restores active demand and requests immediate coordination. Hence the action is correct for the same electrical state regardless of event origin: no duplicate unchanged commands, no blind probe cycle, no permanent zero ceiling. A control assessment that does not change any current must not shift the ordinary cadence deadline. This also fixes a regression caught by the existing household budget recovery test.
 
 Software: 92 pure and 129 runtime tests on both supported HA/Python versions pass. New zero-offer recovery sequence fails against prior policy. See BETA17_VERIFICATION.md for contract and physical acceptance limits. No new release authorized by this preparation request.
+
+
+## 2026-10-30 — Beta.17 publication authorized
+
+Owner explicitly requests publishing beta.17 after the refined offer policy and diagnostic coverage review. This supersedes earlier preparation-only publication holds. Publish the tested policy with manifest 0.1.1-beta.17 as a prerelease, preserve prior tags/stable, and verify CI plus the tagged source tree. No installation, automatic-control enablement or physical charging test is implied. Existing beta.16 dashboard YAML needs no regeneration for beta.17.

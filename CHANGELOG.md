@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta.17 preparation
+## 0.1.1-beta.17
 
 - Keep a stable, fully budgeted offer after completion. Unknown/zero prior offers use the validated electrical minimum rather than a permanent zero ceiling. Active chargers receive capacity first; idle sessions cannot reclaim priority from pause feedback.
 - Reassess waiting transitions, schedule/user permission changes and measurement recovery immediately. Actual start/charging returns the session to active allocation. Repeated identical limits are not sent and no-change assessments do not postpone ordinary five-minute regulation.

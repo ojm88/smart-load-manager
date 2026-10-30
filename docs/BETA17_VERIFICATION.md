@@ -1,7 +1,8 @@
 # Beta.17 — refined offer policy verification
 
-Reviewed 2026-10-30. Published release remains beta.16. No beta.17 publication or
-physical charger test has occurred. This record supersedes the earlier proposal
+Reviewed 2026-10-30. Owner authorized beta.17 publication. Release preparation
+changes only metadata/documentation after the tested source. Physical charger
+acceptance remains pending. This record supersedes the earlier proposal
 to classify the origin of completed→waiting feedback.
 
 ## Final policy

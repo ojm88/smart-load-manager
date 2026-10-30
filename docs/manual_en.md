@@ -115,3 +115,6 @@ Beta 17 verification: A completed-to-waiting/ready transition is reassessed imme
 
 
 Refined beta 17 policy: Preserve a budgeted offer after completion. A zero or unknown prior limit can offer the validated electrical minimum when capacity permits. The car draws only when it requests energy. Active cars receive capacity first. Waiting/ready reports reassess immediately without inferring their cause; actual charging restores active allocation. Unchanged limits are not resent. This supersedes the earlier requirement to identify status origin. Physical acceptance remains pending.
+
+
+Beta 17: Update the integration and restart Home Assistant. Existing beta 16 dashboard YAML remains compatible; beta 17 does not change the card layout. Test renewed charging after raising the target in the car app and download diagnostics promptly if behavior differs.

@@ -122,3 +122,6 @@ Verifiseringsstatus for beta 17: Ny overgang fra fullført til venter/klar vurde
 
 
 Raffinert beta 17-løsning: Etter fullført lading beholdes et budsjettert strømtilbud. Når tidligere grense er null eller ukjent, kan den bekreftede minimumsstrømmen tilbys dersom kapasiteten tillater det. Bilen trekker først strøm når den ønsker lading. Aktive biler prioriteres før avsluttede økter. Ny venter/klar-status gir straks en ny vurdering, uten å gjette hvem som utløste statusen; faktisk ladestart gir vanlig aktiv fordeling. Like strømgrenser sendes ikke gjentatte ganger. Tidligere merknad om behov for statusårsaksidentifikasjon er erstattet av denne modellen. Fysisk ladetest gjenstår.
+
+
+Beta 17: Oppdater integrasjonen og start Home Assistant på nytt. Kort fra beta 16 kan beholdes; beta 17 endrer ikke kortoppsettet. Test ny lading etter økt ladegrense i bilappen og last ned diagnostikk straks ved avvik.

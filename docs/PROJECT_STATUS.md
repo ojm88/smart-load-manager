@@ -2,9 +2,13 @@
 
 Updated: 2026-10-30
 
+## Beta.17 publication preparation — 2026-10-30
+
+Owner explicitly authorized publishing **0.1.1-beta.17**. PR #13 code head **4428d5f8bcda664f22385f965bd6440853ee09c2** passed CI run **41050713570**. Final preparation updates manifest/release records only. Preserve stable 0.1.0 and prior tags. Existing beta.16 dashboard YAML remains compatible; this release changes no card layout. Physical SOC-target restart, overnight completion and two-charger acceptance remain pending. Publication/tag verification will be recorded after release.
+
 ## Beta.17 refined-offer verification — 2026-10-30
 
-[Verification record](BETA17_VERIFICATION.md): 92 pure and 129 runtime tests pass on both supported HA/Python versions. The final policy supersedes status-origin inference: no permanent zero completion ceiling; standby offers use the validated minimum/known allowance and only remaining budget. Waiting transitions assess immediately without gaining active-peer priority. Actual charging restores active allocation; unchanged assessments neither resend current nor move the regular deadline. New recovery regression fails against the old policy. Software checks pass; physical SOC-target restart, overnight and two-charger acceptance remain pending. Beta.17 is not published.
+[Verification record](BETA17_VERIFICATION.md): 92 pure and 129 runtime tests pass on both supported HA/Python versions. The final policy supersedes status-origin inference: no permanent zero completion ceiling; standby offers use the validated minimum/known allowance and only remaining budget. Waiting transitions assess immediately without gaining active-peer priority. Actual charging restores active allocation; unchanged assessments neither resend current nor move the regular deadline. New recovery regression fails against the old policy. Software checks pass; physical SOC-target restart, overnight and two-charger acceptance remain pending. Beta.17 publication is authorized; final publication is recorded above.
 
 ## Earlier beta.17 preparation records (superseded where noted)
 
