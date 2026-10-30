@@ -1,6 +1,8 @@
 # Beta.18 — quiet completion verification
 
-Prepared 2026-10-30, not published or installed. Manifest remains 0.1.1-beta.17.
+Release preparation authorized 2026-10-30. Manifest 0.1.1-beta.18; publication verification pending. No HA installation or physical control performed.
+
+Owner accepts testing this bounded correction as beta.18. It does not resolve every measurement-status wait with change-based HAN sources. A further ten-minute read-only observation (61 snapshots, 35 entities) showed ready throughout, matching raw/template power and observed power age at most 59.9 s; the car was disconnected. This did not reproduce or close the general freshness issue. Private observations are not committed.
 
 ## Preserved behavior and bounded change
 

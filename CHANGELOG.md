@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased — beta.18 preparation
+## 0.1.1-beta.18
 
 - Keep a measured zero-draw completed session quiet when only the HAN timestamp is old. Retain its known current offer; do not mark the stale measurement fresh or allocate new capacity from it. Active/waking sessions still stop once on invalid/stale input. Numeric HAN/tariff, electrical and charger-power faults, pause, schedule and reduced physical limits retain stop behavior. No MQTT reporting changes are required.
 - Completed alone no longer requests an increase or periodic restoration after a budget reduction. A real budget/active-peer constraint can reduce the offer; renewed user permission or waiting/ready/charging source status can reassess it immediately with valid inputs.
-- Add completion-hold diagnostics and use the actual decision-cycle sample for command records rather than the previous published sample. Software preparation only; physical overnight/wake/two-charger acceptance pending.
+- Add completion-hold diagnostics and use the actual decision-cycle sample for command records rather than the previous published sample. Physical overnight/wake/two-charger acceptance pending.
 
 ## 0.1.1-beta.17
 
