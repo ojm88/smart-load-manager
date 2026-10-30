@@ -89,6 +89,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             entry.options.get(CONF_SCHEDULE_ENABLED, False)
         )
         self.last_commanded_current: int | None = None
+        self.manual_current_setting = entry.options.get('manual_current_a')
         self._last_command_at = 0.0
         self.site.controllers[entry.entry_id] = self
         self._source_unsub = None
@@ -161,7 +162,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                         return None
 
                 han_state = self.hass.states.get(self.entry.data[CONF_HAN_POWER_ENTITY])
-                han_age = ((dt_util.now() - dt_util.as_local(han_state.last_updated)).total_seconds()
+                han_age = ((dt_util.now() - dt_util.as_local(getattr(han_state, "last_reported", han_state.last_updated))).total_seconds()
                            if han_state is not None else None)
                 han_power = value(self.entry.data[CONF_HAN_POWER_ENTITY], power=True)
                 measured = {
@@ -254,14 +255,14 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             han_state = self.hass.states.get(han_entity)
             local_now = dt_util.now()
             han_age = (
-                # last_changed only advances when the numeric value changes;
-                # meters may publish fresh attributes while power is steady.
-                (local_now - dt_util.as_local(han_state.last_updated)).total_seconds()
+                # last_reported advances even when a meter republishes exactly
+                # the same value and attributes; last_updated does not.
+                (local_now - dt_util.as_local(getattr(han_state, "last_reported", han_state.last_updated))).total_seconds()
                 if han_state is not None else None
             )
             han_w = None
             han_error = ""
-            if han_state is None or han_age is None or han_age > HAN_MAX_AGE_SECONDS:
+            if han_state is None:
                 han_error = f"HAN-målingen er eldre enn {HAN_MAX_AGE_SECONDS} sekunder"
             else:
                 try:
@@ -421,6 +422,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 "minutes_left": minutes_left,
                 "seconds_to_hour": seconds_to_hour,
                 "auto_control": self.auto_control,
+                "manual_current_setting_a": self.manual_current_setting,
                 "charging_paused": self.charging_paused,
                 "schedule_enabled": schedule_enabled,
                 "schedule_allowed": schedule_allowed,
@@ -445,10 +447,14 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
     async def async_set_current(self, current: int) -> None:
         multiple = len(charger_entries(self.hass)) > 1
-        if multiple and current > 0 and not self.auto_control:
+        if not self.auto_control and not self.charging_paused:
+            self.manual_current_setting = int(current)
+            update_load(self.hass, self.entry, options={**self.entry.options,
+                                                      'manual_current_a': int(current)})
+        if current > 0 and not self.auto_control:
             async with self.site.lock:
                 self.site.manual_requests[self.entry.entry_id] = int(current)
-            await self.site.refresh(self)
+            self.async_publish_sample(await self.site.refresh(self))
             return
         async with self.site.lock:
             self.site.manual_requests.pop(self.entry.entry_id, None)

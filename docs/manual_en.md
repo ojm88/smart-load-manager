@@ -24,7 +24,8 @@ No custom helpers or YAML automation are required. Hot water and floor heating a
 
 | Control | Behavior |
 | --- | --- |
-| Automatic load control | Adjusts the dynamic current limit. Starts off after restart. |
+| Automatic load control | Adjusts the dynamic current limit. Starts off after restart. Switching off selects the allowed manual minimum; pause, schedule and measurement guards remain. |
+| Automatic control – charging | Toggles automation for all chargers together. Individual charger switches remain available; future thermal categories are independent. |
 | Charging pause | Sends 0 A. Resume recalculates automatically or restores the previous manual limit when current measurements and limits permit. |
 | Manual current | Available when automatic control and pause are off; capped by Easee's reported maximum. |
 | Phase selection | Changes Easee's phase setting. SLM never automatically changes topology. |
@@ -69,7 +70,7 @@ Run **Settings → Tools → Actions → `smart_load_manager.get_dashboard`**, t
 
 ## Waiting or troubleshooting
 
-Read household status and Measurement status first. Check HAN freshness, EnergyTariff, enabled Easee Voltage sensors, reported current limits, pause and schedules. HAN must be valid and at most 60 seconds old. An available unchanged Easee power value remains valid despite an old timestamp. Capacity moves between chargers only after subsequent current/power readings confirm a reduction.
+Read household status and Measurement status first. Check HAN freshness, EnergyTariff, enabled Easee Voltage sensors, reported current limits, pause and schedules. HAN must be valid and at most 120 seconds old. An available unchanged Easee power value remains valid despite an old timestamp. Capacity moves between chargers only after subsequent current/power readings confirm a reduction.
 
 SLM does not replace installation protection. Turning automatic control off stops further automatic writes and leaves Easee's last dynamic limit in place. Use Charging pause to explicitly send 0 A.
 
@@ -86,3 +87,19 @@ For later additions, use Configure → Chargers → **Add charger**. The existin
 Run `smart_load_manager.get_dashboard` and replace the existing Manual card YAML after adding/removing/replacing a charger, changing physical charger connections, the HAN source or referenced entity IDs, changing charger names used in headings, or adopting a feature that changes the card layout. YAML is not automatically regenerated. Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection and pause update through existing entity references and require no new card. Preserve manual customizations before replacing the YAML.
 
 The card uses a short heading and three compact columns: meter power in kW, energy used and estimate. Rounding affects display only; calculations retain precision. Very large energy values use MWh. With no cars connected, redundant per-charger sections are hidden. Mixed connections identify the connected and disconnected chargers. Power, recommended/last-set current and the next regulation time appear only while Easee reports charging. Waiting, paused and completed states retain their explanations. Regenerate dashboard YAML to adopt this layout.
+
+
+## Status card in beta 16
+
+The card shows household measurements and budget first, followed by load category and individual load names. Each load has one status and Auto/Manual. A short reason or action appears only when relevant. Separators distinguish configured categories; unconfigured categories are hidden. Power, current limit and next regulation appear during charging. Floor heating and hot water in mockups are planned functionality. Regenerate YAML with `smart_load_manager.get_dashboard` after the future update.
+
+
+An unchanged HAN value remains fresh when the meter reports it again. If reports stop, automatic control stops at the existing age limit. The card retains a readable numeric value with an explicit stale warning; it is not used as fresh control input. Unknown/unavailable sources have no numeric display. Raw Easee status is preserved.
+
+
+## Diagnostic download in beta 16
+
+Open **Settings → Devices & services → Smart Load Manager OJM → integration entry → ⋮ → Download diagnostics**. Download while the problem is present, before restarting or reloading, and attach the file with the observed time. It contains anonymous load state, calculation inputs, regulation decisions and current/phase service attempts/results. The last 4096 events are held in memory; overwritten events are counted. No fixed retention period is guaranteed. Restart/reload resets history; older events cannot be recovered. Service success does not establish physical charging. Credentials, names and source identifiers are excluded. Available from beta 16.
+
+
+Beta 16 accepts valid HAN reports up to **120 seconds** old, inclusive. Beta 15 used 60 seconds. Freshness is based on the last report, including identical values. Older or invalid measurements stop automatic charging at the next control check.

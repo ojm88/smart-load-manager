@@ -186,6 +186,9 @@
       },
       "charging_priority": {
         "name": "Førsteprioritet"
+      },
+      "charging_automatic_control": {
+        "name": "Automatisk laststyring – lading"
       }
     },
     "number": {

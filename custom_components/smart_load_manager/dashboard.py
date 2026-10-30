@@ -42,6 +42,7 @@ async def async_register_dashboard_service(hass):
                 for key, base in mapping.items():
                     shared = key in {
                         "household_status",
+                        "charging_automatic_control",
                         "measurement_status",
                         "consumption_limit",
                         "allocation_mode",

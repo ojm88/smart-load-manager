@@ -563,3 +563,32 @@ whole-sequence validation and remaining physical acceptance boundaries.
 AGENTS.md now requires relevant scenario-based planning and evidence-based
 claims. This is an internal process/documentation change only; no runtime,
 release, HA installation or physical charger command changes.
+
+
+## 2026-10-29 — Approved beta.16 status-card hierarchy
+
+Owner approves the concise mockup: household measurements and budget first, then configured load categories, then named loads with one status and Auto/Manual. Use modest bold headings, category separators and aligned measurement columns. Render a short reason or action only when useful; do not repeat a category-wide charging summary, connection sentence and device status. Charging telemetry/regulation details remain limited to charging rows. Hide unconfigured categories. Floor heating and hot water illustrations are future design references, not implemented thermal controls or measured data. Theme/font/spacing follow Home Assistant; generated mockups are not actual phone validation. No release authorized by design approval.
+
+
+## 2026-10-30 — Completion cycling and HAN report freshness
+
+Owner reports continued raw Easee cycling after beta.14/15; earlier completion-policy tests were not sufficient hardware acceptance. Inspection finds HAN freshness based on last_updated, which does not advance for identical state/attribute reports. False staleness can send 0 A through MeasurementPending, followed by positive allowance on recovery, independently of the remembered completion ceiling. Use HA last_reported (fallback last_updated) in normal and partial samplers. Do not remove genuine stale-input stops or pin raw charger status. Parse existing numeric HAN readings independently of age for display, expose freshness/age on household status and explicitly mark stale readings in Markdown. Unknown/unavailable values remain missing.
+
+A real HA 2026.10.4 sampler regression covers fresh identical reports across six hours after completed with no writes, then actual stopped reports with a 0 A command and visible stale numeric reading. It fails with previous timestamp handling. This establishes a code fault and reproducible mechanism, not the historical cause of every transition in the owner's installation. Historical command/input traces and owner overnight acceptance remain necessary. No publication, installation or physical commands authorized/performed.
+
+
+## 2026-10-30 — Native SLM diagnostics and bounded flight recorder
+
+Owner requests whole-SLM downloadable debug evidence for future development. Implement native async_get_config_entry_diagnostics, current anonymous load snapshots, selected electrical connection, completion allowance and pending-reduction flags. Use strict field allowlists: no complete config entries, registries, raw Easee attributes, names, IDs, tokens or arbitrary exception text. Runtime records sample inputs, decision target/mode, measurement waits/control failures, and actual current/phase service attempts, failure or success. A service success is not a physical acknowledgement. Monotonic event sequence plus UTC timestamps supports correlation.
+
+Keep the last 4096 events in memory, disclose dropped count/start time and reset on reload/restart. No cloud traffic capture, historical backfill, disk persistence, new control calls or fixed overnight retention promise. Debug collection is always bounded and available without enabling verbose logs. A download is a snapshot; obtaining it before restart matters. Native HA download hook and privacy/failure/order tests are software validation; actual Companion download acceptance remains pending. Beta.16 stays unpublished.
+
+
+## 2026-10-30 — Owner-selected two-minute HAN tolerance
+
+Owner accepts HAN reports up to two minutes old. Set the shared freshness limit to 120 seconds inclusive, used by calculations and coordinator error messages. Beta.15 used 60 seconds and last_updated. Beta.16 uses last_reported and permits age <=120 seconds; unknown, nonnumeric, nonpositive and genuinely older input remains invalid. The 30-second watchdog may detect expiry after the exact boundary; do not claim an exact 120-second physical stop. Ordinary five-minute dispatch cadence is unchanged.
+
+
+## 2026-10-30 — Beta.16 publication authorized
+
+Owner explicitly requests publishing beta.16 with the agreed manual minimum transition, charging-category control, concise status card, 120-second report-based HAN freshness and native diagnostics. Supersedes preparation-only holds for this release. Preserve stable 0.1.0 and prior tags. Regenerate dashboard YAML after update/restart. Publication does not install or enable control in HA; actual overnight completion, two-charger and phone download/render acceptance remain required.

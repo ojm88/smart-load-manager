@@ -106,3 +106,22 @@ class EaseeServicePayloadTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ManualMinimumTests(unittest.TestCase):
+    def test_handover_chooses_actual_minimum_not_ten_or_last_current(self):
+        from custom_components.smart_load_manager.control import minimum_manual_current
+        for minimum, maximum, expected in [(6,16,6),(11,16,11),(6,8,6),(11,10,0),
+                                             (None,16,0),(6,0,0),(float('nan'),16,0),
+                                             (6,float('inf'),0)]:
+            with self.subTest(minimum=minimum, maximum=maximum):
+                self.assertEqual(minimum_manual_current(dict(control_minimum_current_a=minimum,
+                    max_current_a=maximum,last_sent_current_a=0,recommended_current_a=16)),expected)
+
+    def test_category_membership_never_toggles_other_load_types(self):
+        from types import SimpleNamespace as NS
+        from custom_components.smart_load_manager.control import charging_controllers
+        ev=NS(entry=NS(data={}))
+        heat=NS(entry=NS(data={'load_type':'floor_heating'}))
+        water=NS(entry=NS(data={'load_type':'water_heater'}))
+        self.assertEqual(charging_controllers(NS(controllers=dict(ev=ev,heat=heat,water=water))),[ev])

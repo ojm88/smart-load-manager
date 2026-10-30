@@ -56,7 +56,10 @@ class ElectricalCalculationTests(unittest.TestCase):
 
   def test_han_freshness_requires_positive_recent_measurement(self):
     self.assertTrue(han_measurement_is_fresh(60, 1000))
-    self.assertFalse(han_measurement_is_fresh(61, 1000))
+    self.assertTrue(han_measurement_is_fresh(61, 1000))
+    self.assertTrue(han_measurement_is_fresh(120, 1000))
+    self.assertFalse(han_measurement_is_fresh(120.001, 1000))
+    self.assertFalse(han_measurement_is_fresh(-1, 1000))
     self.assertFalse(han_measurement_is_fresh(10, 0))
     self.assertFalse(han_measurement_is_fresh(None, 1000))
 

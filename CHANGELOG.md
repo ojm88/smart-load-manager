@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.1-beta.16
+
+- Switching automatic charging control off selects the allowed manual minimum, validated against live electrical limits and existing pause/schedule/input guards. A repeated off command preserves a later user adjustment.
+- Add an independent charging-category automation switch while retaining individual charger controls; future thermal categories remain planned.
+
+- Accept HAN reports up to 120 seconds old (inclusive), as selected by the owner; beta.15 used 60 seconds. Use one shared constant for calculation and diagnostic messages.
+
+- Add native Download diagnostics with anonymous current state and a bounded in-memory history of inputs, regulation decisions and current/phase command attempts/results. Omit credentials, raw configuration and personal identifiers. Disclose overwritten events and restart limitations.
+
+- Use HAN report timestamps so repeated identical readings remain fresh. This prevents a false missing-input stop/recovery command path after charging completes. Keep genuine stale-input stops. Retain stale numeric power for display with an explicit freshness warning; do not invent readings or freeze Easee status.
+
+- Reorganize the status card as household measurements, load categories and named loads. Add category separators and concise status/reason lines; remove repetitive charging summaries. Show only configured categories. Regenerate dashboard YAML after the future update. Thermal controls are not implemented by this layout change.
+
 ## 0.1.1-beta.15
 
 - Compact Markdown headings and three measurement columns keep meter power, used energy and estimate on the same value row. Display meter power in kW, round displayed values and scale very large energy to MWh; calculation precision is unchanged.

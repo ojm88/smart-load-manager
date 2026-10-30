@@ -55,7 +55,7 @@ class MultiChargerIdTests(unittest.TestCase):
                 first = suggested_entity_id(domain,key)
                 second = suggested_entity_id(domain,key,entry)
                 if (domain, key) in {('sensor','household_status'),('sensor','measurement_status'),
-                                     ('select','consumption_limit'),('select','allocation_mode'),('select','priority_charger')}:
+                                     ('select','consumption_limit'),('select','allocation_mode'),('select','priority_charger'),('switch','charging_automatic_control')}:
                     self.assertEqual(first,second)
                 else:
                     self.assertNotEqual(first,second)

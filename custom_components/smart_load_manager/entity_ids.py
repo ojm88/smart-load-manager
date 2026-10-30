@@ -42,6 +42,7 @@ ENTITY_OBJECT_IDS = {
     "number": {"manual_current_limit": "slm_manual_current"},
     "switch": {
         "charging_priority": "slm_priority",
+        "charging_automatic_control": "slm_charging_auto_control",
         "automatic_control": "slm_auto_control",
         "charging_pause": "slm_charging_pause",
         "schedule_control": "slm_schedule",
@@ -67,6 +68,7 @@ def suggested_entity_id(domain: str, translation_key: str, entry=None) -> str:
         ("select", "consumption_limit"),
         ("select", "allocation_mode"),
         ("select", "priority_charger"),
+        ("switch", "charging_automatic_control"),
     }
     suffix = "" if shared else getattr(entry, "data", {}).get("entity_suffix", "")
     return f"{object_id}_{suffix}" if suffix else object_id

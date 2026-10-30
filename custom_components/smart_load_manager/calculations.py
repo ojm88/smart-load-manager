@@ -11,6 +11,8 @@ from datetime import datetime, time, timedelta
 from math import isfinite, sqrt
 from typing import Mapping
 
+from .const import HAN_MAX_AGE_SECONDS
+
 
 def schedule_window_active(
     now: datetime, start_text: str, duration_hours: int = 12
@@ -47,7 +49,7 @@ def next_schedule_transition(now: datetime, start_text: str, duration_hours: int
     return min(candidates) if candidates else None
 
 
-def han_measurement_is_fresh(age_seconds: float | None, power_w: float | None, max_age: int = 60) -> bool:
+def han_measurement_is_fresh(age_seconds: float | None, power_w: float | None, max_age: int = HAN_MAX_AGE_SECONDS) -> bool:
     """Require a positive meter reading updated within the allowed age."""
     return (
         age_seconds is not None

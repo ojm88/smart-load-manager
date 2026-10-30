@@ -6,6 +6,8 @@ cards:
 
     {% set loads = state_attr(info, ''controlled_loads'') or [] %}
 
+    {% set groups = state_attr(info, ''load_groups'') or [{''name'': ''Lading'', ''loads'': loads, ''empty_message'':
+    ''''}] %}
 
     {% set power = state_attr(info, ''han_power_w'') %}
 
@@ -25,29 +27,8 @@ cards:
 
     {%- endmacro %}
 
-    {% set disconnected = loads | selectattr(''status'', ''equalto'', ''disconnected'') | list %}
+    **Boligen**
 
-    {% set connected = loads | selectattr(''status'', ''in'', [''awaiting_start'', ''charging'', ''ready_to_charge'',
-    ''completed'', ''start_charging'', ''awaiting_load_balancing'', ''awaiting_authorization'']) | list
-    %}
-
-    {% if loads and disconnected | length == loads | length %}
-
-    ### {{ ''Ingen bil tilkoblet'' if loads | length == 1 else ''Ingen biler tilkoblet'' }}
-
-    {% else %}
-
-    {% if loads | length > 1 and connected | length + disconnected | length == loads | length %}
-
-    ### {{ connected | length }} av {{ loads | length }} biler tilkoblet
-
-    {% else %}
-
-    ### Ladestatus
-
-    {% endif %}
-
-    {% endif %}
 
     <table><thead><tr><th>⚡ Måler</th><th>✅ Brukt</th><th>🔄 Est.</th></tr></thead><tbody><tr><td><b>{{
     amount(power, ''kW'', 1000) }}</b></td><td><b>{{ amount(used, ''MWh'' if used is number and used >=
@@ -56,79 +37,88 @@ cards:
     >= 1000 else 1) }}</b></td></tr></tbody></table>
 
 
+    {% if state_attr(info, ''han_fresh'') == false %}
+
+
+    ⚠️ HAN-målingen er ikke oppdatert. Avventer nye målinger.
+
+
+    {% endif %}
+
+
     {% if states(info) in [''unknown'', ''unavailable''] or not loads %}
 
-    ℹ️ **Opplysninger om laststyringen er ikke tilgjengelige akkurat nå.**
+    ℹ️ Opplysninger om laststyringen er ikke tilgjengelige akkurat nå.
 
     {% else %}
 
-    {% if disconnected | length != loads | length %}
+    Grense: **{{ state_attr(info, ''consumption_limit_kwh'') }} kWh denne timen**.
 
-    **{{ state_attr(info, ''summary'') }}**
+    {% for group in groups %}
 
-    {% endif %}
-
-
-    Forbruksgrensen for hele boligen er **{{ state_attr(info, ''consumption_limit_kwh'') }} kWh denne
-    timen**.
-
-    {% if state_attr(info, ''distribution_explanation'') and loads | rejectattr(''status'', ''equalto'',
-    ''disconnected'') | list | length > 1 %}
+    {% if not loop.first %}
 
 
-    {{ state_attr(info, ''distribution_explanation'') }}
-
-    Førsteprioritet: **{{ state_attr(info, ''priority_charger'') }}**.
-
-    {% endif %}
-
-    {% for load in loads %}
-
-    {% if disconnected | length != loads | length %}
-
-
-    ### {{ load.name }} – {{ load.status_label | default(''Venter'') }}
-
-    {% if load.status in [''awaiting_start'', ''charging'', ''ready_to_charge'', ''completed'', ''charged'',
-    ''awaiting_authentication''] %}
-
-
-    🔌 Bilen er koblet til.
+    ---
 
 
     {% endif %}
 
+    **{{ group.name }}**
 
-    {% if load.status != ''disconnected'' %}
+    {% if group.empty_message %}
 
-    {{ load.explanation }}
+    {{ group.empty_message }}.
+
+    {% else %}
+
+    {% for load in group.loads %}
+
+
+    {{ load.name }} · **{{ load.status_label | default(''Venter'') }}**{% if load.mode_label | default('''')
+    %} · {{ load.mode_label }}{% endif %}
+
+    {% if load.detail | default('''') %}
+
+
+    {{ load.detail }}
 
     {% endif %}
 
+    {% if load.show_charging_details | default(load.status == ''charging'') %}
 
-    {% if load.status == ''charging'' %}
 
-    {% if load.power_w is not none %}
+    Effekt: **{{ amount(load.power_w, ''kW'', 1000) }}**.
 
-    Ladeeffekt: **{{ load.power_w | round(0) | int }} W**.
+    {% if load.automatic_control and load.recommended_current_a is number %}
+
+    {% if load.last_sent_current_a is number and load.recommended_current_a != load.last_sent_current_a
+    %}
+
+    Anbefalt: **{{ load.recommended_current_a | round(0) | int }} A** · Satt: **{{ load.last_sent_current_a
+    | round(0) | int }} A**.
+
+    {% else %}
+
+    Strømgrense: **{{ load.recommended_current_a | round(0) | int }} A**.
 
     {% endif %}
-
-    {% if load.automatic_control and load.recommended_current_a is not none %}
-
-    Anbefalt nå: **{{ load.recommended_current_a | round(0) | int }} A**{% if load.last_sent_current_a
-    is number %} · Sist satt: **{{ load.last_sent_current_a | round(0) | int }} A**{% endif %}.
-
 
     {% if load.next_regulation_at is number %}
 
-    Neste ordinære regulering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'', true) }}**.
+    Regulering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'', true) }}**.
+
+    {% endif %}
+
+    {% elif load.last_sent_current_a is number %}
+
+    Manuell grense: **{{ load.last_sent_current_a | round(0) | int }} A**.
 
     {% endif %}
 
     {% endif %}
 
-    {% endif %}
+    {% endfor %}
 
     {% endif %}
 
@@ -141,7 +131,9 @@ cards:
 
     {% endif %}
 
-    {% endif %}'
+    {% endif %}
+
+    '
 - type: entities
   title: SLM – Boligen
   show_header_toggle: false
