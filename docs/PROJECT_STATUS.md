@@ -2,13 +2,15 @@
 
 Updated: 2026-10-30
 
-## Beta.17 publication preparation — 2026-10-30
+## Current release — 0.1.1-beta.17
 
-Owner explicitly authorized publishing **0.1.1-beta.17**. PR #13 code head **4428d5f8bcda664f22385f965bd6440853ee09c2** passed CI run **41050713570**. Final preparation updates manifest/release records only. Preserve stable 0.1.0 and prior tags. Existing beta.16 dashboard YAML remains compatible; this release changes no card layout. Physical SOC-target restart, overnight completion and two-charger acceptance remain pending. Publication/tag verification will be recorded after release.
+Published **2026-10-30** after owner approval: [0.1.1-beta.17](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.17), visibly verified as **Pre-release**. Stable remains **0.1.0**.
 
-## Beta.17 refined-offer verification — 2026-10-30
+PR **#13** merge/tag commit **3ecf399c9cb2f57c7f5ff460b5a3555cd4a01f38**. Tagged tree **f11e4cbfee9d6bc77ae356384da0d1f28d245ab6** equals the final release-preparation tree; manifest **0.1.1-beta.17** verified from the fetched tag. All four jobs passed in final CI run **41061957587** for head **9b61bc9b7eb574108be1afaf0337762547ad6f20**. Code CI **41050713570** also passed.
 
-[Verification record](BETA17_VERIFICATION.md): 92 pure and 129 runtime tests pass on both supported HA/Python versions. The final policy supersedes status-origin inference: no permanent zero completion ceiling; standby offers use the validated minimum/known allowance and only remaining budget. Waiting transitions assess immediately without gaining active-peer priority. Actual charging restores active allocation; unchanged assessments neither resend current nor move the regular deadline. New recovery regression fails against the old policy. Software checks pass; physical SOC-target restart, overnight and two-charger acceptance remain pending. Beta.17 publication is authorized; final publication is recorded above.
+[Verification record](BETA17_VERIFICATION.md): **92 pure tests**, **129 runtime tests** on both HA **2026.2.3/Python 3.13** and **2026.10.4/Python 3.14**, plus **1 Node test**. New zero-offer recovery regression fails against the prior policy. The final policy uses budgeted standby offers, preserves active-peer priority, assesses waiting/control/measurement-recovery transitions immediately, and neither resends unchanged limits nor moves the regular deadline on no-change assessments. Diagnostics capture source measurements, decisions and command results.
+
+Update the integration and restart Home Assistant. Existing **beta.16 dashboard YAML can be retained**. No HA installation or physical charger control was performed during preparation/publication. Physical SOC-target restart, overnight completion and two-charger acceptance remain pending. Download diagnostics promptly if behavior differs, before restart/reload. Prior release tags remain unchanged.
 
 ## Earlier beta.17 preparation records (superseded where noted)
 
@@ -20,7 +22,7 @@ A successful input-wait zero is not repeated. Newly valid measurements now expli
 
 Owner trace/video confirms zero completion ceiling survives schedule opening and pause resume, preventing automatic restart despite valid 16 A recommendation. Local correction releases ceiling only on explicit renewed permission and avoids recapturing repeated completed feedback. Added sequence regressions; 92 pure and 126 runtime tests pass on both supported HA/Python versions. Physical acceptance pending; beta.16 remains published, no beta.17 release authorized. Uploaded trace also contains real HAN gaps and an initial brief invalid value, so earlier freshness theory is not a proven explanation of every transition.
 
-## Version
+## Previous beta.16 publication record
 
 - Stable: **0.1.0**. Published beta: **0.1.1-beta.16** ([release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.16)).
 - Published 2026-10-30 after owner approval. PR #12 merge/tag **e3d76cccc710f7c7611f6eabbfbea8bde787716f**. GitHub release visibly verified as Pre-release. Tagged tree **fbf4272760b5410b491b043cd0fbd0bc7f22826d** equals tested code tree; manifest 0.1.1-beta.16. All four jobs in CI run **41029232687** pass for code head **0145ecdc8a6a670fd96f5060774c1518497de7b4**.
