@@ -110,3 +110,15 @@ En uendret HAN-verdi er fortsatt fersk når måleren rapporterer den på nytt. H
 
 
 I beta 16 godtas gyldige HAN-rapporter opptil **120 sekunder** gamle, inkludert nøyaktig 120 sekunder. Beta 15 brukte 60 sekunder. Ferskhet måles fra siste rapportering, også når verdien er uendret. Eldre eller ugyldige målinger holder automatisk lading igjen ved neste kontroll.
+
+
+Ved åpning av tidsvindu, gjenopptak etter ladepause eller aktivering av automatikk skal en avsluttet økt vurderes på nytt med gjeldende kapasitet. Dette korrigeres i neste beta etter at beta 16 viste en fastlåst nullgrense. Aktiv tidsstyring gjelder fortsatt også ved manuell ladestrøm; slå av tidsstyring hvis du vil lade utenfor vinduet.
+
+
+Ved manglende HAN-rapportering sendes 0 A én gang per berørt styrt lader når kommandoen lykkes. Nye målinger gir straks en ny vurdering av tillatt strøm; vanlig femminuttersventing gjelder ikke denne gjenopprettingen. Pause, tidsstyring, kapasitet og bekreftet reduksjon på den andre laderen gjelder fortsatt. Mislykkede stopp kan forsøkes på nytt.
+
+
+Verifiseringsstatus for beta 17: Ny overgang fra fullført til venter/klar vurderes straks dersom SLM har beholdt en uendret positiv strømgrense. Ved nullgrense kan samme status følge av SLMs egen pause, og automatisk ny start etter økt prosentgrense i bilappen er foreløpig ikke bekreftet. Beta 17 holdes upublisert mens dette avklares.
+
+
+Raffinert beta 17-løsning: Etter fullført lading beholdes et budsjettert strømtilbud. Når tidligere grense er null eller ukjent, kan den bekreftede minimumsstrømmen tilbys dersom kapasiteten tillater det. Bilen trekker først strøm når den ønsker lading. Aktive biler prioriteres før avsluttede økter. Ny venter/klar-status gir straks en ny vurdering, uten å gjette hvem som utløste statusen; faktisk ladestart gir vanlig aktiv fordeling. Like strømgrenser sendes ikke gjentatte ganger. Tidligere merknad om behov for statusårsaksidentifikasjon er erstattet av denne modellen. Fysisk ladetest gjenstår.

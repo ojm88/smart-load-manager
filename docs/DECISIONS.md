@@ -592,3 +592,29 @@ Owner accepts HAN reports up to two minutes old. Set the shared freshness limit 
 ## 2026-10-30 — Beta.16 publication authorized
 
 Owner explicitly requests publishing beta.16 with the agreed manual minimum transition, charging-category control, concise status card, 120-second report-based HAN freshness and native diagnostics. Supersedes preparation-only holds for this release. Preserve stable 0.1.0 and prior tags. Regenerate dashboard YAML after update/restart. Publication does not install or enable control in HA; actual overnight completion, two-charger and phone download/render acceptance remain required.
+
+
+## 2026-10-30 — Observed beta.16 renewed-charge deadlock (beta.17 preparation)
+
+Owner diagnostic trace establishes: 10:11:53 local auto enabled with closed schedule sends 0 A; 10:36:32 schedule opens with fresh valid inputs and standalone recommendation 16 A, but site target remains 0; 10:41:18 resume does not release zero; 10:42:01 manual handover sends 6 A, then 10 A, and charging follows at 10:42:08. Completion memory initialized before takeover stored 0 and never released on renewed control permission. This is distinct from the previously corrected timestamp fault. Active schedule must continue to hold manual/automatic requests outside its window.
+
+Release completion ceilings on explicit permission reopening (auto enable, unpause or schedule opening), with full live budget and pair-reduction validation. Do not clear on ordinary completed/ready/waiting feedback or meter events: that would reintroduce priority/start-stop loops. Remember observed raw status so repeated completed samples during delayed startup do not immediately recreate the cleared ceiling. Raw status remains untouched. Fix diagnostic command context to use current mode/last sent rather than stale published fields. Private uploaded diagnostic/video are not committed. No beta.17 publication or HA actuation authorized.
+
+
+## 2026-10-30 — One-shot input stop and immediate recovery
+
+Owner clarifies: while required HAN reports are missing/stale, send 0 A once per affected managed charger after successful dispatch, not once per sample. Existing last_commanded_current guard already avoids repeated successful zero writes in MeasurementPending; failed stops must remain retryable. Mark a measurement-wait episode and request immediate regulation once required inputs and peer power become valid again. Preserve schedule/pause, live capacity and paired measured-reduction acknowledgement. Ordinary valid HAN reports still do not bypass the five-minute increase cadence. Regression covers one and two chargers, repeated wait samples, recovery before next regular tick and no repeated unchanged command afterwards.
+
+
+## 2026-10-30 — Verification gate and ambiguous vehicle restart
+
+Owner requires verification before publication. Official Easee OpMode 109 does not attribute waiting transitions to car versus load balancing. Add immediate reassessment for completed→awaiting/ready only when a positive SLM offer remained unchanged since completion. Record/suppress ambiguous transitions after a SLM command/zero offer. This is deliberately not claimed as solving every car-app target change; retain publication hold until the zero-offer case has a verified independent signal or agreed alternative policy. See BETA17_VERIFICATION.md. Also avoid repeated successful zeros while a configured peer is not yet loaded.
+
+
+## 2026-10-30 — Refined budgeted offers replace status-origin inference
+
+Owner requests a working refined solution, treating observations as evidence rather than assuming he supplies the implementation. Supersede the preceding ambiguous-zero/status-origin strategy. Preserve known positive completion offers and give unknown/zero completion ceilings a floor equal to the validated electrical minimum. Active demands remain first; idle offers use only remaining budget (none when an active one-at-a-time allocation exists). Budget and reserve the full offered current. No available/valid capacity still means zero.
+
+All completed→awaiting/ready changes request immediate assessment without promoting idle demand or clearing completion memory. Actual start/charging restores active demand and requests immediate coordination. Hence the action is correct for the same electrical state regardless of event origin: no duplicate unchanged commands, no blind probe cycle, no permanent zero ceiling. A control assessment that does not change any current must not shift the ordinary cadence deadline. This also fixes a regression caught by the existing household budget recovery test.
+
+Software: 92 pure and 129 runtime tests on both supported HA/Python versions pass. New zero-offer recovery sequence fails against prior policy. See BETA17_VERIFICATION.md for contract and physical acceptance limits. No new release authorized by this preparation request.

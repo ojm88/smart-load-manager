@@ -42,6 +42,8 @@ class SiteController:
         self.latest_samples = {}
         self._permissions = {}
         self._completed_limits = {}
+        self._observed_status = {}
+        self._measurement_waiting = False
         self._control_requested = 0
         self._control_applied = 0
         self.cadence = RegulationCadence()
@@ -58,25 +60,42 @@ class SiteController:
                     data["recommended_current_a"] = 0
                     data["control_reason"] = "Avventer at alle konfigurerte ladere blir tilgjengelige."
                     for key, c in self.controllers.items():
-                        if c.auto_control or c.charging_paused or key in self.manual_requests:
+                        if (c.auto_control or c.charging_paused or key in self.manual_requests) and c.last_commanded_current != 0:
                             await c._async_send_current(0)
                             self.pending_reductions[c.entry.entry_id] = (0, c._last_command_at)
                     return data
                 for key, controller in self.controllers.items():
                     samples[key] = await controller._async_sample()
+                    samples[key]["last_sent_current_a"] = controller.last_commanded_current
                     self.debug_trace.record("sample", key, data=samples[key])
                 self._completed_limits = {key: value for key, value in self._completed_limits.items()
                                           if key in self.controllers}
                 for key, d in samples.items():
                     status = normalize_status(d['status'])
+                    c = self.controllers[key]
+                    previous_status = self._observed_status.get(key)
                     if status in {'disconnected', 'charging', 'start_charging'}:
+                        was_idle = key in self._completed_limits
                         self._completed_limits.pop(key, None)
+                        if was_idle and status != 'disconnected':
+                            # Actual draw/start turns a standby offer into normal
+                            # active allocation, with paired reduction guards.
+                            self.async_request_control()
                     elif status == 'completed' and key not in self._completed_limits:
-                        c = self.controllers[key]
-                        # Preserve the offered limit, not measured consumption.
-                        # Completion alone is not an instruction to pause Easee.
-                        self._completed_limits[key] = c.last_commanded_current or 0
+                        # Keep the known positive offer. With no known offer,
+                        # stage only the measured electrical minimum, not a
+                        # permanent zero ceiling or an invented nominal current.
+                        self._completed_limits[key] = max(c.last_commanded_current or 0,
+                                                         d.get('control_minimum_current_a') or 0)
                         self.async_request_control()
+                    elif (key in self._completed_limits and status != previous_status
+                          and status in {'awaiting_start', 'ready_to_charge'}):
+                        # Source changes prompt a fresh assessment, but do NOT
+                        # promote an ended session ahead of active peers. Whether
+                        # caused by the car or our command no longer matters.
+                        self.async_request_control()
+                        self.debug_trace.record('standby_status_assessment', key)
+                self._observed_status = {key: normalize_status(d['status']) for key, d in samples.items()}
                 # Permission/control transitions are independent of meter-driven
                 # regulation. Normal ready -> charging transitions stay steady.
                 self._permissions = {key: value for key, value in self._permissions.items()
@@ -112,6 +131,12 @@ class SiteController:
                     if power is None or not math.isfinite(power) or power < 0:
                         raise MeasurementPending(
                             f"Automatisk laststyring avventer gyldig ladeeffekt fra {name} ({source}).")
+                if self._measurement_waiting:
+                    # Recovery is a permission event, not an ordinary meter tick.
+                    # Recompute immediately, retaining all input/paired guards.
+                    self.async_request_control()
+                    self.debug_trace.record('measurements_recovered')
+                    self._measurement_waiting = False
                 managed = sum(d["charger_power_w"] for key, d in samples.items()
                               if self.controllers[key].auto_control)
                 capacity = available_charging_kw(
@@ -141,7 +166,8 @@ class SiteController:
                             raise MeasurementPending("Automatisk laststyring avventer fase, spenning eller strømgrense fra en lader.")
                         if key in self._completed_limits:
                             standby.append(Demand(key, d['kw_per_amp'], d['control_minimum_current_a'],
-                                                  min(d['max_current_a'], self._completed_limits[key])))
+                                                  min(d['max_current_a'], max(self._completed_limits[key],
+                                                      d['control_minimum_current_a']))))
                         else:
                             demands.append(Demand(key, d["kw_per_amp"], d["control_minimum_current_a"], d["max_current_a"]))
                         eligible.append(key)
@@ -206,6 +232,7 @@ class SiteController:
                         self._publish(c, d)
                 return samples[requester.entry.entry_id]
             except MeasurementPending as err:
+                self._measurement_waiting = True
                 self.debug_trace.record("measurement_wait")
                 # Missing input is a control wait, not a loss of every diagnostic
                 # entity. Keep real samples visible; never allocate on old data.
@@ -406,7 +433,11 @@ class SiteController:
                       for key in allowed)
         if mode in {'regular', 'control'} and not self.pending_reductions and any(
                 c.auto_control for c in self.controllers.values()):
-            self.cadence.record_regular(now)
+            # A status assessment with an unchanged offer must not postpone
+            # the next ordinary regulation indefinitely as feedback arrives.
+            if mode == 'regular' or any(
+                    before[key] != self.controllers[key].last_commanded_current for key in allowed):
+                self.cadence.record_regular(now)
             self._control_applied = control_generation
         elif mode not in {'regular', 'control'} and reduced:
             self.cadence.record_early_reduction(now)

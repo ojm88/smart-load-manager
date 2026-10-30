@@ -103,3 +103,15 @@ Open **Settings → Devices & services → Smart Load Manager OJM → integratio
 
 
 Beta 16 accepts valid HAN reports up to **120 seconds** old, inclusive. Beta 15 used 60 seconds. Freshness is based on the last report, including identical values. Older or invalid measurements stop automatic charging at the next control check.
+
+
+Schedule opening, resume after pause and enabling automation must reassess an ended session against current capacity. The upcoming correction addresses a beta 16 zero-limit deadlock. An enabled schedule still applies to manual current too; disable scheduling to charge outside its window.
+
+
+Missing HAN reports trigger one successful 0 A stop per affected managed charger. Recovery immediately reassesses permitted current instead of waiting for the normal five-minute tick. Pause, schedule, capacity and paired reduction acknowledgement still apply. Failed stop commands remain retryable.
+
+
+Beta 17 verification: A completed-to-waiting/ready transition is reassessed immediately when SLM has retained an unchanged positive offer. At zero, the same feedback may follow an SLM pause; automatic restart after increasing the car-app target is not yet verified. Beta 17 remains unpublished pending this requirement.
+
+
+Refined beta 17 policy: Preserve a budgeted offer after completion. A zero or unknown prior limit can offer the validated electrical minimum when capacity permits. The car draws only when it requests energy. Active cars receive capacity first. Waiting/ready reports reassess immediately without inferring their cause; actual charging restores active allocation. Unchanged limits are not resent. This supersedes the earlier requirement to identify status origin. Physical acceptance remains pending.

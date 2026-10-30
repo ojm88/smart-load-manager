@@ -69,5 +69,8 @@ def command_trace(hass, device_id, event, *, target=None, mode=None):
         return
     for key, controller in site.controllers.items():
         if controller.entry.data.get('charger_device') == device_id:
-            site.debug_trace.record(event, key, data=controller.data or {}, target=target, mode=mode)
+            data = {**(controller.data or {}), 'auto_control': controller.auto_control,
+                    'charging_paused': controller.charging_paused,
+                    'last_sent_current_a': controller.last_commanded_current}
+            site.debug_trace.record(event, key, data=data, target=target, mode=mode)
             break
