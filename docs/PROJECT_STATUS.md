@@ -2,11 +2,13 @@
 
 Updated: 2026-10-31
 
-## Beta 20 preparation — not published
+## Beta 20 — release authorized, publication in progress
+
+Owner authorized publication on 2026-10-31. Manifest 0.1.1-beta.20. Code CI run 41198196307 passed for 04dbbac7d4ebb1e7c24f020074c5f51aa8d2c8d2. Release preparation adds only version/docs changes; verify final CI before merging PR #16 and publishing as pre-release. Existing YAML remains compatible.
 
 Persist per-charger automatic control, restore desired manual requests through existing guards, and enforce the verified manual minimum in UI and direct calls. Other UI options already persist; Easee owns phase configuration. New installations remain opt-in. First upgrade requires enabling automation once because beta 19 never saved the choice. Explicit rewiring/removal disables the affected load. Additional correction: block new pause activation for Completed/disconnected/unavailable sources in UI and direct calls; existing pauses remain removable. Rejections are recorded in diagnostics. Ordinary completion/wake allocation is unchanged. Verification includes coordinator recreation and actual HA integration reload with two chargers and mixed saved settings; physical restart/charging remains pending. 93 pure, 142 runtime tests on both supported HA/Python environments and one Node test pass; two regressions fail against beta 19. See [verification](BETA20_VERIFICATION.md).
 
-## Current release — 0.1.1-beta.19
+## Previous release — 0.1.1-beta.19
 
 Owner requests tests and publication of the new completed-session policy. Verified zero-W/sub-amp automatic completed sessions leave capacity allocation and held-offer forecast, and receive no ordinary budget writes. New waiting/ready requests assess the validated minimum immediately; actual charging restores normal allocation. Source feedback latency and retained-limit wake are accepted by the owner. Explicit controls, real faults and active-transfer acknowledgements remain. See BETA19_VERIFICATION.md. Published 2026-10-30 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.19) after owner approval. PR #15 merge/tag dc253af94c2a40a77579e2771b7fbf4b98871c9d; tagged tree e064018c52f3ef0df7b8fa1d975b3615d66f33b7 equals tested tree. All four CI jobs passed in run 41139627386 for 60a86e30c2ea4714b8f7ee732031997d4c39f4d1. 93 pure, 135 runtime tests on each supported HA/Python version and one Node test pass. Two regressions reject beta.18. No HA installation or physical commands performed. Existing YAML remains compatible.
 

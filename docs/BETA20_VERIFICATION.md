@@ -1,6 +1,6 @@
-# Beta 20 preparation — 2026-10-31
+# Beta 20 verification — 2026-10-31
 
-Not published. Manifest remains beta 19 until release preparation.
+Owner authorized publication on 2026-10-31. Manifest 0.1.1-beta.20. Code CI 41198196307 passed for 04dbbac7d4ebb1e7c24f020074c5f51aa8d2c8d2. Final release CI and publication are verified separately.
 
 ## Scope
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta 20 preparation
+## 0.1.1-beta.20
 
 - Disable new charging-pause activation for Completed/disconnected/unavailable chargers, including direct service calls and stale UI races. Retain removal of an existing SLM pause. Record rejected attempts in diagnostics; leave the completed current offer untouched.
 

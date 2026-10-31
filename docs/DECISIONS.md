@@ -663,3 +663,7 @@ Manual current is a charging choice, not a stop control: native minimum uses the
 
 ## 2026-10-31 — Do not activate a new pause after completion
 The owner observes that Easee's iOS app does not offer pause at Completed and requests verification and inclusion in the next beta. Block new SLM pause activation for Completed/disconnected/unknown/unavailable/offline using the current source state before saving settings, requesting a control cycle or sending zero. Disable the native switch correspondingly. Existing SLM pauses remain removable even if feedback says Completed. Connected waiting sessions remain pausable, preserving existing schedule/manual-control workflows. Schedule and safety stops are unchanged. Diagnostics record pause_activation_rejected with sanitized current status. This prevents the suspected command sequence; it does not prove the original car-app error was caused by it. No hardware reproduction claimed. Include with pending beta 20; do not publish yet.
+
+
+## 2026-10-31 — Beta 20 publication authorized
+The owner authorizes publication of the prepared persistence, manual-minimum and completed-pause changes. Publish 0.1.1-beta.20 as pre-release after final CI; do not install into production HA or claim physical acceptance.
