@@ -1,6 +1,6 @@
 # Beta 20 verification — 2026-10-31
 
-Owner authorized publication on 2026-10-31. Manifest 0.1.1-beta.20. Code CI 41198196307 passed for 04dbbac7d4ebb1e7c24f020074c5f51aa8d2c8d2. Final release CI and publication are verified separately.
+Owner authorized publication on 2026-10-31. Manifest 0.1.1-beta.20. Code CI 41198196307 passed for 04dbbac7d4ebb1e7c24f020074c5f51aa8d2c8d2. Published as Pre-release on 2026-10-31. Final CI 41212601543 passed for 86fa59e7144ad5a6a4967cc81ddb8bb69a1fa51b. PR #16 merge/tag 714a0fa364a5a790568e4d5fb64dedd7fd51796d; tagged tree ffa18845e994f4094cc6fcabd4bfc5d208d1473b matches the release-preparation tree. Public page and tag verified. No HA installation performed.
 
 ## Scope
 

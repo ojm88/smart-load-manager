@@ -2,9 +2,9 @@
 
 Updated: 2026-10-31
 
-## Beta 20 — release authorized, publication in progress
+## Current release — 0.1.1-beta.20
 
-Owner authorized publication on 2026-10-31. Manifest 0.1.1-beta.20. Code CI run 41198196307 passed for 04dbbac7d4ebb1e7c24f020074c5f51aa8d2c8d2. Release preparation adds only version/docs changes; verify final CI before merging PR #16 and publishing as pre-release. Existing YAML remains compatible.
+Published 2026-10-31 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.20) after owner authorization. PR #16 merge/tag 714a0fa364a5a790568e4d5fb64dedd7fd51796d; tagged tree ffa18845e994f4094cc6fcabd4bfc5d208d1473b equals tested release-preparation tree. Final CI run 41212601543 passed for 86fa59e7144ad5a6a4967cc81ddb8bb69a1fa51b; code CI 41198196307 also passed. Manifest 0.1.1-beta.20 and public Pre-release page verified. No production HA installation or physical charger commands performed. Existing YAML compatible. First upgrade requires one activation of automatic control, then settings survive future restarts/updates. Stable remains 0.1.0.
 
 Persist per-charger automatic control, restore desired manual requests through existing guards, and enforce the verified manual minimum in UI and direct calls. Other UI options already persist; Easee owns phase configuration. New installations remain opt-in. First upgrade requires enabling automation once because beta 19 never saved the choice. Explicit rewiring/removal disables the affected load. Additional correction: block new pause activation for Completed/disconnected/unavailable sources in UI and direct calls; existing pauses remain removable. Rejections are recorded in diagnostics. Ordinary completion/wake allocation is unchanged. Verification includes coordinator recreation and actual HA integration reload with two chargers and mixed saved settings; physical restart/charging remains pending. 93 pure, 142 runtime tests on both supported HA/Python environments and one Node test pass; two regressions fail against beta 19. See [verification](BETA20_VERIFICATION.md).
 
