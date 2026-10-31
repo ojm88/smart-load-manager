@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from .device_info import get_device
+from . import installation as inst
 
 import math
 from collections import Counter
@@ -285,6 +286,8 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                     async with controller.site.lock:
                         await controller._async_send_current(0)
                         controller.auto_control = False
+                        inst.update_load(self.hass, inst.LoadEntry(parent, record["id"]), options={
+                            **inst.LoadEntry(parent, record["id"]).options, 'automatic_control_enabled': False})
                 records = [
                     {**r, "data": {**r["data"], CONF_CONNECTION: connection}} if r["id"] == record["id"] else r
                     for r in active
@@ -330,6 +333,8 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                     async with controller.site.lock:
                         await controller._async_send_current(0)
                         controller.auto_control = False
+                        inst.update_load(self.hass, inst.LoadEntry(parent, removed["id"]), options={
+                            **inst.LoadEntry(parent, removed["id"]).options, 'automatic_control_enabled': False})
                 except Exception as err:
                     errors["base"] = "invalid_setup"
                     detail = str(err)

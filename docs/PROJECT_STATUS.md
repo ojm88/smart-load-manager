@@ -1,6 +1,10 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-30
+Updated: 2026-10-31
+
+## Beta 20 preparation — not published
+
+Persist per-charger automatic control, restore desired manual requests through existing guards, and enforce the verified manual minimum in UI and direct calls. Other UI options already persist; Easee owns phase configuration. New installations remain opt-in. First upgrade requires enabling automation once because beta 19 never saved the choice. Explicit rewiring/removal disables the affected load. No completion/wake policy changes. Verification includes coordinator recreation and actual HA integration reload with two chargers and mixed saved settings; physical restart/charging remains pending. 93 pure, 139 runtime tests on both supported HA/Python environments and one Node test pass; two regressions fail against beta 19. See [verification](BETA20_VERIFICATION.md).
 
 ## Current release — 0.1.1-beta.19
 

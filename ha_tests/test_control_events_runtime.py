@@ -341,3 +341,85 @@ class ControlEventTests(IsolatedAsyncioTestCase):
             await self.refresh()
         self.assertGreater(self.commands[-1],0)
         self.assertTrue(self.c.data['site_control_ready'])
+
+    async def test_automation_and_ui_choices_survive_coordinator_recreation(self):
+        entity = NS(coordinator=self.c, async_write_ha_state=Mock())
+        self.entry.options.update(schedule_enabled=True, schedule_start_time='22:00:00',
+                                  charging_paused=True, manual_current_a=12)
+        await AutomaticLoadControl.async_turn_off(entity)
+        await AutomaticLoadControl.async_turn_on(entity)
+        self.assertTrue(self.entry.options['automatic_control_enabled'])
+        restored = ChargingCoordinator(self.hass, self.entry)
+        self.assertTrue(restored.auto_control)
+        self.assertTrue(restored.charging_paused)
+        self.assertTrue(restored.schedule_enabled)
+        self.assertEqual(self.entry.options['schedule_start_time'], '22:00:00')
+        self.assertIsNone(restored.last_commanded_current)
+        await restored.async_shutdown()
+        self.site.controllers[self.entry.entry_id] = self.c
+        await AutomaticLoadControl.async_turn_off(entity)
+        restored = ChargingCoordinator(self.hass, self.entry)
+        self.assertFalse(restored.auto_control)
+        self.assertEqual(restored.manual_current_setting, 6)
+        self.assertEqual(self.site.manual_requests[self.entry.entry_id], 6)
+        await restored.async_shutdown()
+
+    async def test_manual_number_rejects_every_value_below_actual_minimum(self):
+        from smart_load_manager.number import ChargingCurrentLimit
+        from homeassistant.exceptions import HomeAssistantError
+        await self.refresh()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c, async_write_ha_state=Mock()))
+        entity = ChargingCurrentLimit(self.c, self.entry)
+        entity.hass = self.hass
+        self.commands.clear()
+        for minimum in (6, 11):
+            self.c.data['control_minimum_current_a'] = minimum
+            self.assertEqual(entity.native_min_value, minimum)
+            for value in (-1, 0, minimum-1, minimum-.1, float('nan'), float('inf')):
+                with self.subTest(minimum=minimum, value=value):
+                    with self.assertRaises(HomeAssistantError):
+                        await entity.async_set_native_value(value)
+            self.assertEqual(self.commands, [])
+        self.c.data['control_minimum_current_a'] = None
+        self.assertFalse(entity.available)
+        with self.assertRaises(HomeAssistantError):
+            await entity.async_set_native_value(6)
+
+    async def test_manual_number_accepts_minimum_and_pause_still_sends_zero(self):
+        from smart_load_manager.number import ChargingCurrentLimit
+        await self.refresh()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c, async_write_ha_state=Mock()))
+        entity = ChargingCurrentLimit(self.c, self.entry)
+        entity.hass = self.hass
+        await entity.async_set_native_value(12)
+        self.assertEqual(self.c.manual_current_setting, 12)
+        await entity.async_set_native_value(6)
+        self.assertEqual(self.c.manual_current_setting, 6)
+        await self.c.async_set_charging_paused(True)
+        self.assertEqual(self.commands[-1], 0)
+        self.assertEqual(self.c.manual_current_setting, 6)
+
+    async def test_restored_manual_request_waits_for_valid_measurements(self):
+        self.entry.options.update(automatic_control_enabled=False, manual_current_a=12)
+        await self.c.async_shutdown()
+        self.c = ChargingCoordinator(self.hass, self.entry)
+        commands = []
+        async def send(current):
+            commands.append(current)
+            self.c.last_commanded_current = current
+            self.c._last_command_at = self.now.timestamp()
+        self.c._async_send_current = send
+        real_sample = self.c._async_sample
+        valid = False
+        async def sample(**kwargs):
+            data = await real_sample(**kwargs)
+            data.update(han_fresh=valid, inputs_valid=valid, han_power_w=1000)
+            return data
+        self.c._async_sample = sample
+        await self.refresh()
+        self.assertFalse(any(v > 0 for v in commands))
+        self.assertEqual(self.c.manual_current_setting, 12)
+        valid = True
+        self.now += timedelta(seconds=1)
+        await self.refresh()
+        self.assertEqual(commands[-1], 12)

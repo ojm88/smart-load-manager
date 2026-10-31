@@ -83,13 +83,16 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.easee = resolve_easee_entities(
             hass, str(entry.data["charger_device"])
         )
-        self.auto_control = False
+        self.auto_control = bool(entry.options.get("automatic_control_enabled", False))
         self.charging_paused = bool(entry.options.get("charging_paused", False))
         self.schedule_enabled = bool(
             entry.options.get(CONF_SCHEDULE_ENABLED, False)
         )
         self.last_commanded_current: int | None = None
         self.manual_current_setting = entry.options.get('manual_current_a')
+        # Restore desired manual input, never an assumed successful charger command.
+        if not self.auto_control and self.manual_current_setting is not None:
+            self.site.manual_requests[entry.entry_id] = self.manual_current_setting
         self._last_command_at = 0.0
         self.site.controllers[entry.entry_id] = self
         self._source_unsub = None

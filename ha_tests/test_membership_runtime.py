@@ -538,7 +538,8 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         controller._async_send_current.assert_awaited_once_with(0)
         await self.hass.async_block_till_done()
         self.assertEqual(self.parent.data['loads'][1], original_peer)
-        self.assertEqual(self.parent.options['loads'][self.record['id']], original_options)
+        self.assertEqual(self.parent.options['loads'][self.record['id']],
+                         {**original_options, 'automatic_control_enabled': False})
         self.assertEqual(self.registry.async_get(entity_id).disabled_by, er.RegistryEntryDisabler.INTEGRATION)
         self.assertIn(getattr(self.hass.states.get(entity_id), "state", None), {None, "unavailable"})
         card = await self.hass.services.async_call('smart_load_manager', 'get_dashboard', {},

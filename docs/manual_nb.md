@@ -29,10 +29,10 @@ Ingen egne hjelpere eller YAML-automasjoner trengs. Varmtvann og gulvvarme vises
 
 | Betjening | Funksjon |
 | --- | --- |
-| Automatisk laststyring | Lar SLM regulere laderen. Starter avslått etter omstart. Når du slår den av, velges laveste tillatte manuelle strøm; pause, starttid og gyldige målinger respekteres. |
+| Automatisk laststyring | Lar SLM regulere laderen. Nye ladere starter avslått. Fra beta 20 beholdes valget ved omstart og oppdatering. Når du slår den av, velges laveste tillatte manuelle strøm; pause, starttid og gyldige målinger respekteres. |
 | Automatisk laststyring – lading | Slår automatikk av/på for alle laderne samlet. Hver lader kan fortsatt styres individuelt; andre fremtidige lasttyper påvirkes ikke. |
 | Ladepause | Sender 0 A. Ved gjenopptak beregnes ny strøm automatisk, eller tidligere manuell grense gjenopprettes når målinger og grenser tillater det. |
-| Manuell ladestrøm | Tilgjengelig når automatikk og ladepause er av. Easees rapporterte øvre grense gjelder. |
+| Manuell ladestrøm | Tilgjengelig når automatikk og ladepause er av. Laderens faktiske minimum og Easees rapporterte maksimum gjelder. Null og lavere verdier kan ikke velges; bruk Ladepause. |
 | Fasevalg | Endrer Easees faseinnstilling. SLM bytter ikke automatisk mellom én og tre faser. |
 | Tidsstyring og starttid | Eget daglig 12-timers ladevindu per lader. Åpent vindu gir bare tillatelse til lading. |
 | Førsteprioritet | Vises med to ladere. Bryterne er koblet sammen, slik at nøyaktig én har førsteprioritet. Dette endrer ikke Easees tekniske master/slave-oppsett. |
@@ -73,7 +73,7 @@ De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](
 
 **Konfigurer → Boligens målekilder og sikkerhetsmargin** validerer alt før lagring og påvirker ikke ladeinnstillingene. Nye kilder leses ved neste ordinære oppdatering.
 
-**Konfigurer → Ladere → Legg til lader** viser bare ledige Easee-enheter og beholder den eksisterende laderen. **Fjern lader** er et eget valg når to ladere er konfigurert. Integrasjonen lastes på nytt, og automatisk styring må aktiveres igjen. En lader som fjernes, får en 0 A-kommando før oppsettet endres; feil ved denne kommandoen avbryter endringen. Dette er ikke en målt bekreftelse på at fysisk lading har stoppet. Innstillinger beholdes ved senere gjeninnlegging.
+**Konfigurer → Ladere → Legg til lader** viser bare ledige Easee-enheter og beholder den eksisterende laderen. **Fjern lader** er et eget valg når to ladere er konfigurert. Integrasjonen lastes på nytt; eksisterende laderes lagrede på/av-valg beholdes. En lader som fjernes, får en 0 A-kommando før oppsettet endres; feil ved denne kommandoen avbryter endringen. Dette er ikke en målt bekreftelse på at fysisk lading har stoppet. Innstillinger beholdes ved senere gjeninnlegging.
 
 ## Hvis lading venter
 
@@ -125,3 +125,6 @@ Ved manglende HAN-rapportering sendes 0 A én gang per berørt styrt lader når 
 Beta 17: Oppdater integrasjonen og start Home Assistant på nytt. Kort fra beta 16 kan beholdes; beta 17 endrer ikke kortoppsettet. Test ny lading etter økt ladegrense i bilappen og last ned diagnostikk straks ved avvik.
 
 Beta 19: Oppdater og start HA på nytt. Eksisterende dashboard-YAML kan beholdes. Diagnostikken viser completed_capacity_released og completed_control_resumed; Målegrunnlag har attributtet completed_capacity_released. Fysisk fullføring, ny ladeforespørsel og to-lader-test gjenstår.
+
+
+Beta 20 (klargjort): SLM lagrer automatikk per lader, ladepause, tidsstyring, starttid, manuell strøm og boligens budsjett/fordelingsvalg. Disse beholdes ved vanlig omstart, omlasting og oppdatering. Fasevalget lagres hos Easee og leses tilbake derfra. Nye ladere starter fortsatt med automatikk av. Beta 19 lagret ikke automatikkvalget: etter første oppdatering til beta 20 må automatikk derfor aktiveres én gang. Bekreftet endring av fysisk tilkobling eller fjerning av en lader slår fortsatt av den berørte laderen. Oppstart vurderer alltid målinger, pause, tidsstyring og strømgrenser før lading tillates. Eksisterende YAML kan beholdes.
