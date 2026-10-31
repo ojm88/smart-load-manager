@@ -8,6 +8,7 @@ import math
 from dataclasses import asdict
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -83,13 +84,16 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.easee = resolve_easee_entities(
             hass, str(entry.data["charger_device"])
         )
-        self.auto_control = False
+        self.auto_control = bool(entry.options.get("automatic_control_enabled", False))
         self.charging_paused = bool(entry.options.get("charging_paused", False))
         self.schedule_enabled = bool(
             entry.options.get(CONF_SCHEDULE_ENABLED, False)
         )
         self.last_commanded_current: int | None = None
         self.manual_current_setting = entry.options.get('manual_current_a')
+        # Restore desired manual input, never an assumed successful charger command.
+        if not self.auto_control and self.manual_current_setting is not None:
+            self.site.manual_requests[entry.entry_id] = self.manual_current_setting
         self._last_command_at = 0.0
         self.site.controllers[entry.entry_id] = self
         self._source_unsub = None
@@ -480,9 +484,27 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
         update_load(self.hass, self.entry, options=options)
         await async_refresh_control(self)
 
+    @property
+    def can_activate_charging_pause(self) -> bool:
+        """Use current source state, not the last published calculation sample."""
+        status = self.hass.states.get(self.easee.status)
+        return status is not None and normalize_status(status.state) not in {
+            'completed', 'disconnected', 'unknown', 'unavailable', 'offline'}
+
     async def async_set_charging_paused(self, paused: bool) -> None:
         """Pause/resume charging with a persistent Easee dynamic limit."""
         was_paused = self.charging_paused
+        if paused and not was_paused and not self.can_activate_charging_pause:
+            # Reject before saving options, requesting regulation or sending 0 A.
+            # An existing SLM pause can always be removed, including Completed.
+            self.site.debug_trace.record('pause_activation_rejected', self.entry.entry_id,
+                data={**(self.data or {}), 'status': normalize_status(
+                    self.hass.states.get(self.easee.status).state)
+                    if self.hass.states.get(self.easee.status) else 'unavailable'})
+            raise HomeAssistantError(
+                "Ladepause kan ikke aktiveres når ladingen er ferdig eller laderen ikke er tilgjengelig."
+                if str(self.hass.config.language or '').startswith('nb') else
+                "Charging pause cannot be enabled when charging has completed or the charger is unavailable.")
         if paused and not was_paused:
             resume_current = self.last_commanded_current
         else:

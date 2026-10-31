@@ -24,10 +24,10 @@ No custom helpers or YAML automation are required. Hot water and floor heating a
 
 | Control | Behavior |
 | --- | --- |
-| Automatic load control | Adjusts the dynamic current limit. Starts off after restart. Switching off selects the allowed manual minimum; pause, schedule and measurement guards remain. |
+| Automatic load control | Adjusts the dynamic current limit. New chargers start off. From beta 20, saved choices survive restarts and updates. Switching off selects the allowed manual minimum; pause, schedule and measurement guards remain. |
 | Automatic control – charging | Toggles automation for all chargers together. Individual charger switches remain available; future thermal categories are independent. |
 | Charging pause | Sends 0 A. Resume recalculates automatically or restores the previous manual limit when current measurements and limits permit. |
-| Manual current | Available when automatic control and pause are off; capped by Easee's reported maximum. |
+| Manual current | Available when automatic control and pause are off; bounded by the verified charger minimum and Easee's reported maximum. Zero or lower values cannot be selected; use Charging pause. |
 | Phase selection | Changes Easee's phase setting. SLM never automatically changes topology. |
 | Schedule and start time | Independent daily 12-hour windows. An open window grants eligibility, not guaranteed charging. |
 | First priority | Two complementary switches backed by one saved priority. Turning the active switch off promotes the other charger. These are SLM software roles, not Easee hardware roles. |
@@ -66,7 +66,7 @@ Run **Settings → Tools → Actions → `smart_load_manager.get_dashboard`**, t
 
 **Configure → Household sources and safety margin** validates all inputs before saving and retains load settings. Updated sources are read at the next regular refresh.
 
-**Configure → Chargers → Add charger** lists only unused Easee devices and keeps the existing charger. **Remove charger** is a separate choice when two chargers are configured. Membership changes reload SLM. Enable automatic control again afterwards. Before removal, SLM sends a 0 A command to the removed charger; a failed command aborts the change. Command success does not confirm a physical stop. Saved settings are retained if the device is added again.
+**Configure → Chargers → Add charger** lists only unused Easee devices and keeps the existing charger. **Remove charger** is a separate choice when two chargers are configured. Membership changes reload SLM and retain existing charger automation choices. Before removal, SLM sends a 0 A command to the removed charger; a failed command aborts the change. Command success does not confirm a physical stop. Saved settings are retained if the device is added again.
 
 ## Waiting or troubleshooting
 
@@ -118,3 +118,9 @@ Missing HAN reports trigger one successful 0 A stop per affected managed charger
 Beta 17: Update the integration and restart Home Assistant. Existing beta 16 dashboard YAML remains compatible; beta 17 does not change the card layout. Test renewed charging after raising the target in the car app and download diagnostics promptly if behavior differs.
 
 Beta 19: Update and restart HA. Existing dashboard YAML remains compatible. Diagnostics record completed_capacity_released and completed_control_resumed; Measurement status exposes completed_capacity_released. Physical completion, renewed-request and two-charger acceptance remain pending.
+
+
+Beta 20: Per-charger automation, pause, schedule enable/time, manual current and shared budget/allocation choices survive ordinary HA restart, reload and update. Phase selection is owned by Easee and read back from the charger. New chargers still start with automation off. Beta 19 did not save automation enablement: enable it once after the first upgrade to beta 20. Explicit rewiring/removal still disables the affected charger. Startup validates measurements, pause, schedule and electrical limits before allowing charging. Existing YAML remains compatible.
+
+
+From beta 20, Charging pause is unavailable when Easee reports Completed or disconnected. Direct pause requests are also rejected before settings or current limits change. An existing SLM pause can still be removed with a Completed source. Connected waiting sessions remain pausable; scheduling and automatic stops are independent. Rejections appear as pause_activation_rejected in diagnostics.

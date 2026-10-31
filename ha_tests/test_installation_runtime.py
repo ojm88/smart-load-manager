@@ -688,6 +688,36 @@ class InstallationTests(IsolatedAsyncioTestCase):
             self.assertEqual(c.data["max_current_a"], 16)
             self.assertEqual(c.data["control_minimum_current_a"], 6)
             self.assertAlmostEqual(c.data["kw_per_amp"], 0.69)
+        # Reload the actual integration, keeping a mixed pair and every saved
+        # UI choice. All outgoing charger calls stay mocked.
+        import custom_components.smart_load_manager.installation as installation
+        first, second = list(a.runtime_data.controllers.values())
+        installation.update_load(self.hass, first.entry, options={
+            **first.entry.options, 'automatic_control_enabled': True,
+            'charging_paused': True, 'schedule_enabled': True,
+            'schedule_start_time': '22:15:00', 'manual_current_a': 12})
+        installation.update_load(self.hass, second.entry, options={
+            **second.entry.options, 'automatic_control_enabled': False,
+            'charging_paused': True, 'manual_current_a': 9})
+        saved_options = dict(a.options)
+        with patch.object(coordinator_module, "resolve_easee_entities", side_effect=resolve), patch(
+            'custom_components.smart_load_manager.coordinator.async_send_dynamic_limit'
+        ):
+            self.assertTrue(await self.hass.config_entries.async_reload(a.entry_id))
+            await self.hass.async_block_till_done()
+        first, second = list(a.runtime_data.controllers.values())
+        self.assertTrue(first.auto_control)
+        self.assertFalse(second.auto_control)
+        self.assertTrue(first.charging_paused)
+        self.assertTrue(second.charging_paused)
+        self.assertTrue(first.schedule_enabled)
+        self.assertEqual(first.entry.options['schedule_start_time'], '22:15:00')
+        self.assertEqual(first.manual_current_setting, 12)
+        self.assertEqual(second.manual_current_setting, 9)
+        self.assertEqual(dict(a.options), saved_options)
+        for state in self.hass.states.async_all('number'):
+            if 'manual' in state.entity_id or 'manuell' in state.entity_id:
+                self.assertEqual(state.attributes['min'], 6)
         # An old installation with no confirmed wiring must not revive the
         # previously cached TN factor after a zero-current pause.
         records = [dict(r, data=dict(r["data"])) for r in a.data["loads"]]

@@ -1,6 +1,7 @@
 """User current-limit control, routed through the installed Easee integration."""
 
 from __future__ import annotations
+import math
 from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -10,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import ChargingCoordinator
-from .control import manual_control_is_available
+from .control import manual_control_is_available, minimum_manual_current
 from .entity_ids import suggested_entity_id
 
 
@@ -27,9 +28,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], NumberEntity):
-    """Dynamic current cap for this charger; 0 means pause charging."""
+    """Manual current selection within the verified charger limits."""
 
-    _attr_native_min_value = 0
     _attr_native_step = 1
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
     _attr_mode = NumberMode.SLIDER
@@ -62,9 +62,13 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
     @property
     def available(self) -> bool:
         """Disable manual input while automatic control owns the current limit."""
-        return super().available and manual_control_is_available(
+        return self.native_min_value > 0 and super().available and manual_control_is_available(
             self.coordinator.auto_control
         ) and not self.coordinator.charging_paused
+
+    @property
+    def native_min_value(self) -> float:
+        return float(minimum_manual_current(self.coordinator.data or {}))
 
     @property
     def native_max_value(self) -> float:
@@ -73,7 +77,17 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
 
     async def async_set_native_value(self, value: float) -> None:
         data = self.coordinator.data or {}
-        requested = int(round(value))
+        try:
+            raw = float(value)
+        except (TypeError, ValueError):
+            raw = math.nan
+        minimum = minimum_manual_current(data)
+        if (not math.isfinite(raw) or not raw.is_integer() or minimum <= 0
+                or raw < minimum or raw > self.native_max_value):
+            raise HomeAssistantError(_message(
+                self.hass, "Velg en hel ampere innenfor laderens tillatte grenser. Bruk ladepause for å stoppe.",
+                "Choose whole amperes within the charger limits. Use charging pause to stop."))
+        requested = int(raw)
         if self.coordinator.auto_control:
             raise HomeAssistantError(
                 _message(
@@ -110,7 +124,7 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
                 )
             if not data.get("han_fresh", False):
                 raise HomeAssistantError(
-                    _message(self.hass, "HAN-målingen er ugyldig eller eldre enn 60 sekunder.", "The HAN meter reading is invalid or older than 60 seconds.")
+                    _message(self.hass, "HAN-målingen er ugyldig eller for gammel.", "The HAN meter reading is invalid or stale.")
                 )
             if not data.get("schedule_allowed", True):
                 raise HomeAssistantError(
@@ -125,8 +139,8 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
                 raise HomeAssistantError(
                     _message(
                         self.hass,
-                        f"Bruk 0 A for pause eller minst {int(minimum)} A for denne ladeformen.",
-                        f"Use 0 A to pause, or at least {int(minimum)} A for this charging setup.",
+                        f"Velg minst {int(minimum)} A. Bruk ladepause for å stoppe.",
+                        f"Choose at least {int(minimum)} A. Use charging pause to stop.",
                     )
                 )
         await self.coordinator.async_set_current(requested)
@@ -138,7 +152,7 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
         norwegian = str(self.hass.config.language or "").startswith("nb")
         return {
             "use_when": "Brukes når automatisk laststyring er av" if norwegian else "Use when automatic load control is off",
-            "zero_current": "0 A setter laderen på pause" if norwegian else "0 A pauses charging",
+            "pause_control": "Bruk bryteren Ladepause" if norwegian else "Use the Charging pause switch",
             "positive_current": "Setter dynamisk strømgrense på Easee-laderen" if norwegian else "Sets an Easee dynamic current limit",
             "automatic_control_active": self.coordinator.auto_control,
             "last_sent_current_a": self.coordinator.last_commanded_current,

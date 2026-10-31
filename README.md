@@ -113,7 +113,7 @@ Normal changes to the consumption target, safety margin, priority, charging mode
 
 This project is under development. Physical charging validation of the current version, including two-charger operation, is pending. Automated tests cover calculations, allocation and Home Assistant setup; see [validation status](docs/PROJECT_STATUS.md).
 
-- Automatic control starts **off after restart**.
+- Automatic control starts **off for new chargers**. From beta 20, the saved choice survives restart/update.
 - Missing or stale required meter data pauses automatic allocation. Reductions must be confirmed by subsequent measurements before capacity is reassigned.
 - Phase changes are manual. There is no spot-price optimization or vehicle battery control.
 - Hot-water and floor-heating control are not implemented. SLM does not replace electrical protection.

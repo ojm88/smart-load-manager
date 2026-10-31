@@ -1,4 +1,4 @@
-"""Opt-in automatic control. It starts disabled after every HA restart."""
+"""Opt-in automatic control. Saved choices survive HA restarts; new chargers start disabled."""
 
 from __future__ import annotations
 from .device_info import ChargerNameMixin, charger_device_info, name_charger_entity
@@ -44,8 +44,7 @@ class AutomaticLoadControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
         return self.coordinator.auto_control
 
     async def async_turn_on(self, **kwargs) -> None:
-        self.coordinator.auto_control = True
-        await async_refresh_control(self.coordinator)
+        await async_set_charging_automation([self.coordinator], True)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -133,6 +132,12 @@ class ChargingPauseControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
         name_charger_entity(self, entry, "switch", "charging_pause")
         self.entity_id = f"switch.{suggested_entity_id('switch', 'charging_pause', entry)}"
         self._attr_device_info = charger_device_info(entry)
+
+    @property
+    def available(self) -> bool:
+        return super().available and (
+            self.coordinator.charging_paused
+            or self.coordinator.can_activate_charging_pause)
 
     @property
     def is_on(self) -> bool:

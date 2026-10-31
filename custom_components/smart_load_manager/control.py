@@ -62,6 +62,8 @@ async def async_set_charging_automation(controllers, enabled):
                 site.manual_requests[c.entry.entry_id] = current
             else:
                 site.manual_requests.pop(c.entry.entry_id, None)
+            update_load(c.hass, c.entry, options={
+                **c.entry.options, 'automatic_control_enabled': bool(enabled)})
             c.auto_control = bool(enabled)
         site.async_request_control()
     requester = controllers[0]
