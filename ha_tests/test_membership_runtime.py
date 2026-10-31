@@ -49,6 +49,7 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         shutdowns = self.shutdowns
 
         class SyntheticCoordinator(DataUpdateCoordinator):
+            can_activate_charging_pause = True
             def __init__(c, hass, entry):
                 super().__init__(
                     hass, logging.getLogger(__name__), name="SLM synthetic"

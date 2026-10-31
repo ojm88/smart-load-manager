@@ -423,3 +423,70 @@ class ControlEventTests(IsolatedAsyncioTestCase):
         self.now += timedelta(seconds=1)
         await self.refresh()
         self.assertEqual(commands[-1], 12)
+
+    async def test_completed_pause_is_blocked_before_any_write_then_car_can_restart(self):
+        from homeassistant.exceptions import HomeAssistantError
+        from smart_load_manager.switch import ChargingPauseControl
+        await self.refresh()
+        self.hass.states.async_set('sensor.test_status', 'completed', {
+            'config_phaseMode': 1, 'state_outputPhase': 0, 'circuit_ratedCurrent': 16})
+        # Deliberately leave the published data stale to reproduce a UI/source race.
+        self.assertNotEqual(self.c.data['status'], 'completed')
+        self.commands.clear()
+        options = dict(self.entry.options)
+        for automatic in (True, False):
+            self.c.auto_control = automatic
+            entity = ChargingPauseControl(self.c, self.entry)
+            entity.hass = self.hass
+            self.assertFalse(entity.available)
+            with self.assertRaises(HomeAssistantError):
+                await entity.async_turn_on()
+            self.assertFalse(self.c.charging_paused)
+            self.assertEqual(self.entry.options, options)
+            self.assertEqual(self.commands, [])
+            self.assertEqual(self.c.last_commanded_current, 16)
+        rejected = [e for e in self.site.debug_trace.export()['events']
+                    if e['event'] == 'pause_activation_rejected']
+        self.assertEqual(len(rejected), 2)
+        self.assertTrue(all(e['sample']['status'] == 'completed' for e in rejected))
+        self.c.auto_control = True
+        await self.refresh()
+        self.now += timedelta(minutes=15)
+        await self.refresh()
+        self.assertEqual(self.commands, [])
+        self.hass.states.async_set('sensor.test_status', 'awaiting_start', {
+            'config_phaseMode': 1, 'state_outputPhase': 0, 'circuit_ratedCurrent': 16})
+        await self.refresh()
+        self.assertGreaterEqual(self.c.last_commanded_current, 6)
+        self.assertNotIn(0, self.commands)
+        self.hass.states.async_set('sensor.test_status', 'charging', {
+            'config_phaseMode': 1, 'state_outputPhase': 0, 'circuit_ratedCurrent': 16})
+        self.hass.states.async_set('sensor.test_current', 6, {'state_inCurrentT2': 6, 'state_inCurrentT3': 6})
+        self.hass.states.async_set('sensor.test_power', 1380, {'unit_of_measurement': 'W'})
+        await self.refresh()
+        self.assertGreater(self.c.data['recommended_current_a'], 0, self.c.data)
+        self.assertNotIn(0, self.commands)
+        self.assertTrue(entity.available)
+
+    async def test_existing_pause_can_be_removed_even_with_completed_source(self):
+        from smart_load_manager.switch import ChargingPauseControl
+        await self.refresh()
+        await self.c.async_set_charging_paused(True)
+        self.assertEqual(self.commands[-1], 0)
+        self.hass.states.async_set('sensor.test_status', 'completed', {
+            'config_phaseMode': 1, 'state_outputPhase': 0, 'circuit_ratedCurrent': 16})
+        entity = ChargingPauseControl(self.c, self.entry)
+        entity.hass = self.hass
+        self.assertTrue(entity.available)
+        await self.c.async_set_charging_paused(False)
+        self.assertFalse(self.c.charging_paused)
+        self.assertFalse(self.entry.options['charging_paused'])
+        self.assertFalse(entity.available)
+
+    async def test_disconnected_pause_cannot_save_or_send_zero(self):
+        from homeassistant.exceptions import HomeAssistantError
+        self.hass.states.async_set('sensor.test_status', 'disconnected')
+        with self.assertRaises(HomeAssistantError):
+            await self.c.async_set_charging_paused(True)
+        self.assertEqual(self.commands, [])
+        self.assertNotIn('charging_paused', self.entry.options)

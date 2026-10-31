@@ -121,3 +121,6 @@ Beta 19: Update and restart HA. Existing dashboard YAML remains compatible. Diag
 
 
 Beta 20 (prepared): Per-charger automation, pause, schedule enable/time, manual current and shared budget/allocation choices survive ordinary HA restart, reload and update. Phase selection is owned by Easee and read back from the charger. New chargers still start with automation off. Beta 19 did not save automation enablement: enable it once after the first upgrade to beta 20. Explicit rewiring/removal still disables the affected charger. Startup validates measurements, pause, schedule and electrical limits before allowing charging. Existing YAML remains compatible.
+
+
+From beta 20, Charging pause is unavailable when Easee reports Completed or disconnected. Direct pause requests are also rejected before settings or current limits change. An existing SLM pause can still be removed with a Completed source. Connected waiting sessions remain pausable; scheduling and automatic stops are independent. Rejections appear as pause_activation_rejected in diagnostics.

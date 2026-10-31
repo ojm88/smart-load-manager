@@ -134,6 +134,12 @@ class ChargingPauseControl(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
         self._attr_device_info = charger_device_info(entry)
 
     @property
+    def available(self) -> bool:
+        return super().available and (
+            self.coordinator.charging_paused
+            or self.coordinator.can_activate_charging_pause)
+
+    @property
     def is_on(self) -> bool:
         return self.coordinator.charging_paused
 

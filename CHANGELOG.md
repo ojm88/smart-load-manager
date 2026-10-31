@@ -2,6 +2,8 @@
 
 ## Unreleased — beta 20 preparation
 
+- Disable new charging-pause activation for Completed/disconnected/unavailable chargers, including direct service calls and stale UI races. Retain removal of an existing SLM pause. Record rejected attempts in diagnostics; leave the completed current offer untouched.
+
 - Persist automatic load control per charger across HA restart, reload and update. Restore saved manual requests through existing guards; retain pause, schedule/time and shared UI settings. New chargers default off. First upgrade requires enabling automation once because beta 19 did not save it.
 - Bound the manual current slider and direct writes by the verified charger minimum and maximum. Reject zero, negative, fractional and non-finite input. Use the separate pause switch to stop. Disable manual input while limits are unknown.
 

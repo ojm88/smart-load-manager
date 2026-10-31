@@ -128,3 +128,6 @@ Beta 19: Oppdater og start HA på nytt. Eksisterende dashboard-YAML kan beholdes
 
 
 Beta 20 (klargjort): SLM lagrer automatikk per lader, ladepause, tidsstyring, starttid, manuell strøm og boligens budsjett/fordelingsvalg. Disse beholdes ved vanlig omstart, omlasting og oppdatering. Fasevalget lagres hos Easee og leses tilbake derfra. Nye ladere starter fortsatt med automatikk av. Beta 19 lagret ikke automatikkvalget: etter første oppdatering til beta 20 må automatikk derfor aktiveres én gang. Bekreftet endring av fysisk tilkobling eller fjerning av en lader slår fortsatt av den berørte laderen. Oppstart vurderer alltid målinger, pause, tidsstyring og strømgrenser før lading tillates. Eksisterende YAML kan beholdes.
+
+
+Fra beta 20 er Ladepause utilgjengelig når Easee melder Completed eller frakoblet. Et direkte pausekall avvises også før innstillinger eller strømgrense endres. En allerede aktiv SLM-pause kan fortsatt oppheves ved Completed. Pause i ventende, tilkoblet tilstand beholdes; tidsstyring og automatiske stopp er uavhengige av denne knappen. Avviste forsøk logges som pause_activation_rejected i diagnostikken.
