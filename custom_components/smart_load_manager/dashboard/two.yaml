@@ -1,4 +1,3 @@
-# Manual card. Run smart_load_manager.get_dashboard for your registered entity IDs.
 type: vertical-stack
 cards:
 - type: markdown
@@ -6,8 +5,8 @@ cards:
 
     {% set loads = state_attr(info, ''controlled_loads'') or [] %}
 
-    {% set groups = state_attr(info, ''load_groups'') or [{''name'': ''Lading'', ''loads'': loads, ''empty_message'':
-    ''''}] %}
+    {% set groups = state_attr(info, ''load_groups'') or [{''name'': ''Lading'', ''loads'':
+    loads, ''empty_message'': ''''}] %}
 
     {% set power = state_attr(info, ''han_power_w'') %}
 
@@ -21,7 +20,8 @@ cards:
 
     {% set scaled = value / divisor -%}
 
-    {{ (scaled | round(0) | int) if scaled | abs >= 100 else (scaled | round(1)) }}&nbsp;{{ unit }}
+    {{ (scaled | round(0) | int) if scaled | abs >= 100 else (scaled | round(1)) }}&nbsp;{{
+    unit }}
 
     {%- else -%}—{%- endif %}
 
@@ -31,10 +31,11 @@ cards:
 
 
     <table><thead><tr><th>⚡ Måler</th><th>✅ Brukt</th><th>🔄 Est.</th></tr></thead><tbody><tr><td><b>{{
-    amount(power, ''kW'', 1000) }}</b></td><td><b>{{ amount(used, ''MWh'' if used is number and used >=
-    1000 else ''kWh'', 1000 if used is number and used >= 1000 else 1) }}</b></td><td><b>{{ amount(estimate,
-    ''MWh'' if estimate is number and estimate >= 1000 else ''kWh'', 1000 if estimate is number and estimate
-    >= 1000 else 1) }}</b></td></tr></tbody></table>
+    amount(power, ''kW'', 1000) }}</b></td><td><b>{{ amount(used, ''MWh'' if used
+    is number and used >= 1000 else ''kWh'', 1000 if used is number and used >= 1000
+    else 1) }}</b></td><td><b>{{ amount(estimate, ''MWh'' if estimate is number and
+    estimate >= 1000 else ''kWh'', 1000 if estimate is number and estimate >= 1000
+    else 1) }}</b></td></tr></tbody></table>
 
 
     {% if state_attr(info, ''han_fresh'') == false %}
@@ -75,8 +76,8 @@ cards:
     {% for load in group.loads %}
 
 
-    {{ load.name }} · **{{ load.status_label | default(''Venter'') }}**{% if load.mode_label | default('''')
-    %} · {{ load.mode_label }}{% endif %}
+    {{ load.name }} · **{{ load.status_label | default(''Venter'') }}**{% if load.mode_label
+    | default('''') %} · {{ load.mode_label }}{% endif %}
 
     {% if load.detail | default('''') %}
 
@@ -95,8 +96,8 @@ cards:
     {% if load.last_sent_current_a is number and load.recommended_current_a != load.last_sent_current_a
     %}
 
-    Anbefalt: **{{ load.recommended_current_a | round(0) | int }} A** · Satt: **{{ load.last_sent_current_a
-    | round(0) | int }} A**.
+    Anbefalt: **{{ load.recommended_current_a | round(0) | int }} A** · Satt: **{{
+    load.last_sent_current_a | round(0) | int }} A**.
 
     {% else %}
 
@@ -154,12 +155,26 @@ cards:
   entities:
   - entity: switch.slm_auto_control_FIRST_CHARGER_SUFFIX
     name: Automatisk laststyring
-  - entity: switch.slm_charging_pause_FIRST_CHARGER_SUFFIX
-    name: Ladepause
+  - type: conditional
+    conditions:
+    - entity: switch.slm_charging_pause_FIRST_CHARGER_SUFFIX
+      state_not: unavailable
+    - entity: switch.slm_charging_pause_FIRST_CHARGER_SUFFIX
+      state_not: unknown
+    row:
+      entity: switch.slm_charging_pause_FIRST_CHARGER_SUFFIX
+      name: Ladepause
   - entity: select.slm_phase_mode_FIRST_CHARGER_SUFFIX
     name: Fasevalg
-  - entity: number.slm_manual_current_FIRST_CHARGER_SUFFIX
-    name: Manuell ladestrøm (brukes når automatisk styring er av)
+  - type: conditional
+    conditions:
+    - entity: number.slm_manual_current_FIRST_CHARGER_SUFFIX
+      state_not: unavailable
+    - entity: number.slm_manual_current_FIRST_CHARGER_SUFFIX
+      state_not: unknown
+    row:
+      entity: number.slm_manual_current_FIRST_CHARGER_SUFFIX
+      name: Manuell ladestrøm (brukes når automatisk styring er av)
   - entity: switch.slm_schedule_FIRST_CHARGER_SUFFIX
     name: Tidsstyring
   - entity: time.slm_charge_start_FIRST_CHARGER_SUFFIX
@@ -188,12 +203,26 @@ cards:
   entities:
   - entity: switch.slm_auto_control_CHARGER_SUFFIX
     name: Automatisk laststyring
-  - entity: switch.slm_charging_pause_CHARGER_SUFFIX
-    name: Ladepause
+  - type: conditional
+    conditions:
+    - entity: switch.slm_charging_pause_CHARGER_SUFFIX
+      state_not: unavailable
+    - entity: switch.slm_charging_pause_CHARGER_SUFFIX
+      state_not: unknown
+    row:
+      entity: switch.slm_charging_pause_CHARGER_SUFFIX
+      name: Ladepause
   - entity: select.slm_phase_mode_CHARGER_SUFFIX
     name: Fasevalg
-  - entity: number.slm_manual_current_CHARGER_SUFFIX
-    name: Manuell ladestrøm (brukes når automatisk styring er av)
+  - type: conditional
+    conditions:
+    - entity: number.slm_manual_current_CHARGER_SUFFIX
+      state_not: unavailable
+    - entity: number.slm_manual_current_CHARGER_SUFFIX
+      state_not: unknown
+    row:
+      entity: number.slm_manual_current_CHARGER_SUFFIX
+      name: Manuell ladestrøm (brukes når automatisk styring er av)
   - entity: switch.slm_schedule_CHARGER_SUFFIX
     name: Tidsstyring
   - entity: time.slm_charge_start_CHARGER_SUFFIX

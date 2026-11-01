@@ -132,3 +132,7 @@ fysisk testing overflødig. Ingen ny fysisk aksept er gjennomført i denne runde
   [kontrollhendelser](../ha_tests/test_control_events_runtime.py),
   [reguleringsforløp](../ha_tests/test_site_runtime.py),
   [korttester](../ha_tests/test_dashboard_runtime.py).
+
+
+## Follow-up lesson — 2026-11-01, first physical paired installation
+Paired tests allowed pending zero reductions to clear because their fixtures republished both current and power after every command. This assumed heartbeat hid an indefinite wait on an unused disconnected charger. Passing paired simulations did not establish physical two-charger readiness. Preserve unchanged source timestamps in regressions, run the actual coordinator user-control path as well as allocator tests, and test mixed modes plus second plug-in. Compare commanded targets with actual outgoing attempts. Separate idle/no-transfer cases from measured active-load transfers instead of adding timeouts that silently grant capacity.

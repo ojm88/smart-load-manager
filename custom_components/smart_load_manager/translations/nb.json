@@ -28,7 +28,7 @@
       },
       "charging": {
         "title": "Elbillading",
-        "description": "Velg første Easee-lader. Aktiver Spenning-sensoren på laderen først og vent på en målt verdi. Deretter kan du fullføre med én lader eller legge til en til. Begge deler boligens forbruksgrense, med egen tidsstyring per lader. Automatisk laststyring starter avslått. {validation_error}",
+        "description": "Velg første Easee-lader. Du kan fullføre med én lader eller legge til én til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
         "data": {
           "charger_device": "Første Easee-lader",
           "electrical_connection": "Laderens fysiske tilkobling"
@@ -46,9 +46,9 @@
       },
       "second_charger": {
         "title": "Andre Easee-lader",
-        "description": "Første lader er allerede valgt. Behold den, og bruk det tomme feltet under til å velge én lader til. Valgte ladere er utelatt fra legg-til-listen. Aktiver Easees Spenning-sensor på den nye laderen før du fortsetter. {validation_error}",
+        "description": "Eksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
         "data": {
-          "charger_device": "Valgte ladere og ny lader",
+          "charger_device": "Ny Easee-lader",
           "electrical_connection": "Den nye laderens fysiske tilkobling"
         },
         "data_description": {
@@ -61,7 +61,8 @@
       "already_configured": "Laderen er allerede lagt til."
     },
     "error": {
-      "invalid_setup": "Kontroller lader og målekilder."
+      "invalid_setup": "Kontroller lader og målekilder.",
+      "missing_measurements": "Aktiver Strøm/Current og Spenning/Voltage på laderen, og vent på målte verdier før du prøver igjen."
     }
   },
   "entity": {
@@ -258,9 +259,9 @@
       },
       "add_charger": {
         "title": "Legg til lader",
-        "description": "Eksisterende lader er allerede valgt. Behold den, og bruk det tomme feltet under til å velge én ny lader. Den eksisterende laderen og innstillingene beholdes. Bruk Fjern lader for å fjerne en lader. Aktiver Easees Spenning-sensor på den nye laderen først. Integrasjonen lastes på nytt, og automatisk laststyring starter avslått. {validation_error}",
+        "description": "Eksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
         "data": {
-          "charger_device": "Valgte ladere og ny lader",
+          "charger_device": "Ny Easee-lader",
           "electrical_connection": "Den nye laderens fysiske tilkobling"
         },
         "data_description": {
@@ -288,7 +289,8 @@
       }
     },
     "error": {
-      "invalid_setup": "Kontroller lader og målekilder."
+      "invalid_setup": "Kontroller lader og målekilder.",
+      "missing_measurements": "Aktiver Strøm/Current og Spenning/Voltage på laderen, og vent på målte verdier før du prøver igjen."
     },
     "abort": {
       "two_chargers": "To ladere er allerede konfigurert.",

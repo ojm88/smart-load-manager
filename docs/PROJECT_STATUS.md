@@ -1,8 +1,14 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-31
+Updated: 2026-11-01
 
-## Current release — 0.1.1-beta.20
+## Beta 21 — publication authorized, in progress
+
+Owner's first physical two-charger test exposes a global reduction-acknowledgement deadlock: one disconnected charger retains an outstanding zero reduction, blocking positive automatic/manual commands on its peer. Uploaded evidence shows valid HAN/electrical/schedule inputs and successful direct Easee 18 A control. Reproduced against beta 20. Fix distinguishes validated idle zero draw from actual active-load transfer; no fabricated zero heartbeat is required for idle chargers. Active reductions retain new measured confirmation. Diagnostics add wait-start, confirmation and idle-release events, pending limit and age.
+
+Validation: 93 pure tests, 154 runtime tests on HA 2026.2.3/Python 3.13 and HA 2026.10.4/Python 3.14, plus one Node test pass. Four new regressions fail against beta 20. Includes actual coordinator controls with two synthetic HA chargers, pause/resume, manual minimum/change, second plug-in, and existing paired-transfer/single-charger sequences. No production HA writes or physical correction acceptance. See [verification](BETA21_VERIFICATION.md). No further input is needed to fix the demonstrated deadlock; physical two-charger acceptance remains required. Manifest is 0.1.1-beta.21; owner authorized publication on 2026-11-01. Additional owner requests are included: conditional availability rows in generated YAML, one unused charger per add (no third field or selected-device choices), and explicit Current/Voltage activation guidance with localized missing-measurement errors. New card behavior requires regenerated YAML.
+
+## Previous release — 0.1.1-beta.20
 
 Published 2026-10-31 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.20) after owner authorization. PR #16 merge/tag 714a0fa364a5a790568e4d5fb64dedd7fd51796d; tagged tree ffa18845e994f4094cc6fcabd4bfc5d208d1473b equals tested release-preparation tree. Final CI run 41212601543 passed for 86fa59e7144ad5a6a4967cc81ddb8bb69a1fa51b; code CI 41198196307 also passed. Manifest 0.1.1-beta.20 and public Pre-release page verified. No production HA installation or physical charger commands performed. Existing YAML compatible. First upgrade requires one activation of automatic control, then settings survive future restarts/updates. Stable remains 0.1.0.
 

@@ -133,3 +133,6 @@ More chargers, hot-water tanks and floor-heating zones sharing the household bud
 ## Acknowledgements
 
 Thanks to [Home Assistant](https://www.home-assistant.io/), the Easee integration maintainers and [EnergyTariff / Erling Paulsen](https://github.com/epaulsen/energytariff). These projects are independently maintained.
+
+
+Before configuring chargers, enable **Current (A)** and **Voltage (V)** on **each Easee charger**: Settings → Devices & services → Easee → charger → Entities → include disabled entities. Enable both and wait for measured values. Beta 21 uses a single unused-charger list for adding a second device; a third slot is not offered.

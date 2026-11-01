@@ -8,6 +8,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 
+class EaseeMeasurementError(ValueError):
+    """Required charger measurements need enabling before setup can continue."""
+
+
 @dataclass(frozen=True, slots=True)
 class EaseeEntities:
     status: str
@@ -97,7 +101,10 @@ def resolve_easee_entities(hass: HomeAssistant, device_id: str) -> EaseeEntities
                      f"No active Easee {label} data. Check that the sensor is enabled "
                      "and has updated values on the selected charger.")
                 )
-        raise ValueError(" ".join(details))
+        guide = ("Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett. "
+                 if norwegian else
+                 "Enable both Current (A) and Voltage (V) on every Easee charger before setup. ")
+        raise EaseeMeasurementError(guide + " ".join(details))
 
     return EaseeEntities(
         status=status,

@@ -62,9 +62,12 @@ class ChargingCurrentLimit(ChargerNameMixin, CoordinatorEntity[ChargingCoordinat
     @property
     def available(self) -> bool:
         """Disable manual input while automatic control owns the current limit."""
-        return self.native_min_value > 0 and super().available and manual_control_is_available(
-            self.coordinator.auto_control
-        ) and not self.coordinator.charging_paused
+        data = self.coordinator.data or {}
+        return (self.native_min_value > 0 and super().available
+                and manual_control_is_available(self.coordinator.auto_control)
+                and not self.coordinator.charging_paused
+                and bool(data.get('inputs_valid')) and bool(data.get('han_fresh'))
+                and bool(data.get('schedule_allowed', True)))
 
     @property
     def native_min_value(self) -> float:

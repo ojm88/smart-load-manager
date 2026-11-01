@@ -28,7 +28,7 @@
       },
       "charging": {
         "title": "EV charging",
-        "description": "Select the first Easee charger. First enable its Voltage sensor and wait for a measured value. You can then finish with one charger or add a second. Both share the household limit and retain independent schedules. Automatic control starts off. {validation_error}",
+        "description": "Select the first Easee charger. Finish with one or add one more. Before setup, enable both Current (A) and Voltage (V) on each Easee charger: Settings → Devices & services → Easee → charger → Entities. Include disabled entities, enable both sensors and wait for measured values. {validation_error}",
         "data": {
           "charger_device": "First Easee charger",
           "electrical_connection": "Physical charger connection"
@@ -46,9 +46,9 @@
       },
       "second_charger": {
         "title": "Second Easee charger",
-        "description": "The first charger is already selected. Keep it selected and use the empty field below to add one charger. Selected devices are excluded from the add list. Enable the new charger’s Easee Voltage sensor before continuing. {validation_error}",
+        "description": "The existing charger is retained. Select one new charger; only unused chargers are listed. At most two chargers are supported. Before setup, enable both Current (A) and Voltage (V) on each Easee charger: Settings → Devices & services → Easee → charger → Entities. Include disabled entities, enable both sensors and wait for measured values. {validation_error}",
         "data": {
-          "charger_device": "Selected chargers and new charger",
+          "charger_device": "New Easee charger",
           "electrical_connection": "Physical connection of the new charger"
         },
         "data_description": {
@@ -61,7 +61,8 @@
       "already_configured": "Charger already configured."
     },
     "error": {
-      "invalid_setup": "Check charger and meter sources."
+      "invalid_setup": "Check charger and meter sources.",
+      "missing_measurements": "Enable Current and Voltage on the charger and wait for measured values before retrying."
     }
   },
   "entity": {
@@ -258,9 +259,9 @@
       },
       "add_charger": {
         "title": "Add charger",
-        "description": "The existing charger is already selected. Keep it selected and use the empty field below to add one new charger. The existing charger and settings are preserved. Use Remove charger to remove a charger. Enable the new charger’s Easee Voltage sensor first. The integration reloads and automatic control starts off. {validation_error}",
+        "description": "The existing charger is retained. Select one new charger; only unused chargers are listed. At most two chargers are supported. Before setup, enable both Current (A) and Voltage (V) on each Easee charger: Settings → Devices & services → Easee → charger → Entities. Include disabled entities, enable both sensors and wait for measured values. {validation_error}",
         "data": {
-          "charger_device": "Selected chargers and new charger",
+          "charger_device": "New Easee charger",
           "electrical_connection": "Physical connection of the new charger"
         },
         "data_description": {
@@ -288,7 +289,8 @@
       }
     },
     "error": {
-      "invalid_setup": "Check charger and meter sources."
+      "invalid_setup": "Check charger and meter sources.",
+      "missing_measurements": "Enable Current and Voltage on the charger and wait for measured values before retrying."
     },
     "abort": {
       "two_chargers": "Two chargers are already configured.",

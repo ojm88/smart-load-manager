@@ -14,7 +14,7 @@ class DiagnosticsTests(IsolatedAsyncioTestCase):
         c = NS(entry=NS(data={'electrical_connection':'it_3'}), auto_control=True, charging_paused=False,
                data={'status':'completed','han_power_w':1847,'token':'SECRET'})
         site = NS(controllers={'private':c}, debug_trace=trace,
-                  pending_reductions={}, _completed_limits={'private':16})
+                  pending_reductions={'private':(0, 0)}, _completed_limits={'private':16})
         hass = NS(data={'smart_load_manager':{'site':site}})
         with patch('smart_load_manager.diagnostics.async_get_integration',
                    new=AsyncMock(return_value=NS(version='0.1.1-beta.16'))):
@@ -23,5 +23,7 @@ class DiagnosticsTests(IsolatedAsyncioTestCase):
         self.assertNotIn('SECRET', text)
         self.assertNotIn('private', text)
         self.assertEqual(result['loads'][0]['completed_allowance_a'],16)
+        self.assertEqual(result['loads'][0]['pending_reduction_limit_a'], 0)
+        self.assertGreater(result['loads'][0]['pending_reduction_age_seconds'], 0)
         self.assertEqual(result['trace']['events'][0]['target'],16)
         self.assertEqual(result['slm_version'],'0.1.1-beta.16')

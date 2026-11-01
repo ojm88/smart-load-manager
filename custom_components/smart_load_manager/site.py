@@ -396,7 +396,7 @@ class SiteController:
         idle = (limit == 0 and data['charger_power_w'] == 0
                 and 0 <= data['charger_current_a'] < 1
                 and normalize_status(data.get('status')) in
-                {'completed', 'awaiting_start', 'ready_to_charge'})
+                {'completed', 'disconnected', 'awaiting_start', 'ready_to_charge'})
         return data['charger_current_a'] > limit + .5 and not idle
 
     @callback
@@ -533,11 +533,33 @@ class SiteController:
                 'urgent': 'Reduserer straks: timebudsjettet kan ikke vente.',
             }[mode]
 
+    @staticmethod
+    def _idle_without_transfer(data):
+        """Known idle zero draw releases no measured load to another charger.
+
+        Easee can keep zero current/power unchanged without republishing them.
+        Do not require a post-command heartbeat for that no-transfer case.
+        A charging, unknown, invalid or nonzero-power sample never qualifies.
+        """
+        current, power = data.get('charger_current_a'), data.get('charger_power_w')
+        return (data.get('inputs_valid') is True and data.get('han_fresh') is True
+                and normalize_status(data.get('status')) in {
+                    'disconnected', 'awaiting_start', 'ready_to_charge', 'completed'}
+                and isinstance(current, (int, float)) and math.isfinite(current)
+                and 0 <= current < 1
+                and isinstance(power, (int, float)) and math.isfinite(power) and power == 0)
+
     async def _apply(self, targets, samples):
-        # First confirm every previous reduction using telemetry reported AFTER
-        # that command. A successful HTTP/service response alone is not enough.
+        # Actual load transfers need telemetry reported AFTER the reduction.
+        # Validated idle zero draw releases no measured load and needs no new
+        # zero heartbeat. HTTP/service success alone is never a confirmation.
         for key, (limit, sent_at) in list(self.pending_reductions.items()):
             c = self.controllers[key]
+            if self._idle_without_transfer(samples[key]):
+                self.pending_reductions.pop(key)
+                self.debug_trace.record('reduction_not_required_idle', key,
+                                        data=samples[key], target=limit)
+                continue
             current = self.hass.states.get(c.easee.current)
             power = self.hass.states.get(c.easee.power)
             d = samples[key]
@@ -548,16 +570,20 @@ class SiteController:
                 if (reported > sent_at and kw and not self._current_above_limit(d, limit)
                         and d["charger_power_w"] <= limit * kw * 1000 + 100):
                     self.pending_reductions.pop(key)
+                    self.debug_trace.record('reduction_confirmed', key, data=d, target=limit)
         for key, target in targets.items():
             c = self.controllers[key]
             previous = c.last_commanded_current
             pending = self.pending_reductions.get(key)
             needs_reduction = previous is None or target < previous or self._current_above_limit(samples[key], target)
-            if needs_reduction and (pending is None or target < pending[0]):
+            if (needs_reduction and not self._idle_without_transfer(samples[key])
+                    and (pending is None or target < pending[0])):
                 # At takeover there is no known command. Establish 0 A first.
                 reduction = 0 if previous is None else min(target, previous)
                 await c._async_send_current(reduction)
                 self.pending_reductions[key] = (reduction, c._last_command_at)
+                self.debug_trace.record('reduction_wait_started', key,
+                                        data=samples[key], target=reduction)
         if self.pending_reductions:
             return
         for key, target in targets.items():

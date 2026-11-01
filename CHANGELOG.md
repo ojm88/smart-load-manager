@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1-beta.21
+
+- Hide unavailable pause/manual-current rows independently in generated one- and two-charger YAML. Regenerate the card after updating to adopt the conditions.
+- Replace the add/second-charger multi-device field with one unused-device choice, excluding configured chargers and preventing a third field. Keep first-device native selection, preserve existing membership and validate all submissions server-side.
+- Explain activation of both Easee Current (A) and Voltage (V) before setup, with specific localized missing-measurement errors and navigation instructions.
+
+- Fix two-charger startup, pause/resume and manual-current deadlocks when an idle charger never republishes unchanged zero measurements. Known idle states with valid required inputs, exactly zero power and sub-amp standby draw do not require a reduction heartbeat or a preliminary zero pulse.
+- Keep post-command measured acknowledgement for actual active-load reductions; unknown, invalid or conflicting samples do not qualify for the idle exception. Single-charger regulation and quiet completed handling remain unchanged.
+- Record reduction wait/start/confirmation and idle release in diagnostics; include the outstanding limit and wait age in diagnostic downloads.
+
+
 ## 0.1.1-beta.20
 
 - Disable new charging-pause activation for Completed/disconnected/unavailable chargers, including direct service calls and stale UI races. Retain removal of an existing SLM pause. Record rejected attempts in diagnostics; leave the completed current offer untouched.

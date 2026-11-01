@@ -4,7 +4,7 @@ SLM adjusts charging to a shared hourly household energy target. It can help avo
 
 ## Requirements and installation
 
-Use Home Assistant 2026.2 or newer, configured Easee devices, and EnergyTariff with a HAN power sensor in W or kW. **Enable the Voltage sensor on every Easee charger** under Settings → Devices & services → Easee → charger → Entities. Include disabled entities and wait for measured values.
+Use Home Assistant 2026.2 or newer, configured Easee devices, and EnergyTariff with a HAN power sensor in W or kW. **Enable both Current (A) and Voltage (V) sensors on every Easee charger** under Settings → Devices & services → Easee → charger → Entities. Include disabled entities and wait for measured values.
 
 Download a GitHub release, copy `custom_components/smart_load_manager` into `config/custom_components/`, then restart Home Assistant. From HA 2026.11 you can also add `https://github.com/ojm88/smart-load-manager` as a custom Integration in **Settings → Marketplace**; custom repositories require a GitHub connection.
 
@@ -124,3 +124,9 @@ Beta 20: Per-charger automation, pause, schedule enable/time, manual current and
 
 
 From beta 20, Charging pause is unavailable when Easee reports Completed or disconnected. Direct pause requests are also rejected before settings or current limits change. An existing SLM pause can still be removed with a Completed source. Connected waiting sessions remain pausable; scheduling and automatic stops are independent. Rejections appear as pause_activation_rejected in diagnostics.
+
+
+Beta 21: With two chargers, an unused charger must not block its peer because zero readings remain unchanged. With valid required measurements, known idle status, zero power and less than 1 A standby current, starting/resuming needs no new zero heartbeat. Actual active-load reductions still require measured confirmation before another charger increases. Pause, schedule and physical limits remain. Diagnostics expose pending reduction limit/age and reduction_wait_started, reduction_confirmed and reduction_not_required_idle. Existing YAML remains compatible.
+
+
+Beta 21: adding a charger retains the existing load automatically and presents one single-choice list of unused Easee chargers. Configured devices and a third selection slot are not offered. Current and Voltage must both be enabled before setup; missing measurements produce specific localized guidance. The generated dashboard independently hides unavailable Charging pause and Manual current rows. An existing SLM pause remains visible for removal. Regenerate get_dashboard YAML and replace the copied card after updating; existing pasted cards do not update themselves.

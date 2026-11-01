@@ -784,3 +784,95 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.assertTrue(result['completion_released'])
         for seconds in (300,600,1800):await self.refresh_at(site,seconds)
         self.assertEqual(self.commands,[])
+
+    def setup_idle_pair(self):
+        from datetime import timedelta
+        site = self.setup_regulation()
+        for key, c in site.controllers.items():
+            c.last_commanded_current = 0
+            c._async_sample.return_value.update(
+                status='disconnected' if key == 'a' else 'awaiting_start',
+                charger_current_a=0 if key == 'a' else .87, charger_power_w=0,
+                han_power_w=1742, energy_used_kwh=5.61, minutes_left=4,
+                kw_per_amp=.688, max_current_a=20, seconds_to_hour=240)
+            for suffix in ('current', 'power'):
+                old = self.now-timedelta(minutes=20)
+                self.states[key+'_'+suffix] = NS(state='0', last_updated=old, last_reported=old)
+            site.pending_reductions[key] = (0, self.now.timestamp())
+        site.async_request_control()
+        return site
+
+    async def test_unused_peer_and_unchanged_zero_do_not_latch_automatic_start(self):
+        site = self.setup_idle_pair()
+        data = await self.refresh_at(site, 1)
+        self.assertFalse(site.pending_reductions)
+        self.assertFalse(data['awaiting_reduction'])
+        self.assertEqual(self.commands, [('b', 20)])
+        for seconds in (2, 30, 60):
+            await self.refresh_at(site, seconds)
+        self.assertEqual(self.commands, [('b', 20)])
+        events = site.debug_trace.export()['events']
+        released = [e for e in events if e['event'] == 'reduction_not_required_idle']
+        self.assertEqual(len(released), 2)
+
+    async def test_unused_peer_does_not_block_manual_request_or_pause_resume(self):
+        site = self.setup_idle_pair()
+        c = site.controllers['b']
+        c.auto_control = False
+        site.manual_requests['b'] = 14
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('b', 14)])
+        # Pause stays immediate; resuming does not need another zero heartbeat.
+        c.charging_paused = True
+        site.async_request_control()
+        await self.refresh_at(site, 2)
+        self.assertEqual(self.commands[-1], ('b', 0))
+        c.charging_paused = False
+        site.async_request_control()
+        await self.refresh_at(site, 3)
+        self.assertEqual(self.commands, [('b', 14), ('b', 0), ('b', 14)])
+        self.assertFalse(site.pending_reductions)
+
+    async def test_two_waiting_cars_start_without_zero_heartbeat_or_takeover_pulse(self):
+        site = self.setup_idle_pair()
+        site.controllers['a']._async_sample.return_value['status'] = 'ready_to_charge'
+        for c in site.controllers.values():
+            c.last_commanded_current = None
+        site.pending_reductions.clear()
+        await self.refresh_at(site, 1)
+        self.assertEqual(self.commands, [('a', 20), ('b', 20)])
+        self.assertFalse(site.pending_reductions)
+
+    async def test_real_transfer_still_waits_after_unused_peer_releases(self):
+        from datetime import timedelta
+        site = self.setup_idle_pair()
+        a = site.controllers['a']
+        a.last_commanded_current = 16
+        a._async_sample.return_value.update(status='charging', charger_current_a=16,
+                                           charger_power_w=11008)
+        # A was actually drawing load when stopped: stale low/nonzero data is
+        # insufficient. B must not increase until A's measured reduction arrives.
+        await self.refresh_at(site, 1)
+        self.assertFalse(any(key == 'b' and value > 0 for key, value in self.commands))
+        self.assertIn('a', site.pending_reductions)
+        a._async_sample.return_value.update(charger_current_a=0, charger_power_w=0)
+        await self.refresh_at(site, 2)
+        self.assertIn('a', site.pending_reductions)  # Charging status, old readings.
+        self.assertFalse(any(key == 'b' and value > 0 for key, value in self.commands))
+        for suffix in ('current','power'):
+            stamp = self.now+timedelta(seconds=3)
+            self.states['a_'+suffix] = NS(state='0', last_updated=stamp, last_reported=stamp)
+        await self.refresh_at(site, 3)
+        self.assertFalse(site.pending_reductions)
+        self.assertTrue(any(key == 'b' and value > 0 for key, value in self.commands))
+
+    def test_idle_exception_rejects_unknown_active_invalid_or_conflicting_samples(self):
+        valid = dict(status='disconnected', charger_current_a=.87, charger_power_w=0,
+                     inputs_valid=True, han_fresh=True)
+        self.assertTrue(SiteController._idle_without_transfer(valid))
+        for change in [dict(status='charging'), dict(status='unknown'),
+                       dict(inputs_valid=False), dict(han_fresh=False),
+                       dict(charger_current_a=1), dict(charger_current_a=float('nan')),
+                       dict(charger_power_w=1), dict(charger_power_w=None)]:
+            with self.subTest(change=change):
+                self.assertFalse(SiteController._idle_without_transfer({**valid, **change}))

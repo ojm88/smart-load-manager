@@ -490,3 +490,71 @@ class ControlEventTests(IsolatedAsyncioTestCase):
             await self.c.async_set_charging_paused(True)
         self.assertEqual(self.commands, [])
         self.assertNotIn('charging_paused', self.entry.options)
+
+    async def test_real_controls_with_two_chargers_and_unused_peer_without_heartbeat(self):
+        from smart_load_manager.number import ChargingCurrentLimit
+        peer_entry = NS(entry_id='second', title='Peer', options={}, data={
+            'charger_device':'peer', 'electrical_connection':'it_1',
+            'han_power_entity':'sensor.test_han'})
+        peer_sources = EaseeEntities(status='sensor.peer_status', current='sensor.peer_current',
+                                    voltage='sensor.peer_voltage', power='sensor.peer_power', current_limits=())
+        with patch('smart_load_manager.coordinator.resolve_easee_entities', return_value=peer_sources):
+            peer = ChargingCoordinator(self.hass, peer_entry)
+        peer.auto_control = True
+        peer_commands = []
+        async def peer_send(current):
+            peer_commands.append(current)
+            peer.last_commanded_current = current
+            peer._last_command_at = self.now.timestamp()
+        peer._async_send_current = peer_send
+        real = peer._async_sample
+        async def sample(**kwargs):
+            d = await real(**kwargs)
+            d.update(han_fresh=True, inputs_valid=bool(d['electrical_ready'] and d.get('energy_used_kwh') is not None))
+            return d
+        peer._async_sample = sample
+        self.hass.states.async_set('sensor.peer_status', 'disconnected', {
+            'config_phaseMode':1, 'state_outputPhase':0, 'circuit_ratedCurrent':16})
+        self.hass.states.async_set('sensor.peer_current', 0, {'state_inCurrentT2':0,'state_inCurrentT3':0})
+        self.hass.states.async_set('sensor.peer_voltage', 230, {'state_inVoltageT2T3':230})
+        self.hass.states.async_set('sensor.peer_power', 0, {'unit_of_measurement':'W'})
+        try:
+            with patch('smart_load_manager.site.charger_entries', return_value=[self.entry, peer_entry]), patch(
+                    'smart_load_manager.coordinator.charger_entries', return_value=[self.entry, peer_entry]):
+                await self.refresh()
+                self.assertEqual(self.commands, [16])
+                self.assertFalse(self.site.pending_reductions)
+                await self.c.async_set_charging_paused(True)
+                self.assertEqual(self.commands[-1], 0)
+                await self.c.async_set_charging_paused(False)
+                self.assertEqual(self.commands[-1], 16)
+                await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c, async_write_ha_state=Mock()))
+                self.assertEqual(self.commands[-1], 6)
+                number = ChargingCurrentLimit(self.c, self.entry)
+                number.hass = self.hass
+                await number.async_set_native_value(12)
+                self.assertEqual(self.commands[-1], 12)
+                self.assertFalse(self.site.pending_reductions)
+                self.assertFalse(any(v > 0 for v in peer_commands))
+                # Plugging into the unused charger starts allocation without
+                # inventing a fresh zero report for its current/power sensors.
+                self.hass.states.async_set('sensor.peer_status', 'awaiting_start', {
+                    'config_phaseMode':1, 'state_outputPhase':0, 'circuit_ratedCurrent':16})
+                await self.refresh()
+                self.assertGreaterEqual(peer_commands[-1], 6)
+                self.assertFalse(self.site.pending_reductions)
+        finally:
+            await peer.async_shutdown()
+
+    async def test_manual_row_availability_follows_measurement_and_schedule_guards(self):
+        from smart_load_manager.number import ChargingCurrentLimit
+        await self.refresh()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c, async_write_ha_state=Mock()))
+        number = ChargingCurrentLimit(self.c, self.entry)
+        number.hass = self.hass
+        self.assertTrue(number.available)
+        for key in ('inputs_valid', 'han_fresh', 'schedule_allowed'):
+            self.c.data[key] = False
+            self.assertFalse(number.available, key)
+            self.c.data[key] = True
+        self.assertTrue(number.available)

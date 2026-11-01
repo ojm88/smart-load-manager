@@ -423,6 +423,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
         await self.migrate([a, b])
 
         class FakeCoordinator(DataUpdateCoordinator):
+            can_activate_charging_pause = True
             def __init__(c, hass, entry):
                 super().__init__(hass, logging.getLogger(__name__), name="SLM test")
                 c.entry = entry
@@ -505,6 +506,7 @@ class InstallationTests(IsolatedAsyncioTestCase):
         b = self.entry("b", "Tesla", "tesla_123")
 
         class FakeCoordinator(DataUpdateCoordinator):
+            can_activate_charging_pause = True
             def __init__(c, hass, entry):
                 super().__init__(hass, logging.getLogger(__name__), name="SLM test")
                 c.entry = entry
