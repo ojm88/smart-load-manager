@@ -1,6 +1,6 @@
 # Beta 21 verification — preparation, 2026-11-01
 
-Not published. Manifest remains beta 20. No production HA modifications or physical charger commands performed.
+Owner authorized publication on 2026-11-01. Manifest 0.1.1-beta.21. Final release CI and public pre-release must be verified. No production HA modifications or physical charger commands performed.
 
 ## Reproduction and scope
 

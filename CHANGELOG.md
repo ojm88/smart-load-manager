@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta 21 preparation
+## 0.1.1-beta.21
 
 - Hide unavailable pause/manual-current rows independently in generated one- and two-charger YAML. Regenerate the card after updating to adopt the conditions.
 - Replace the add/second-charger multi-device field with one unused-device choice, excluding configured chargers and preventing a third field. Keep first-device native selection, preserve existing membership and validate all submissions server-side.

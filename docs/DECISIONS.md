@@ -683,3 +683,7 @@ Owner screenshots show HA's multiple DeviceSelector appending a third selection 
 Wrap each pause/manual-number entity row in the supported native conditional row, excluding unavailable/unknown based on that very entity. Resume remains shown for an existing SLM pause. Regenerate copied dashboard YAML to adopt this change. Do not hide the entire card or base both rows on one shared status. Setup descriptions, source strings and nb/en errors explicitly require both Current (A) and Voltage (V) on every charger, including navigation to disabled entities. Missing-measurement errors use a typed exception so localized base guidance appears even when HA's server language differs from the client. Physical iPhone rendering remains pending.
 
 Manual number availability follows required measurement validity, HAN freshness and schedule allowance as well as automatic ownership, pause and known minimum. This keeps the conditional row aligned with actionable manual control; existing paired validation still checks a requested current before sending it.
+
+
+## 2026-11-01 — Beta 21 publication authorized
+Owner authorizes publication of the paired idle/reduction correction, conditional dashboard rows, restricted charger selection and explicit Current/Voltage guidance. Publish 0.1.1-beta.21 as pre-release after final CI; do not install into production HA or claim physical paired acceptance. Regenerate copied dashboard YAML for the new visibility conditions.
