@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — beta 21 preparation
+
+- Fix two-charger startup, pause/resume and manual-current deadlocks when an idle charger never republishes unchanged zero measurements. Known idle states with valid required inputs, exactly zero power and sub-amp standby draw do not require a reduction heartbeat or a preliminary zero pulse.
+- Keep post-command measured acknowledgement for actual active-load reductions; unknown, invalid or conflicting samples do not qualify for the idle exception. Single-charger regulation and quiet completed handling remain unchanged.
+- Record reduction wait/start/confirmation and idle release in diagnostics; include the outstanding limit and wait age in diagnostic downloads.
+
+
 ## 0.1.1-beta.20
 
 - Disable new charging-pause activation for Completed/disconnected/unavailable chargers, including direct service calls and stale UI races. Retain removal of an existing SLM pause. Record rejected attempts in diagnostics; leave the completed current offer untouched.

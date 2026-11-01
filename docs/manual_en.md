@@ -124,3 +124,6 @@ Beta 20: Per-charger automation, pause, schedule enable/time, manual current and
 
 
 From beta 20, Charging pause is unavailable when Easee reports Completed or disconnected. Direct pause requests are also rejected before settings or current limits change. An existing SLM pause can still be removed with a Completed source. Connected waiting sessions remain pausable; scheduling and automatic stops are independent. Rejections appear as pause_activation_rejected in diagnostics.
+
+
+Beta 21 (prepared): With two chargers, an unused charger must not block its peer because zero readings remain unchanged. With valid required measurements, known idle status, zero power and less than 1 A standby current, starting/resuming needs no new zero heartbeat. Actual active-load reductions still require measured confirmation before another charger increases. Pause, schedule and physical limits remain. Diagnostics expose pending reduction limit/age and reduction_wait_started, reduction_confirmed and reduction_not_required_idle. Existing YAML remains compatible.

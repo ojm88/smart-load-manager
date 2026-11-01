@@ -1,6 +1,7 @@
 """Native HA download: anonymous SLM state and bounded decision/command history."""
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.loader import async_get_integration
+from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .debug_trace import sample_data
 
@@ -18,10 +19,13 @@ async def async_get_config_entry_diagnostics(hass, entry):
         return result
     # No awaits while copying the serialized runtime state.
     for key, c in site.controllers.items():
+        reduction = site.pending_reductions.get(key)
         result['loads'].append({'load': site.debug_trace.alias(key),
             'automatic': bool(c.auto_control), 'paused': bool(c.charging_paused),
             'sample': sample_data(c.data or {}),
-            'pending_reduction': key in site.pending_reductions,
+            'pending_reduction': reduction is not None,
+            'pending_reduction_limit_a': reduction[0] if reduction else None,
+            'pending_reduction_age_seconds': max(0, round(dt_util.utcnow().timestamp()-reduction[1], 1)) if reduction else None,
             'completed_allowance_a': site._completed_limits.get(key),
             'connection': c.entry.data.get('electrical_connection')
                 if c.entry.data.get('electrical_connection') in {'it_1','it_3','tn_1','tn_3'} else 'unspecified'})

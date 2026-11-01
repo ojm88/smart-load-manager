@@ -667,3 +667,11 @@ The owner observes that Easee's iOS app does not offer pause at Completed and re
 
 ## 2026-10-31 — Beta 20 publication authorized
 The owner authorizes publication of the prepared persistence, manual-minimum and completed-pause changes. Publish 0.1.1-beta.20 as pre-release after final CI; do not install into production HA or claim physical acceptance.
+
+
+## 2026-11-01 — Two-charger idle measurements are not reduction heartbeats
+First physical paired installation shows automatic and manual positive targets blocked while pause zero writes work. Retained trace has pending reductions on both loads, one disconnected at zero current/power; direct Easee service accepts a positive limit and charging resumes. Reproduce with unchanged idle values before the zero command; never refresh fake timestamps merely to make tests pass.
+
+In paired apply, an inputs-valid, HAN-fresh sample in disconnected/awaiting_start/ready_to_charge/completed with exactly zero power and finite current below 1 A has no measured load to transfer. Clear obsolete pending reductions for this case and directly apply its allowed target without a preliminary zero/ack pulse. This is not a service-success acknowledgement. Charging/starting/unknown/fault states, missing/invalid inputs, current >=1 A or any positive power do not qualify. Actual active reductions still require post-command current AND power reports below the limit before increases are sent. Completed release policy and single-charger cadence remain unchanged. Preserve independent pause/schedule/physical-current guards.
+
+Record reduction_wait_started, reduction_confirmed and reduction_not_required_idle once per transition. Export pending reduction limit/age without source identities. Prepare beta 21; no publication or HA writes authorized in this step. Physical acceptance is still pending. Tests must include an unused peer that never emits new zero values, mixed manual/automatic modes and active-peer reduction ordering.

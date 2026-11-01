@@ -131,3 +131,6 @@ Beta 20: SLM lagrer automatikk per lader, ladepause, tidsstyring, starttid, manu
 
 
 Fra beta 20 er Ladepause utilgjengelig når Easee melder Completed eller frakoblet. Et direkte pausekall avvises også før innstillinger eller strømgrense endres. En allerede aktiv SLM-pause kan fortsatt oppheves ved Completed. Pause i ventende, tilkoblet tilstand beholdes; tidsstyring og automatiske stopp er uavhengige av denne knappen. Avviste forsøk logges som pause_activation_rejected i diagnostikken.
+
+
+Beta 21 (klargjort): Ved to ladere skal en ubrukt lader ikke blokkere den andre fordi nullmålingene står uendret. Med gyldige nødvendige målinger, kjent hvilestatus, 0 W og under 1 A hvilestrøm kreves ingen ny nullrapport for å starte eller gjenoppta. Reell reduksjon på en aktiv lader må fortsatt bekreftes før strøm økes på den andre. Pause, tidsstyring og strømgrenser gjelder som før. Diagnostikken viser ventende reduksjonsgrense og ventetid samt hendelsene reduction_wait_started, reduction_confirmed og reduction_not_required_idle. Eksisterende YAML kan beholdes.

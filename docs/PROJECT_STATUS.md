@@ -1,6 +1,12 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-10-31
+Updated: 2026-11-01
+
+## Beta 21 preparation — not published
+
+Owner's first physical two-charger test exposes a global reduction-acknowledgement deadlock: one disconnected charger retains an outstanding zero reduction, blocking positive automatic/manual commands on its peer. Uploaded evidence shows valid HAN/electrical/schedule inputs and successful direct Easee 18 A control. Reproduced against beta 20. Fix distinguishes validated idle zero draw from actual active-load transfer; no fabricated zero heartbeat is required for idle chargers. Active reductions retain new measured confirmation. Diagnostics add wait-start, confirmation and idle-release events, pending limit and age.
+
+Validation: 93 pure tests, 148 runtime tests on HA 2026.2.3/Python 3.13 and HA 2026.10.4/Python 3.14, plus one Node test pass. Four new regressions fail against beta 20. Includes actual coordinator controls with two synthetic HA chargers, pause/resume, manual minimum/change, second plug-in, and existing paired-transfer/single-charger sequences. No production HA writes or physical correction acceptance. See [verification](BETA21_VERIFICATION.md). No further input is needed to fix the demonstrated deadlock; physical two-charger acceptance remains required. Manifest stays beta 20 until publication is authorized.
 
 ## Current release — 0.1.1-beta.20
 
