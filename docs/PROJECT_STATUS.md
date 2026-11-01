@@ -2,7 +2,9 @@
 
 Updated: 2026-11-01
 
-## Beta 21 — publication authorized, in progress
+## Current release — 0.1.1-beta.21
+
+Published 2026-11-01 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.21). PR #17 merge/tag 56f5c87e78063120051009d74416908b4e6c3aed; tagged tree 0c5f32b8331eaec8da38e47f993d7065a1435295 equals the tested release-preparation tree. Final CI 41333407932 passed all four jobs for b64f196fa2e4a67a060aa8595ae667e1df6389b7. Public Pre-release page and manifest verified. No production installation or physical commands performed. Regenerate dashboard YAML after updating.
 
 Owner's first physical two-charger test exposes a global reduction-acknowledgement deadlock: one disconnected charger retains an outstanding zero reduction, blocking positive automatic/manual commands on its peer. Uploaded evidence shows valid HAN/electrical/schedule inputs and successful direct Easee 18 A control. Reproduced against beta 20. Fix distinguishes validated idle zero draw from actual active-load transfer; no fabricated zero heartbeat is required for idle chargers. Active reductions retain new measured confirmation. Diagnostics add wait-start, confirmation and idle-release events, pending limit and age.
 

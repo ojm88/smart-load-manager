@@ -1,6 +1,6 @@
-# Beta 21 verification — preparation, 2026-11-01
+# Beta 21 verification — published, 2026-11-01
 
-Owner authorized publication on 2026-11-01. Manifest 0.1.1-beta.21. Final release CI and public pre-release must be verified. No production HA modifications or physical charger commands performed.
+Owner authorized publication on 2026-11-01. Manifest 0.1.1-beta.21. Final CI 41333407932 passed all four jobs for b64f196fa2e4a67a060aa8595ae667e1df6389b7. Published Pre-release page verified at https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.21. PR #17 merge/tag 56f5c87e78063120051009d74416908b4e6c3aed; tagged tree 0c5f32b8331eaec8da38e47f993d7065a1435295 equals tested release-preparation tree. Tagged manifest verified. No production HA modifications or physical charger commands performed.
 
 ## Reproduction and scope
 

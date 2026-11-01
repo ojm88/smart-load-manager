@@ -687,3 +687,8 @@ Manual number availability follows required measurement validity, HAN freshness 
 
 ## 2026-11-01 — Beta 21 publication authorized
 Owner authorizes publication of the paired idle/reduction correction, conditional dashboard rows, restricted charger selection and explicit Current/Voltage guidance. Publish 0.1.1-beta.21 as pre-release after final CI; do not install into production HA or claim physical paired acceptance. Regenerate copied dashboard YAML for the new visibility conditions.
+
+
+## Beta 21 publication verified — 2026-11-01
+
+Published after owner authorization. PR #17 merge/tag 56f5c87e78063120051009d74416908b4e6c3aed, tested/tagged tree 0c5f32b8331eaec8da38e47f993d7065a1435295, final CI 41333407932 all four jobs passed. Public Pre-release and manifest beta.21 verified. Existing settings retained; regenerate copied dashboard YAML. No live HA installation or physical acceptance claimed.
