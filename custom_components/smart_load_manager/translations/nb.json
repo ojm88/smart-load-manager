@@ -175,6 +175,21 @@
           "primary": "Førsteprioritet",
           "secondary": "Andreprioritet"
         }
+      },
+      "charging_overview": {
+        "name": "Lading",
+        "state": {
+          "waiting": "Avventer",
+          "automatic": "Automatisk styring",
+          "manual": "Manuell styring",
+          "paused": "Lading pauset",
+          "disconnected": "Ingen bil tilkoblet",
+          "completed": "Lading avsluttet",
+          "mixed": "Ulik status på laderne"
+        }
+      },
+      "charging_power": {
+        "name": "Samlet ladeeffekt"
       }
     },
     "switch": {
@@ -189,9 +204,6 @@
       },
       "charging_priority": {
         "name": "Førsteprioritet"
-      },
-      "charging_automatic_control": {
-        "name": "Automatisk laststyring – lading"
       }
     },
     "number": {

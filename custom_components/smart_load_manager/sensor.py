@@ -19,12 +19,16 @@ from .entity_ids import suggested_entity_id
 
 
 # Charger measurements only. All user-facing explanations live on the household.
+HOUSEHOLD_SENSOR_KEYS = {"household_status", "measurement_status", "charging_overview", "charging_power"}
+
 CHARGER_SENSOR_KEYS = (
     "status", "charger_power", "charger_current", "recommended_current",
     "active_phases", "line_voltage",
 )
 
 SENSORS = {
+    "charging_overview": (None, SensorDeviceClass.ENUM, "mdi:ev-station"),
+    "charging_power": ("W", SensorDeviceClass.POWER, "mdi:ev-station"),
     "charging_role": (None, SensorDeviceClass.ENUM, "mdi:priority-high"),
     "household_status": (None, SensorDeviceClass.ENUM, "mdi:home-lightning-bolt"),    "measurement_status": (None, SensorDeviceClass.ENUM, "mdi:clipboard-check-outline"),
     "phase_advice": (None, None, "mdi:lightbulb-outline"),
@@ -58,6 +62,8 @@ SENSORS = {
 
 
 SENSOR_EXPLANATIONS = {
+    "charging_overview": ("Samlet ladeoversikt. Automatikk velges på hver lader. Attributtene viser deltakelse, effekt og beregnet ladekapasitet.", "Combined charging overview. Enable automation per charger. Attributes show participation, power and calculated charging capacity."),
+    "charging_power": ("Samlet målt ladeeffekt fra alle laderne, også de med manuell styring. Ukjent hvis en måling mangler.", "Total measured charging power including manual chargers. Unknown if a measurement is missing."),
     "charging_role": ("Førsteprioritet i SLM, ikke Easees tekniske masterrolle.", "Software priority in SLM, not the Easee hardware master role."),
     "household_status": (
         "Samlet forklaring på hva laststyringen gjør, hvorfor laster lader eller venter, og eventuelle råd. Brukes av Markdown-kortet.",
@@ -186,7 +192,7 @@ async def async_setup_entry(
         keys = list(CHARGER_SENSOR_KEYS)
         if len(charger_entries(hass)) == 2:
             keys.append("charging_role")
-        legacy = [key for key in SENSORS if key not in keys and key not in {"measurement_status", "household_status", "charging_role"}
+        legacy = [key for key in SENSORS if key not in keys and key not in HOUSEHOLD_SENSOR_KEYS | {"charging_role"}
                   and registry.async_get_entity_id("sensor", DOMAIN, f"{load.entry_id}_{key}")]
         add_grouped(hass, entry, async_add_entities, [
             ChargingDiagnosticSensor(coordinator, load, key, *SENSORS[key], legacy=key in legacy)
@@ -194,7 +200,7 @@ async def async_setup_entry(
         if site_entry(hass).entry_id == load.entry_id:
             add_grouped(hass, entry, async_add_entities, [
                 ChargingDiagnosticSensor(coordinator, load, key, *SENSORS[key])
-                for key in ("household_status", "measurement_status")], "household")
+                for key in ("household_status", "measurement_status", "charging_overview", "charging_power")], "household")
 
 
 class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SensorEntity):
@@ -207,13 +213,13 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
         super().__init__(coordinator)
         self._key = key
         from .installation import shared_identity
-        identity = shared_identity(entry) if key in {"household_status", "measurement_status"} else entry.entry_id
+        identity = shared_identity(entry) if key in HOUSEHOLD_SENSOR_KEYS else entry.entry_id
         self._attr_unique_id = f"{identity}_{key}"
         self._attr_translation_key = key
         name_charger_entity(self, entry, "sensor", key)
         self.entity_id = f"sensor.{suggested_entity_id('sensor', key, entry)}"
         self._attr_device_info = charger_device_info(entry)
-        if key in {"household_status", "measurement_status"}:
+        if key in HOUSEHOLD_SENSOR_KEYS:
             from .device_info import household_device_info
             self._attr_device_info = household_device_info()
         self._attr_native_unit_of_measurement = unit
@@ -228,10 +234,10 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
             self._attr_state_class = None
         if key == "measurement_status":
             self._attr_options = ["ready", "waiting"]
-        if key == "household_status":
+        if key in {"household_status", "charging_overview"}:
             self._attr_options = ["waiting", "automatic", "manual", "paused", "disconnected", "completed", "mixed"]
         if key in {
-            "measurement_status", "household_status",
+            "measurement_status", "household_status", "charging_overview",
             "phase_advice", "status", "phase_mode", "output_phase", "grid_type", "voltage_type",
             "confidence", "reason", "control_reason", "no_current_reason",
             "manual_control_status", "auto_control", "han_fresh",
@@ -250,6 +256,10 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
         if self._key == "household_status":
             _, payload = ChargingDiagnosticSensor._household_payload(self)
             attributes.update(payload)
+        elif self._key == "charging_overview":
+            from .household_status import charging_summary
+            _, payload = ChargingDiagnosticSensor._household_payload(self)
+            attributes.update(charging_summary(payload))
         elif self._key == "phase_advice":
             attributes["card_suffix"] = self.coordinator.entry.data.get("entity_suffix", "")
         elif self._key == "recommended_current":
@@ -326,6 +336,8 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
         payload.update({key: reference.get(key) for key in (
             "han_power_w", "han_fresh", "han_age_seconds", "energy_used_kwh", "energy_estimate_kwh", "safety_margin_kwh", "minutes_left",
         )})
+        payload["site_available_kw"] = (reference.get("site_available_kw")
+            if reference.get("inputs_valid") and reference.get("han_fresh") else None)
         return state, payload
 
     def _priority_id(self):
@@ -338,8 +350,11 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
 
     @property
     def native_value(self):
-        if self._key == "household_status":
+        if self._key in {"household_status", "charging_overview"}:
             return ChargingDiagnosticSensor._household_payload(self)[0]
+        if self._key == "charging_power":
+            from .household_status import charging_summary
+            return charging_summary(ChargingDiagnosticSensor._household_payload(self)[1])["total_power_w"]
         data = self.coordinator.data or {}
         electrical = data.get("electrical", {})
         norwegian = str(self.hass.config.language or "").startswith("nb")

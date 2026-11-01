@@ -30,7 +30,6 @@ Ingen egne hjelpere eller YAML-automasjoner trengs. Varmtvann og gulvvarme vises
 | Betjening | Funksjon |
 | --- | --- |
 | Automatisk laststyring | Lar SLM regulere laderen. Nye ladere starter avslått. Fra beta 20 beholdes valget ved omstart og oppdatering. Når du slår den av, velges laveste tillatte manuelle strøm; pause, starttid og gyldige målinger respekteres. |
-| Automatisk laststyring – lading | Kategorientitet for alle laderne, beholdt for eksisterende automasjoner. Vises ikke i generert YAML; bruk bryteren på hver lader. |
 | Ladepause | Sender 0 A. Ved gjenopptak beregnes ny strøm automatisk, eller tidligere manuell grense gjenopprettes når målinger og grenser tillater det. |
 | Manuell ladestrøm | Tilgjengelig når automatikk og ladepause er av. Laderens faktiske minimum og Easees rapporterte maksimum gjelder. Null og lavere verdier kan ikke velges; bruk Ladepause. |
 | Fasevalg | Endrer Easees faseinnstilling. SLM bytter ikke automatisk mellom én og tre faser. |
@@ -141,6 +140,8 @@ Beta 21-kortet skjuler Ladepause og Manuell ladestrøm hver for seg når den akt
 
 ## Kort og estimatsensor
 
-Statuskortet er alltid på norsk, også med engelsk språk på HA-serveren. Fellesbryteren for alle ladere er fjernet fra generert YAML; hver lader beholder sin egen automatikkbryter. Kategorien finnes fortsatt som entitet for eksisterende automasjoner.
+Statuskortet er alltid på norsk, også med engelsk språk på HA-serveren. Fellesbryteren for alle ladere er fjernet fra generert YAML; hver lader beholder sin egen automatikkbryter. Fellesbryteren og den tomme enheten «SLM – Lading» fjernes ved oppdatering. Lagrede automatikkvalg på hver lader beholdes.
 
 Under oppsett eller Konfigurer → Boligens målinger kan du velge et valgfritt anslag for samlet forbruk i inneværende klokktime, i kWh. EnergyTariff `energy_estimate_this_hour` eller Tibber **Estimated consumption current hour** kan brukes. Estimatet vises bare som informasjon og erstatter ikke **energi brukt denne timen**. Uten valg beholdes tidligere standard `sensor.energy_estimate_this_hour` hvis den finnes. Ugyldig eller manglende estimat stopper ikke lading. EnergyTariff anbefales fortsatt for sine flere nyttige sensorer. Hent ny dashboard-YAML etter endring av kilde eller kort.
+
+Boligen får sensorene **Lading** (samlet status med deltakelse, antall ladere, effekt og beregnet ladekapasitet i attributtene) og **Samlet ladeeffekt** (W, inkludert manuell lading). Ved manglende effektmåling er totalen ukjent. Ingen av sensorene sender kommandoer.

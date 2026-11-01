@@ -148,6 +148,7 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         any_advice |= advice.startswith("Enfase på begge")
         rows.append({
             "id": load["id"], "name": load["name"], "load_type": load.get("load_type", "ev_charger"),
+            "source_available": bool(data and load.get("available", True)),
             "stage": stage, "status": status, "status_label": label, "explanation": explanation,
             "automatic_control": automatic, "paused": paused,
             "mode_label": tr("Auto", "Auto") if automatic else tr("Manuell", "Manual"),
@@ -247,3 +248,29 @@ def group_load_rows(rows, *, norwegian=True):
         result.append({'load_type': kind, 'name': labels.get(kind, ('Andre laster', 'Other loads'))[0 if norwegian else 1],
                        'loads': members, 'empty_message': empty_message})
     return result
+
+
+def charging_summary(payload):
+    """Read-only category totals from the same snapshot as the household card."""
+    import math
+    rows = [r for r in payload.get("controlled_loads", []) if r.get("load_type") == "ev_charger"]
+    known = [r for r in rows if r.get("source_available") and r.get("status") not in {"unknown", "unavailable", "other"}]
+    automatic = [r for r in known if r.get("automatic_control")]
+    powers = [r.get("power_w") for r in rows]
+    complete = bool(rows) and len(known) == len(rows) and all(
+        isinstance(p, (int, float)) and not isinstance(p, bool) and math.isfinite(p) and p >= 0
+        for p in powers)
+    return {
+        "charger_count": len(rows),
+        "available_chargers": len(known),
+        "charging_chargers": sum(r.get("status") == "charging" for r in known),
+        "completed_chargers": sum(r.get("status") == "completed" for r in known),
+        "automatic_chargers": len(automatic),
+        "automatic_mode": ("unknown" if len(known) != len(rows) else
+                           "off" if not automatic else "all" if len(automatic) == len(rows) else "mixed"),
+        "automatic_charger_names": [r["name"] for r in automatic],
+        "total_power_w": round(sum(powers), 1) if complete else None,
+        "power_measurements_complete": complete,
+        "capacity_for_automatic_charging_kw": payload.get("site_available_kw"),
+        "loads": rows,
+    }

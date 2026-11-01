@@ -175,6 +175,21 @@
           "primary": "First priority",
           "secondary": "Second priority"
         }
+      },
+      "charging_overview": {
+        "name": "Charging",
+        "state": {
+          "waiting": "Waiting",
+          "automatic": "Automatic control",
+          "manual": "Manual control",
+          "paused": "Charging paused",
+          "disconnected": "No car connected",
+          "completed": "Charging ended",
+          "mixed": "Different charger states"
+        }
+      },
+      "charging_power": {
+        "name": "Total charging power"
       }
     },
     "switch": {
@@ -189,9 +204,6 @@
       },
       "charging_priority": {
         "name": "First priority"
-      },
-      "charging_automatic_control": {
-        "name": "Automatic load control – charging"
       }
     },
     "number": {

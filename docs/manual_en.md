@@ -25,7 +25,6 @@ No custom helpers or YAML automation are required. Hot water and floor heating a
 | Control | Behavior |
 | --- | --- |
 | Automatic load control | Adjusts the dynamic current limit. New chargers start off. From beta 20, saved choices survive restarts and updates. Switching off selects the allowed manual minimum; pause, schedule and measurement guards remain. |
-| Automatic control – charging | Category entity retained for existing automations; omitted from generated YAML. Use each charger’s switch. |
 | Charging pause | Sends 0 A. Resume recalculates automatically or restores the previous manual limit when current measurements and limits permit. |
 | Manual current | Available when automatic control and pause are off; bounded by the verified charger minimum and Easee's reported maximum. Zero or lower values cannot be selected; use Charging pause. |
 | Phase selection | Changes Easee's phase setting. SLM never automatically changes topology. |
@@ -134,6 +133,8 @@ Beta 21: adding a charger retains the existing load automatically and presents o
 
 ## Card and optional estimate source
 
-The generated status card is always Norwegian, including on an English HA server. The combined automatic-control card is omitted; each charger retains its own switch. The category entity remains available to existing automations.
+The generated status card is always Norwegian, including on an English HA server. The combined automatic-control card is omitted; each charger retains its own switch. The combined switch and empty SLM – Lading device are removed on update; saved per-charger choices are retained.
 
 Setup and Configure → Household offer an optional sensor for estimated total consumption in the current clock hour, in kWh. EnergyTariff `energy_estimate_this_hour`, Tibber **Estimated consumption current hour**, or an equivalent source can be selected. It is display-only and does not replace measured **energy used this hour**. Missing/invalid estimates do not stop charging. Existing installations default to `sensor.energy_estimate_this_hour` when no source is selected. EnergyTariff remains recommended for its additional useful sensors. Generate new dashboard YAML after changing the source or layout.
+
+The household has read-only **Charging** (summary with participation, counts, power and existing calculated charging capacity attributes) and **Total charging power** (W, including manual chargers). Missing power inputs yield an unknown total. Neither sensor sends commands.

@@ -136,8 +136,9 @@ async def async_setup_entry(hass, entry):
         # A concurrent legacy setup may finish after consolidation removed it.
         return True
     ensure_groups(hass, entry)
-    from .installation import reconcile_pair_entities
+    from .installation import reconcile_pair_entities, retire_charging_category_control
 
+    retire_charging_category_control(hass, entry)
     reconcile_pair_entities(hass, entry)
     loads = platform_loads(entry)
     from .budget import consumption_limit_value

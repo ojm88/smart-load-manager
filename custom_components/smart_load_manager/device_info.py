@@ -29,6 +29,8 @@ def name_charger_entity(entity, entry, domain, key):
     """Full names put function before charger; registry user overrides win."""
     if key in {
         "household_status",
+        "charging_overview",
+        "charging_power",
         "measurement_status",
         "consumption_limit",
         "allocation_mode",

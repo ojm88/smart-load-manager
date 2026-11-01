@@ -6,6 +6,8 @@ from .const import DOMAIN
 
 SENSOR_OBJECT_IDS = {
     "charging_role": "slm_charging_role",
+    "charging_overview": "slm_charging_overview",
+    "charging_power": "slm_total_charging_power",
     "household_status": "slm_status",
     "measurement_status": "slm_measurement_status",
     "phase_advice": "slm_phase_advice",
@@ -42,7 +44,6 @@ ENTITY_OBJECT_IDS = {
     "number": {"manual_current_limit": "slm_manual_current"},
     "switch": {
         "charging_priority": "slm_priority",
-        "charging_automatic_control": "slm_charging_auto_control",
         "automatic_control": "slm_auto_control",
         "charging_pause": "slm_charging_pause",
         "schedule_control": "slm_schedule",
@@ -64,11 +65,12 @@ def suggested_entity_id(domain: str, translation_key: str, entry=None) -> str:
         raise KeyError(f"No stable entity ID for {domain}.{translation_key}")
     shared = (domain, translation_key) in {
         ("sensor", "household_status"),
+        ("sensor", "charging_overview"),
+        ("sensor", "charging_power"),
         ("sensor", "measurement_status"),
         ("select", "consumption_limit"),
         ("select", "allocation_mode"),
         ("select", "priority_charger"),
-        ("switch", "charging_automatic_control"),
     }
     suffix = "" if shared else getattr(entry, "data", {}).get("entity_suffix", "")
     return f"{object_id}_{suffix}" if suffix else object_id

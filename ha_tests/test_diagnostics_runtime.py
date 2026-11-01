@@ -27,3 +27,5 @@ class DiagnosticsTests(IsolatedAsyncioTestCase):
         self.assertGreater(result['loads'][0]['pending_reduction_age_seconds'], 0)
         self.assertEqual(result['trace']['events'][0]['target'],16)
         self.assertEqual(result['slm_version'],'0.1.1-beta.16')
+        self.assertEqual(result['charging_summary']['automatic_chargers'],1)
+        self.assertIsNone(result['charging_summary']['total_power_w'])

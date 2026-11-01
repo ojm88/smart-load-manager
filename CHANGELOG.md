@@ -3,7 +3,7 @@
 ## Unreleased — beta 22 preparation
 
 - Keep generated status content Norwegian independently of HA server language.
-- Remove the combined charging automation card from generated YAML; retain individual controls and category entity compatibility.
+- Remove the combined charging automation card from generated YAML; retain individual controls. Retire the obsolete category switch and empty device without changing saved per-charger choices. Add read-only charging overview and measured total-power sensors on the household device, with participation and capacity attributes and anonymous diagnostic summary.
 - Add optional hourly estimate selection (EnergyTariff, Tibber or equivalent kWh source), preserve the existing default, and use chosen source IDs in graphs. Missing estimates remain display-only.
 - Show Easee branding in second/add dialogs while retaining the unused-only native text list. The logo is in the dialog, not each dropdown option.
 
