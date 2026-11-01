@@ -4,14 +4,14 @@ SLM adjusts charging to a shared hourly household energy target. It can help avo
 
 ## Requirements and installation
 
-Use Home Assistant 2026.2 or newer, configured Easee devices, and EnergyTariff with a HAN power sensor in W or kW. **Enable both Current (A) and Voltage (V) sensors on every Easee charger** under Settings → Devices & services → Easee → charger → Entities. Include disabled entities and wait for measured values.
+Use Home Assistant 2026.2 or newer, configured Easee devices, a HAN power sensor in W or kW, and current-clock-hour energy used in kWh. EnergyTariff is recommended; equivalent sources from other integrations are supported. **Enable both Current (A) and Voltage (V) sensors on every Easee charger** under Settings → Devices & services → Easee → charger → Entities. Include disabled entities and wait for measured values.
 
 Download a GitHub release, copy `custom_components/smart_load_manager` into `config/custom_components/`, then restart Home Assistant. From HA 2026.11 you can also add `https://github.com/ojm88/smart-load-manager` as a custom Integration in **Settings → Marketplace**; custom repositories require a GitHub connection.
 
 ## Setup
 
 1. Add **Smart Load Manager OJM** under Devices & services.
-2. Select household HAN power, EnergyTariff **used this hour**, and a safety margin.
+2. Select household HAN power, **energy used this hour**, optional estimated total consumption this hour, and a safety margin.
 3. Choose EV charging and the first Easee charger. Then finish with one or add a second; the second list excludes the first choice.
 4. Set **Consumption limit / Forbruksgrense** on the household device (4.5–20 kWh per hour, 0.5 steps).
 5. Disable older automation controlling these chargers, then deliberately enable SLM automatic control for each charger.
@@ -25,7 +25,7 @@ No custom helpers or YAML automation are required. Hot water and floor heating a
 | Control | Behavior |
 | --- | --- |
 | Automatic load control | Adjusts the dynamic current limit. New chargers start off. From beta 20, saved choices survive restarts and updates. Switching off selects the allowed manual minimum; pause, schedule and measurement guards remain. |
-| Automatic control – charging | Toggles automation for all chargers together. Individual charger switches remain available; future thermal categories are independent. |
+| Automatic control – charging | Category entity retained for existing automations; omitted from generated YAML. Use each charger’s switch. |
 | Charging pause | Sends 0 A. Resume recalculates automatically or restores the previous manual limit when current measurements and limits permit. |
 | Manual current | Available when automatic control and pause are off; bounded by the verified charger minimum and Easee's reported maximum. Zero or lower values cannot be selected; use Charging pause. |
 | Phase selection | Changes Easee's phase setting. SLM never automatically changes topology. |
@@ -130,3 +130,10 @@ Beta 21: With two chargers, an unused charger must not block its peer because ze
 
 
 Beta 21: adding a charger retains the existing load automatically and presents one single-choice list of unused Easee chargers. Configured devices and a third selection slot are not offered. Current and Voltage must both be enabled before setup; missing measurements produce specific localized guidance. The generated dashboard independently hides unavailable Charging pause and Manual current rows. An existing SLM pause remains visible for removal. Regenerate get_dashboard YAML and replace the copied card after updating; existing pasted cards do not update themselves.
+
+
+## Card and optional estimate source
+
+The generated status card is always Norwegian, including on an English HA server. The combined automatic-control card is omitted; each charger retains its own switch. The category entity remains available to existing automations.
+
+Setup and Configure → Household offer an optional sensor for estimated total consumption in the current clock hour, in kWh. EnergyTariff `energy_estimate_this_hour`, Tibber **Estimated consumption current hour**, or an equivalent source can be selected. It is display-only and does not replace measured **energy used this hour**. Missing/invalid estimates do not stop charging. Existing installations default to `sensor.energy_estimate_this_hour` when no source is selected. EnergyTariff remains recommended for its additional useful sensors. Generate new dashboard YAML after changing the source or layout.

@@ -5,7 +5,7 @@ SLM tilpasser ladingen til boligens valgte timebudsjett. Målet er å redusere u
 ## Før du begynner
 
 - Home Assistant 2026.2 eller nyere.
-- Easee-integrasjonen og EnergyTariff må være satt opp.
+- Easee-integrasjonen må være satt opp. EnergyTariff anbefales fordi den gir flere nyttige målinger; kompatible timeforbruk-sensorer fra andre integrasjoner kan også brukes.
 - Bruk HAN-sensoren som EnergyTariff benytter (W eller kW).
 - Aktiver **Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader**, også lader nummer to: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter og vent på en målt verdi.
 
@@ -16,7 +16,7 @@ Last ned ønsket GitHub-utgivelse. Kopier `custom_components/smart_load_manager`
 Fra HA 2026.11 kan du også legge til `https://github.com/ojm88/smart-load-manager` som egendefinert integrasjonsrepo i **Innstillinger → Marketplace**. Egendefinerte repoer krever GitHub-tilkobling.
 
 1. Legg til **Smart Load Manager OJM** under Enheter og tjenester.
-2. Velg boligens HAN-effekt, EnergyTariff **brukt denne timen**, og sikkerhetsmargin.
+2. Velg boligens HAN-effekt, **energi brukt denne timen**, valgfritt timeestimat og sikkerhetsmargin.
 3. Velg elbillading, første Easee-lader og laderens fysiske tilkobling. Velg deretter å fullføre med én eller legge til en til. Listen for lader to viser bare enheter du ikke allerede har valgt.
 4. Velg **Forbruksgrense** på **SLM – Boligen** (4,5–20 kWh per time, trinn på 0,5).
 5. Slå av eventuell tidligere automasjon som regulerer de samme laderne. Slå deretter på automatisk laststyring for laderne du vil styre.
@@ -30,7 +30,7 @@ Ingen egne hjelpere eller YAML-automasjoner trengs. Varmtvann og gulvvarme vises
 | Betjening | Funksjon |
 | --- | --- |
 | Automatisk laststyring | Lar SLM regulere laderen. Nye ladere starter avslått. Fra beta 20 beholdes valget ved omstart og oppdatering. Når du slår den av, velges laveste tillatte manuelle strøm; pause, starttid og gyldige målinger respekteres. |
-| Automatisk laststyring – lading | Slår automatikk av/på for alle laderne samlet. Hver lader kan fortsatt styres individuelt; andre fremtidige lasttyper påvirkes ikke. |
+| Automatisk laststyring – lading | Kategorientitet for alle laderne, beholdt for eksisterende automasjoner. Vises ikke i generert YAML; bruk bryteren på hver lader. |
 | Ladepause | Sender 0 A. Ved gjenopptak beregnes ny strøm automatisk, eller tidligere manuell grense gjenopprettes når målinger og grenser tillater det. |
 | Manuell ladestrøm | Tilgjengelig når automatikk og ladepause er av. Laderens faktiske minimum og Easees rapporterte maksimum gjelder. Null og lavere verdier kan ikke velges; bruk Ladepause. |
 | Fasevalg | Endrer Easees faseinnstilling. SLM bytter ikke automatisk mellom én og tre faser. |
@@ -65,7 +65,7 @@ Easee-statusen **completed**, bekreftet med 0 W og mindre enn 1 A hvilestrøm, t
 
 Måleverdier og ladestatus følger endringer fra kildesensorene i HA. Easee kan melde ladestart før strømmålingen stiger fra 0 A; dette alene stanser ikke lading når bekreftet tilkobling og målte spenninger er gyldige. Ledig kapasitet og anbefalt ladestrøm beregnes ved kildeendringer, i tillegg til en tids- og gyldighetskontroll hvert 30. sekund. Når Easee melder at en nylig tilkoblet bil er klar til lading, vurderer SLM lading straks. Automatisk styring må være på, ladeplanen må tillate lading, pause må være av og nødvendige målinger og kapasitet må være tilgjengelige. Ved to ladere bekreftes nødvendige reduksjoner før kapasitet flyttes. Neste ordinære regulering settes fem minutter etter fullført startregulering. Ladegrensene reguleres ellers normalt hvert femte minutt; uendret grense sendes ikke på nytt. En prognose basert på brukt energi, målereffekt og sist satte ladegrenser avgjør om budsjettet kan holde til neste regulering eller timeskifte. Vedvarende risiko i 30 sekunder kan gi tidligere reduksjon; kan budsjettet ikke vente, reduseres det straks. Pause, ugyldige nødvendige målinger og lavere fysisk strømgrense håndteres straks. Etter en tidlig reduksjon venter ordinær økning minst fem minutter. Kortet skiller mellom anbefalt strøm nå, sist satt grense og målt strøm. Markdown-kortet viser målereffekt (W), brukt energi denne timen (kWh) og forventet timeforbruk (kWh) på en kompakt linje. Manglende verdier vises som —. Generer kortet på nytt for å få dette oppsettet.
 
-Kjør `smart_load_manager.get_dashboard` under **Settings → Tools → Actions**. Kopier `yaml` til et **Manuelt kort i en eksisterende seksjon**. Generatoren bruker de faktiske entitets-ID-ene, også når du har gitt dem egne navn. Grafen leser EnergyTariff direkte.
+Kjør `smart_load_manager.get_dashboard` under **Settings → Tools → Actions**. Kopier `yaml` til et **Manuelt kort i en eksisterende seksjon**. Generatoren bruker de faktiske entitets-ID-ene, også når du har gitt dem egne navn. Grafen bruker de valgte timeforbruk- og estimatsensorene.
 
 De statiske [ett-lader](../examples/lovelace/charging_card.yaml)- og [to-lader](../examples/lovelace/two_chargers_card.yaml)-kortene er maler. Generer helst kortet for din installasjon.
 
@@ -137,3 +137,10 @@ Beta 21: Ved to ladere skal en ubrukt lader ikke blokkere den andre fordi nullm�
 
 
 Beta 21-kortet skjuler Ladepause og Manuell ladestrøm hver for seg når den aktuelle kontrollen er utilgjengelig. En aktiv SLM-pause er fortsatt synlig slik at den kan oppheves. Etter oppdatering: kjør get_dashboard-handlingen på nytt og erstatt kortets YAML for å få denne visningen. Tidligere kopiert YAML endres ikke automatisk.
+
+
+## Kort og estimatsensor
+
+Statuskortet er alltid på norsk, også med engelsk språk på HA-serveren. Fellesbryteren for alle ladere er fjernet fra generert YAML; hver lader beholder sin egen automatikkbryter. Kategorien finnes fortsatt som entitet for eksisterende automasjoner.
+
+Under oppsett eller Konfigurer → Boligens målinger kan du velge et valgfritt anslag for samlet forbruk i inneværende klokktime, i kWh. EnergyTariff `energy_estimate_this_hour` eller Tibber **Estimated consumption current hour** kan brukes. Estimatet vises bare som informasjon og erstatter ikke **energi brukt denne timen**. Uten valg beholdes tidligere standard `sensor.energy_estimate_this_hour` hvis den finnes. Ugyldig eller manglende estimat stopper ikke lading. EnergyTariff anbefales fortsatt for sine flere nyttige sensorer. Hent ny dashboard-YAML etter endring av kilde eller kort.

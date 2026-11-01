@@ -2,6 +2,10 @@
 
 Updated: 2026-11-01
 
+## Beta 22 preparation — not published
+
+Owner confirms beta 21 starts physical charging on the outside charger with only one car connected in the paired installation. This is initial one-car/two-configured-charger acceptance, not full paired load transfer acceptance. Requested refinements: always-Norwegian status card, no combined charging automation card in YAML, optional configurable hourly estimate from Tibber/EnergyTariff and continued EnergyTariff recommendation. Native unused-only SelectSelector has no option-image support; Easee branding is added to dialog description without changing eligibility or leaving Companion. Physical phone rendering remains pending. Validation: 93 pure tests, 158 runtime tests on each of HA 2026.10.4/Python 3.14 and HA 2026.2.3/Python 3.13, plus one Node test pass. The server-English regression renders Norwegian empty-state Markdown. Selected-provider estimate events update live, invalid/missing estimates retain valid control inputs, and graph replacement tests cover provider-specific IDs. No live HA modifications or phone/logo render verification. See BETA22_VERIFICATION.md.
+
 ## Current release — 0.1.1-beta.21
 
 Published 2026-11-01 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.21). PR #17 merge/tag 56f5c87e78063120051009d74416908b4e6c3aed; tagged tree 0c5f32b8331eaec8da38e47f993d7065a1435295 equals the tested release-preparation tree. Final CI 41333407932 passed all four jobs for b64f196fa2e4a67a060aa8595ae667e1df6389b7. Public Pre-release page and manifest verified. No production installation or physical commands performed. Regenerate dashboard YAML after updating.

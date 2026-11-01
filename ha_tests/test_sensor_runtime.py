@@ -189,3 +189,24 @@ class SensorConsolidationTests(unittest.IsolatedAsyncioTestCase):
         entity=ConsumptionLimitSelect(NS(),NS(entry_id='owner',data={}))
         self.assertEqual(entity.device_info['identifiers'],{('smart_load_manager','household')})
         self.assertEqual(entity.device_info['name'],'SLM – Boligen')
+
+
+class NorwegianDashboardTests(unittest.IsolatedAsyncioTestCase):
+    async def test_household_card_is_norwegian_on_english_server(self):
+        from types import SimpleNamespace as NS
+        from pathlib import Path
+        from jinja2 import Environment
+        import yaml
+        owner=NS(entry_id='a',title='Smart Load Manager OJM – Outside',data={},options={})
+        coordinator=NS(entry=owner,data={'status':'disconnected'},last_update_success=True)
+        entity=NS(coordinator=coordinator,hass=NS(config=NS(language='en')))
+        state,payload=ChargingDiagnosticSensor._household_payload(entity)
+        env=Environment()
+        env.globals.update(states=lambda _:state,state_attr=lambda _,key:payload.get(key))
+        for filename in ['one.yaml','two.yaml']:
+            template=yaml.safe_load((Path(__file__).parents[1]/'custom_components/smart_load_manager/dashboard'/filename).read_text())['cards'][0]['content']
+            rendered=env.from_string(template).render()
+            self.assertIn('Lading',rendered)
+            self.assertIn('Ingen bil',rendered)
+            self.assertNotIn('Charging',rendered)
+            self.assertNotIn('No cars',rendered)

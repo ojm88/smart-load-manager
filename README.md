@@ -21,9 +21,10 @@ SLM reduces charging when the home needs more power and gives charging more room
 ## Requirements
 
 - Home Assistant **2026.2 or newer**.
-- Easee chargers configured in Home Assistant, with an enabled **Voltage** sensor and a measured value on each charger.
+- Easee chargers configured in Home Assistant, with enabled **Current (A)** and **Voltage (V)** sensors and a measured value on each charger.
 - A HAN power sensor in W or kW.
-- **[EnergyTariff](https://github.com/epaulsen/energytariff) is required.** Set it up with the same HAN meter before configuring SLM. Its **energy used this hour** sensor supplies the hourly consumption needed for the budget calculation; a spot-price sensor cannot replace it.
+- A sensor for **energy used since the start of the current clock hour**, in kWh, is required. **[EnergyTariff](https://github.com/epaulsen/energytariff) is recommended** because it supplies this and several other useful sensors. Equivalent sources, such as Tibber’s accumulated consumption current hour, can also be selected. A spot-price sensor cannot replace hourly energy.
+- Optional: estimated total consumption for the current clock hour in kWh, from EnergyTariff (`energy_estimate_this_hour`), [Tibber](https://www.home-assistant.io/integrations/tibber/) (**Estimated consumption current hour**) or another compatible integration. Select it during setup or under **Configure → Household**; it is informational and does not replace measured hourly consumption. Existing installations retain `sensor.energy_estimate_this_hour` as the default when no source is selected.
 
 ## Installation
 
@@ -38,7 +39,7 @@ Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy
 ## Configuration
 
 1. Open **Settings → Devices & services → Add integration → Smart Load Manager OJM**.
-2. Select HAN power, EnergyTariff energy used this hour, and the safety margin.
+2. Select HAN power, energy used this hour, the optional hourly estimate, and the safety margin.
 3. Choose EV charging, select the first charger and confirm its physical supply/wired phases, then finish or add a second with its own connection.
 4. Set the household consumption target on **SLM – Boligen**. Enable automatic control deliberately on each charger, with no competing automation controlling it.
 
@@ -136,3 +137,5 @@ Thanks to [Home Assistant](https://www.home-assistant.io/), the Easee integratio
 
 
 Before configuring chargers, enable **Current (A)** and **Voltage (V)** on **each Easee charger**: Settings → Devices & services → Easee → charger → Entities → include disabled entities. Enable both and wait for measured values. Beta 21 uses a single unused-charger list for adding a second device; a third slot is not offered.
+
+The generated status card is always in Norwegian, independently of the HA server language. Automatic control is shown per charger; the combined charging-category switch is omitted from the generated YAML. The category entity remains available for existing automations.

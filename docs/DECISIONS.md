@@ -692,3 +692,10 @@ Owner authorizes publication of the paired idle/reduction correction, conditiona
 ## Beta 21 publication verified — 2026-11-01
 
 Published after owner authorization. PR #17 merge/tag 56f5c87e78063120051009d74416908b4e6c3aed, tested/tagged tree 0c5f32b8331eaec8da38e47f993d7065a1435295, final CI 41333407932 all four jobs passed. Public Pre-release and manifest beta.21 verified. Existing settings retained; regenerate copied dashboard YAML. No live HA installation or physical acceptance claimed.
+
+
+## 2026-11-01 — Beta 22 presentation and source selection
+
+The generated dashboard is Norwegian independently of server language. Remove only the combined charging-category card, preserving entity state, per-charger controls and external automation compatibility. Keep one unused-device list for additive setup; show Easee branding in the dialog description because SelectSelector options accept value/label only and DeviceSelector does not exclude individual IDs. No custom/external picker is introduced.
+
+Hourly energy used remains required; EnergyTariff is recommended rather than mandated by provider. Optional estimated total hourly kWh is explicitly selectable, e.g. Tibber Estimated consumption current hour, defaults to the existing EnergyTariff entity for old installations, and is never a control/freshness requirement. Source changes persist with household configuration and regenerate graph references. New release not authorized or published by this feedback.

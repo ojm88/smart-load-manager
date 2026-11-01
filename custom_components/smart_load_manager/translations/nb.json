@@ -3,16 +3,18 @@
     "step": {
       "household": {
         "title": "Boligens målinger",
-        "description": "Velg felles HAN-effekt og EnergyTariff timeforbruk én gang for boligen. Forbruksgrensen endres senere fra boligenheten. {validation_error}",
+        "description": "Velg boligens HAN-effekt og energi brukt denne timen. EnergyTariff anbefales fordi den gir flere nyttige sensorer. Timeestimat er valgfritt og kan også hentes fra Tibber eller en annen integrasjon. {validation_error}",
         "data": {
           "han_power_entity": "Husmåling – HAN-effektmåler",
-          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
-          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
+          "tariff_used_entity": "Energi brukt denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin – kWh",
+          "energy_estimate_entity": "Forventet forbruk denne timen – valgfritt"
         },
         "data_description": {
-          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
-          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
-          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+          "han_power_entity": "Velg øyeblikkelig effekt fra boligens HAN-måler, i W eller kW.",
+          "tariff_used_entity": "Velg akkumulert energiforbruk siden starten av inneværende klokktime, i kWh. EnergyTariff anbefales; tilsvarende sensor fra for eksempel Tibber kan også brukes. Ikke velg estimat, døgnforbruk eller totalmåler.",
+          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt.",
+          "energy_estimate_entity": "Velg anslag for samlet energiforbruk i inneværende klokktime i kWh, for eksempel EnergyTariff energy_estimate_this_hour eller Tibber Estimated consumption current hour. Brukes bare til visning. Uten valg brukes sensor.energy_estimate_this_hour hvis den finnes."
         }
       },
       "load_type": {
@@ -46,7 +48,7 @@
       },
       "second_charger": {
         "title": "Andre Easee-lader",
-        "description": "Eksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
+        "description": "<img src=\"https://brands.home-assistant.io/easee/icon.png\" alt=\"Easee\" width=\"40\">\n\nEksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
         "data": {
           "charger_device": "Ny Easee-lader",
           "electrical_connection": "Den nye laderens fysiske tilkobling"
@@ -237,16 +239,18 @@
       },
       "household": {
         "title": "Boligens målinger",
-        "description": "Velg felles HAN-effekt og EnergyTariff timeforbruk én gang for boligen. Forbruksgrensen endres senere fra boligenheten. {validation_error}",
+        "description": "Velg boligens HAN-effekt og energi brukt denne timen. EnergyTariff anbefales fordi den gir flere nyttige sensorer. Timeestimat er valgfritt og kan også hentes fra Tibber eller en annen integrasjon. {validation_error}",
         "data": {
           "han_power_entity": "Husmåling – HAN-effektmåler",
-          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
-          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
+          "tariff_used_entity": "Energi brukt denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin – kWh",
+          "energy_estimate_entity": "Forventet forbruk denne timen – valgfritt"
         },
         "data_description": {
-          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
-          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
-          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+          "han_power_entity": "Velg øyeblikkelig effekt fra boligens HAN-måler, i W eller kW.",
+          "tariff_used_entity": "Velg akkumulert energiforbruk siden starten av inneværende klokktime, i kWh. EnergyTariff anbefales; tilsvarende sensor fra for eksempel Tibber kan også brukes. Ikke velg estimat, døgnforbruk eller totalmåler.",
+          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt.",
+          "energy_estimate_entity": "Velg anslag for samlet energiforbruk i inneværende klokktime i kWh, for eksempel EnergyTariff energy_estimate_this_hour eller Tibber Estimated consumption current hour. Brukes bare til visning. Uten valg brukes sensor.energy_estimate_this_hour hvis den finnes."
         }
       },
       "chargers": {
@@ -259,7 +263,7 @@
       },
       "add_charger": {
         "title": "Legg til lader",
-        "description": "Eksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
+        "description": "<img src=\"https://brands.home-assistant.io/easee/icon.png\" alt=\"Easee\" width=\"40\">\n\nEksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
         "data": {
           "charger_device": "Ny Easee-lader",
           "electrical_connection": "Den nye laderens fysiske tilkobling"

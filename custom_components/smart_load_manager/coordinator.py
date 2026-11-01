@@ -34,6 +34,7 @@ from .const import (
     HAN_MAX_AGE_SECONDS,
     SCHEDULE_WINDOW_HOURS,
     CONF_TARIFF_USED_ENTITY,
+    CONF_ESTIMATE_ENTITY,
     TARIFF_ESTIMATE_ENTITY,
     TARIFF_USED_ENTITY,
     UPDATE_INTERVAL,
@@ -53,6 +54,19 @@ def _number(state) -> float:
     if not math.isfinite(value):
         raise ValueError("Kildesensoren har en ugyldig tallverdi")
     return value
+
+
+def _hourly_estimate(hass, entry):
+    """Optional display input; invalid estimates never stop charging."""
+    entity_id = entry.data.get(CONF_ESTIMATE_ENTITY) or TARIFF_ESTIMATE_ENTITY
+    state = hass.states.get(entity_id)
+    try:
+        value = _number(state)
+        if value >= 0 and str(state.attributes.get("unit_of_measurement", "")).lower() == "kwh":
+            return value
+    except (TypeError, ValueError):
+        pass
+    return None
 
 
 def _numeric_attributes(attributes, prefix: str) -> dict[str, float]:
@@ -114,7 +128,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                    self.easee.power, *self.easee.current_limits,
                    self.entry.data[CONF_HAN_POWER_ENTITY],
                    self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY),
-                   TARIFF_ESTIMATE_ENTITY}
+                   self.entry.data.get(CONF_ESTIMATE_ENTITY) or TARIFF_ESTIMATE_ENTITY}
         self._source_unsub = async_track_state_change_event(
             self.hass, [source for source in sources if source], self._source_changed)
 
@@ -178,7 +192,7 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     "han_fresh": han_measurement_is_fresh(han_age, han_power),
                     "han_age_seconds": han_age, "han_power_w": han_power,
                     "energy_used_kwh": value(self.entry.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY)),
-                    "energy_estimate_kwh": value(TARIFF_ESTIMATE_ENTITY),
+                    "energy_estimate_kwh": _hourly_estimate(self.hass, self.entry),
                 }
             live_keys = {
                 "status", "charger_current_a", "charger_power_w", "electrical",
@@ -289,12 +303,9 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                 energy_used = _number(self.hass.states.get(used_entity))
             except (TypeError, ValueError) as err:
                 tariff_error = str(err)
-            # The EnergyTariff estimate is exposed for display and comparison,
+            # The selected hourly estimate is exposed for display and comparison,
             # but it is deliberately not a setup requirement or control input.
-            try:
-                energy_estimate = _number(self.hass.states.get(TARIFF_ESTIMATE_ENTITY))
-            except (TypeError, ValueError):
-                energy_estimate = None
+            energy_estimate = _hourly_estimate(self.hass, self.entry)
             charger_power_w = 0.0
             if self.easee.power:
                 power_state = self.hass.states.get(self.easee.power)

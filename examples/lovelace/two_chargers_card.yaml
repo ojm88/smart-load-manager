@@ -143,12 +143,6 @@ cards:
   - entity: select.slm_charging_mode
     name: Lademåte
 - type: entities
-  title: Lading – automatikk
-  show_header_toggle: false
-  entities:
-  - entity: switch.slm_charging_auto_control
-    name: Automatisk laststyring – alle ladere
-- type: entities
   title: Styring – første lader
   show_header_toggle: false
   entities:

@@ -20,6 +20,7 @@ from .const import (
     CONF_HAN_POWER_ENTITY,
     CONF_SAFETY_MARGIN_KWH,
     CONF_TARIFF_USED_ENTITY,
+    CONF_ESTIMATE_ENTITY,
     DOMAIN,
     TARIFF_USED_ENTITY,
 )
@@ -58,20 +59,30 @@ def _validate_meter_sources(hass, user_input):
     state = hass.states.get(used_entity)
     if state is None or state.state in {"unknown", "unavailable"}:
         raise ValueError(
-            "EnergyTariff må være konfigurert først; mangler " + used_entity
+            "Sensor for energi brukt denne timen mangler: " + used_entity
         )
     try:
         used = float(state.state)
         if not math.isfinite(used) or used < 0:
             raise ValueError(
-                "EnergyTariff-forbruk må være et gyldig, ikke-negativt tall"
+                "Timeforbruk må være et gyldig, ikke-negativt tall"
             )
     except (TypeError, ValueError) as err:
         raise ValueError(
-            "EnergyTariff-sensoren er ikke numerisk: " + used_entity
+            "Timeforbruk-sensoren er ikke numerisk: " + used_entity
         ) from err
     if str(state.attributes.get("unit_of_measurement", "")).lower() != "kwh":
-        raise ValueError("EnergyTariff-sensoren må være i kWh: " + used_entity)
+        raise ValueError("Timeforbruk-sensoren må være i kWh: " + used_entity)
+
+    estimate_entity = user_input.get(CONF_ESTIMATE_ENTITY)
+    if estimate_entity:
+        estimate = hass.states.get(estimate_entity)
+        try:
+            value = float(estimate.state)
+            if not math.isfinite(value) or value < 0 or str(estimate.attributes.get("unit_of_measurement", "")).lower() != "kwh":
+                raise ValueError
+        except (AttributeError, TypeError, ValueError) as err:
+            raise ValueError("Velg et gyldig timeestimat i kWh / Select a valid hourly estimate in kWh") from err
 
     margin = float(user_input.get(CONF_SAFETY_MARGIN_KWH, 0.3))
     if not math.isfinite(margin) or not 0 <= margin <= 3:
@@ -202,6 +213,8 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
         detail = ""
         if user_input is not None:
             values.update(user_input)
+            if CONF_ESTIMATE_ENTITY not in user_input:
+                values.pop(CONF_ESTIMATE_ENTITY, None)
             try:
                 _validate_meter_sources(self.hass, values)
             except (ValueError, TypeError) as err:
@@ -475,6 +488,9 @@ def _household_schema():
             vol.Required(
                 CONF_TARIFF_USED_ENTITY, default=TARIFF_USED_ENTITY
             ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Optional(CONF_ESTIMATE_ENTITY): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
             vol.Required(CONF_SAFETY_MARGIN_KWH, default=0.3): selector.NumberSelector(
                 selector.NumberSelectorConfig(
                     min=0, max=3, step=0.1, unit_of_measurement="kWh", mode="box"

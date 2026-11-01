@@ -1,0 +1,19 @@
+# Beta 22 preparation — 2026-11-01
+
+Not published; manifest remains beta 21. Owner confirms beta 21 starts charging on the outside charger with one connected car and two configured chargers. This does not yet establish simultaneous paired capacity transfer.
+
+## Scope and source contracts
+
+- Always-Norwegian household presentation payload feeds the existing Norwegian Markdown. HA server language continues to govern ordinary translated entity metadata.
+- Remove the combined charging-automation entities card from two-charger packaged/example YAML. Keep category entity, persisted state and per-charger control semantics unchanged.
+- Native additive SelectSelector still excludes configured devices and caps additions. Installed HA selector.py confirms SelectOptionDict has only value/label, and DeviceFilterSelectorConfig has no individual-ID exclusion. Add a small Easee brand image to the native dialog description; dropdown options remain text. No external navigation/custom panel.
+- Optional household energy_estimate_entity selects total estimated current-clock-hour kWh. Legacy fallback sensor.energy_estimate_this_hour is retained if omitted. Validate finite nonnegative kWh at selection; invalid/unavailable runtime values yield no estimate and do not affect charging readiness. Source-event subscription, normal/partial sampling and graph references use the selected source.
+- Hourly consumed energy remains a separate required input. Tibber accumulated consumption current hour can provide it; estimated consumption cannot replace it. EnergyTariff remains recommended for its additional sensors. Official Tibber documentation lists the hourly estimate: https://www.home-assistant.io/integrations/tibber/.
+
+## Validation
+
+93 pure tests, 158 HA runtime tests on each supported environment (2026.10.4/Python 3.14.8 and 2026.2.3/Python 3.13.16), and one Node test pass. Compilation, JSON parsing, YAML loading and whitespace checks pass. Runtime tests include selected-source live events and loss, setup unit/numeric validation, legacy estimate fallback, actual registered graph references and Norwegian rendered Markdown on an English server. Existing charge cadence, paired handover, completion/wake and persistence suites pass with synthetic telemetry and mocked outgoing commands.
+
+## Remaining acceptance
+
+No production HA writes, physical charging commands or phone rendering during this preparation. Dialog logo placement/rendering must be checked in Companion; it is not restored inside individual dropdown options. Regenerate YAML after installing a future release to get the removed card and changed source references. A two-car hardware test remains part of beta 21 acceptance.

@@ -128,8 +128,8 @@ SENSOR_EXPLANATIONS = {
         "Energy used so far this hour, supplied by EnergyTariff.",
     ),
     "energy_estimate": (
-        "EnergyTariffs anslag for totalt forbruk denne timen. Vises kun til informasjon.",
-        "EnergyTariff's estimate of total use this hour. Informational only.",
+        "Valgt sensors anslag for totalt forbruk denne timen. Vises kun til informasjon.",
+        "Selected sensor's estimate of total use this hour. Informational only.",
     ),
     "confidence": (
         "Hvor sikkert fase- og spenningsgrunnlaget kan bestemmes.",
@@ -321,7 +321,7 @@ class ChargingDiagnosticSensor(ChargerNameMixin, CoordinatorEntity[ChargingCoord
         limit = consumption_limit_value(owner) if hasattr(owner, "options") else (coordinator.data or {}).get("hourly_limit_kwh", 15)
         state, payload = build_household_status(loads, limit_kwh=limit,
             mode=options.get("allocation_mode", "both"), priority=priority,
-            norwegian=str(self.hass.config.language or "").startswith("nb"))
+            norwegian=True)  # Generated dashboard content is always Norwegian.
         reference = snapshots.get(getattr(owner, "entry_id", ""), coordinator.data or {})
         payload.update({key: reference.get(key) for key in (
             "han_power_w", "han_fresh", "han_age_seconds", "energy_used_kwh", "energy_estimate_kwh", "safety_margin_kwh", "minutes_left",

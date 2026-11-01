@@ -10,7 +10,7 @@ from smart_load_manager.entity_ids import ENTITY_OBJECT_IDS
 
 class DashboardRuntimeTests(IsolatedAsyncioTestCase):
     async def test_two_charger_card_uses_real_ids_in_markdown_and_controls(self):
-        entries=[NS(entry_id='primary',data={'charger_device':'dev_a','han_power_entity':'sensor.actual_han'},title='First'),
+        entries=[NS(entry_id='primary',data={'charger_device':'dev_a','han_power_entity':'sensor.actual_han','tariff_used_entity':'sensor.provider_used','energy_estimate_entity':'sensor.provider_estimate'},title='First'),
                  NS(entry_id='other',data={'charger_device':'dev_b','entity_suffix':'carport_ab1234'},title='Second')]
         callbacks={}
         async def executor(func): return func()
@@ -42,6 +42,12 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
         self.assertNotIn('sensor.renamed_reason',text)
         self.assertIn('select.slm_charging_mode',text)
         self.assertIn('sensor.actual_han',text)
+        self.assertIn('sensor.provider_used',text)
+        self.assertIn('sensor.provider_estimate',text)
+        self.assertNotIn('sensor.energy_estimate_this_hour',text)
+        self.assertNotIn('sensor.energy_used_this_hour',text)
+        self.assertNotIn('switch.slm_charging_auto_control', text)
+        self.assertNotIn('Lading – automatikk', text)
         self.assertNotIn('SLM_HAN_POWER_SOURCE',text)
         self.assertNotIn('sensor.slm_min_current',text)
         self.assertNotIn('sensor.slm_max_current',text)

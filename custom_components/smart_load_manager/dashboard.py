@@ -6,7 +6,8 @@ from pathlib import Path
 import re
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import entity_registry as er, device_registry as dr
-from .const import DOMAIN, CONF_HAN_POWER_ENTITY
+from .const import (DOMAIN, CONF_HAN_POWER_ENTITY, CONF_TARIFF_USED_ENTITY,
+                    CONF_ESTIMATE_ENTITY, TARIFF_USED_ENTITY, TARIFF_ESTIMATE_ENTITY)
 from .entity_ids import ENTITY_OBJECT_IDS
 from .site import site_entry
 
@@ -24,7 +25,9 @@ async def async_register_dashboard_service(hass):
         text = await hass.async_add_executor_job(path.read_text)
         registry = er.async_get(hass)
         replacements = {
-            "sensor.SLM_HAN_POWER_SOURCE": owner.data[CONF_HAN_POWER_ENTITY]
+            "sensor.SLM_HAN_POWER_SOURCE": owner.data[CONF_HAN_POWER_ENTITY],
+            TARIFF_USED_ENTITY: owner.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY),
+            TARIFF_ESTIMATE_ENTITY: owner.data.get(CONF_ESTIMATE_ENTITY) or TARIFF_ESTIMATE_ENTITY
         }
         for entry in [owner] + others:
             if entry.data.get("electrical_connection") not in {"it_3", "tn_3"}:
