@@ -6,6 +6,22 @@ from smart_load_manager.entity_resolution import resolve_easee_entities
 from smart_load_manager.config_flow import ChargerOptionsFlow
 
 class ResolutionTests(TestCase):
+    def test_disabled_current_and_voltage_have_enable_instructions(self):
+        entries = [NS(entity_id='sensor.test_'+k, domain='sensor', platform='easee',
+                      translation_key=k, disabled_by='integration' if k in {'current','voltage'} else None)
+                   for k in ['status','current','voltage']]
+        states = {'sensor.test_status':NS(attributes={'state_outputPhase':0})}
+        for language in ('nb', 'en'):
+            hass = NS(config=NS(language=language), states=NS(get=states.get))
+            with patch('smart_load_manager.entity_resolution.er.async_get', return_value=NS()), patch(
+                    'smart_load_manager.entity_resolution.er.async_entries_for_device', return_value=entries):
+                with self.assertRaises(ValueError) as error:
+                    resolve_easee_entities(hass, 'test')
+            message = str(error.exception)
+            for text in ('Current', 'Voltage', 'sensor.test_current', 'sensor.test_voltage'):
+                self.assertIn(text, message)
+            self.assertIn('Entiteter' if language == 'nb' else 'Entities', message)
+
     def test_disabled_voltage_explains_actual_sensor_to_enable(self):
         entries = [NS(entity_id='sensor.garage_'+k, domain='sensor', platform='easee',
                       translation_key=k, disabled_by='integration' if k=='voltage' else None)

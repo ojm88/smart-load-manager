@@ -278,10 +278,10 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         ):
             result = await self.flow().async_step_add_charger()
         field = next(iter(result["data_schema"].schema.values()))
-        self.assertEqual(field.selector_type, "device")
-        self.assertTrue(field.config["multiple"])
-        self.assertEqual(field.config["filter"], [{"manufacturer": "Easee", "model": "Home"}])
-        self.assertEqual(next(iter(result["data_schema"].schema)).default(), [self.a.id])
+        self.assertEqual(field.selector_type, "select")
+        self.assertFalse(field.config["multiple"])
+        self.assertEqual({o["value"] for o in field.config["options"]}, {self.b.id})
+        self.assertEqual({o["value"] for o in field.config["options"]}, {self.b.id})
         self.assertEqual(
             [r["id"] for r in self.parent.data["loads"]], [self.record["id"]]
         )
@@ -382,10 +382,10 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             fid, {"next_step_id": "second_charger"}
         )
         field = next(iter(result["data_schema"].schema.values()))
-        self.assertTrue(field.config["multiple"])
-        self.assertEqual(next(iter(result["data_schema"].schema)).default(), [self.a.id])
+        self.assertFalse(field.config["multiple"])
+        self.assertEqual({o["value"] for o in field.config["options"]}, {self.b.id})
         result = await self.hass.config_entries.flow.async_configure(
-            fid, {"charger_device": [self.a.id, self.b.id], "electrical_connection": "tn_3"}
+            fid, {"charger_device": self.b.id, "electrical_connection": "tn_3"}
         )
         self.assertEqual(result["type"], "create_entry")
         self.parent = result["result"]
@@ -444,9 +444,9 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             result = await self.hass.config_entries.flow.async_configure(fid, {'next_step_id': 'second_charger'})
             self.assertEqual(result['type'], 'form')
             field = next(iter(result['data_schema'].schema.values()))
-            self.assertTrue(field.config['multiple'])
-            self.assertEqual(next(iter(result['data_schema'].schema)).default(), [self.a.id])
-            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': [self.a.id, self.b.id], 'electrical_connection': 'tn_3'})
+            self.assertFalse(field.config['multiple'])
+            self.assertEqual({o['value'] for o in field.config['options']}, {self.b.id})
+            result = await self.hass.config_entries.flow.async_configure(fid, {'charger_device': self.b.id, 'electrical_connection': 'tn_3'})
         self.parent = result['result']
         await self.hass.async_block_till_done()
         self.assertEqual([r['data']['charger_device'] for r in self.parent.data['loads']], [self.a.id, self.b.id])
@@ -465,15 +465,14 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
             self.assertEqual(result['type'], 'form')
             self.assertNotIn('url', result)
             field = next(iter(result['data_schema'].schema.values()))
-            self.assertTrue(field.config['multiple'])
-            self.assertEqual(next(iter(result['data_schema'].schema)).default(), [self.a.id])
+            self.assertFalse(field.config['multiple'])
+            self.assertEqual({o['value'] for o in field.config['options']}, {self.b.id})
             from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
             packet = FlowManagerIndexView(manager)._prepare_result_json(result)
             field_packet = packet['data_schema'][0]
-            self.assertEqual(field_packet['default'], [self.a.id])
-            self.assertTrue(field_packet['selector']['device']['multiple'])
-            self.assertEqual(field_packet['selector']['device']['filter'], [{'manufacturer': 'Easee', 'model': 'Home'}])
-            await manager.async_configure(fid, {'charger_device': [self.a.id, self.b.id], 'electrical_connection': 'tn_3'})
+            self.assertFalse(field_packet['selector']['select']['multiple'])
+            self.assertEqual({o['value'] for o in field_packet['selector']['select']['options']}, {self.b.id})
+            await manager.async_configure(fid, {'charger_device': self.b.id, 'electrical_connection': 'tn_3'})
         await self.hass.async_block_till_done()
         self.assertEqual(self.parent.data['loads'][0], self.record)
         self.assertEqual(len(self.parent.data['loads']), 2)
@@ -632,3 +631,39 @@ class MembershipRuntimeTests(IsolatedAsyncioTestCase):
         await self.hass.async_block_till_done()
         self.assertEqual(result['type'], 'create_entry')
         self.assertEqual(self.parent.data['loads'][0]['data']['electrical_connection'], 'it_1')
+
+    async def test_second_picker_never_exposes_existing_charger_or_multiple_slots(self):
+        form = await self.flow().async_step_add_charger()
+        field = next(iter(form['data_schema'].schema.values()))
+        self.assertEqual(field.selector_type, 'select')
+        self.assertFalse(field.config['multiple'])
+        self.assertNotIn(self.a.id, {o['value'] for o in field.config['options']})
+        before = dict(self.parent.data)
+        result = await self.flow().async_step_add_charger({
+            'charger_device': self.a.id, 'electrical_connection':'tn_3'})
+        self.assertEqual(result['type'], 'form')
+        self.assertTrue(result['errors'])
+        self.assertEqual(self.parent.data, before)
+        # A crafted multi-add cannot change membership either.
+        result = await self.flow().async_step_add_charger({
+            'charger_device':[self.a.id, self.b.id, 'third'], 'electrical_connection':'tn_3'})
+        self.assertEqual(result['type'], 'form')
+        self.assertTrue(result['errors'])
+        self.assertEqual(self.parent.data, before)
+
+    async def test_second_step_cannot_offer_a_third_charger_on_reentry(self):
+        flow = self.flow_module.SmartLoadManagerConfigFlow()
+        flow.hass = self.hass
+        flow._draft_loads = [self.record, {**self.record, 'id':'second',
+                             'data':{**self.record['data'], 'charger_device':self.b.id}}]
+        result = await flow.async_step_second_charger()
+        self.assertEqual(result['type'], 'abort')
+        self.assertEqual(result['reason'], 'two_chargers')
+
+    async def test_missing_current_has_specific_localized_setup_error(self):
+        from custom_components.smart_load_manager.entity_resolution import EaseeMeasurementError
+        with patch.object(self.flow_module, 'resolve_easee_entities',
+                          side_effect=EaseeMeasurementError('Enable Current and Voltage')):
+            result = await self.flow().async_step_add_charger({
+                'charger_device':self.b.id, 'electrical_connection':'tn_3'})
+        self.assertEqual(result['errors']['base'], 'missing_measurements')

@@ -23,7 +23,7 @@ from .const import (
     DOMAIN,
     TARIFF_USED_ENTITY,
 )
-from .entity_resolution import resolve_easee_entities
+from .entity_resolution import resolve_easee_entities, EaseeMeasurementError
 from .calculations import power_to_watts
 
 
@@ -96,7 +96,7 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 _validate_meter_sources(self.hass, user_input)
             except (ValueError, TypeError) as err:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = str(err)
             else:
                 self._household = dict(user_input)
@@ -132,7 +132,7 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 records[0]["data"][CONF_CONNECTION] = _connection(user_input)
                 self._draft_loads = records
             except ValueError as err:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = str(err)
             else:
                 return await self.async_step_charging_next()
@@ -149,6 +149,8 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_second_charger(self, user_input=None):
+        if len(self._draft_loads) >= 2:
+            return self.async_abort(reason="two_chargers")
         errors = {}
         detail = ""
         excluded = {r["data"][CONF_CHARGER_DEVICE] for r in self._draft_loads}
@@ -158,7 +160,7 @@ class SmartLoadManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 second = _make_loads(self.hass, [device_id], self._draft_loads)
                 connection = _connection(user_input)
             except ValueError as err:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = str(err)
             else:
                 second[0] = {**second[0], "data": {**second[0]["data"], CONF_CONNECTION: connection}}
@@ -203,7 +205,7 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
             try:
                 _validate_meter_sources(self.hass, values)
             except (ValueError, TypeError) as err:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = str(err)
             else:
                 self.hass.config_entries.async_update_entry(
@@ -249,7 +251,7 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                 connection = _connection(user_input)
                 new = [{**r, "data": {**r["data"], CONF_CONNECTION: connection}} for r in new]
             except ValueError as err:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = str(err)
             else:
                 # Always keep every existing load and its saved identity/options.
@@ -293,7 +295,7 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                     for r in active
                 ]
             except Exception as err:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = str(err)
             else:
                 return await self._save_membership(records, list(parent.data.get("retired_loads", [])))
@@ -319,7 +321,7 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                 (r for r in active if r["data"][CONF_CHARGER_DEVICE] == device_id), None
             )
             if removed is None:
-                errors["base"] = "invalid_setup"
+                errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                 detail = "Velg en konfigurert lader / Select a configured charger"
             else:
                 try:
@@ -336,7 +338,7 @@ class ChargerOptionsFlow(config_entries.OptionsFlow):
                         inst.update_load(self.hass, inst.LoadEntry(parent, removed["id"]), options={
                             **inst.LoadEntry(parent, removed["id"]).options, 'automatic_control_enabled': False})
                 except Exception as err:
-                    errors["base"] = "invalid_setup"
+                    errors["base"] = "missing_measurements" if isinstance(err, EaseeMeasurementError) else "invalid_setup"
                     detail = str(err)
                 else:
                     records = [r for r in active if r["id"] != removed["id"]]
@@ -432,17 +434,13 @@ def _native_charger_filter(hass):
 
 
 def _charger_schema(hass, *, exclude=()):
-    # HA's supported multi-device picker excludes current values from its ADD
-    # dropdown. Preselect existing sources; never replace membership on submit.
-    selected = sorted(exclude)
-    key = (
-        vol.Required(CONF_CHARGER_DEVICE, default=selected)
-        if selected else vol.Required(CONF_CHARGER_DEVICE)
-    )
+    # The native device selector cannot exclude individual device IDs or cap
+    # a multiple selection. Add exactly one from an explicit unused-device list.
+    picker = (_choice_selector(_charger_options(hass, exclude)) if exclude else
+              selector.DeviceSelector(selector.DeviceSelectorConfig(
+                  filter=_native_charger_filter(hass), multiple=False)))
     return vol.Schema({
-        key: selector.DeviceSelector(selector.DeviceSelectorConfig(
-            filter=_native_charger_filter(hass), multiple=bool(selected)
-        )),
+        vol.Required(CONF_CHARGER_DEVICE): picker,
         vol.Required(CONF_CONNECTION): _connection_selector(),
     })
 

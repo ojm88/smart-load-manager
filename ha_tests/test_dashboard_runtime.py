@@ -27,7 +27,8 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                     if key in ENTITY_OBJECT_IDS.get(domain,{}):
                         base=ENTITY_OBJECT_IDS[domain][key]
                         # Simulate a user-renamed sensor, not just its proposed ID.
-                        return f'{domain}.renamed_reason' if unique=='other_control_reason' else f'{domain}.{base}'+('_carport_ab1234' if entry is entries[1] else '')
+                        return ('number.renamed_manual' if unique == 'other_manual_current_limit' else
+                                f'{domain}.renamed_reason' if unique=='other_control_reason' else f'{domain}.{base}'+('_carport_ab1234' if entry is entries[1] else ''))
         devices=NS(devices={'dev_a':NS(name_by_user='Garasje',name='a'),
                             'dev_b':NS(name_by_user='Carport: "Vest"',name='b')})
         with patch('smart_load_manager.dashboard.er.async_get',return_value=NS(async_get_entity_id=entity_id)), patch('smart_load_manager.dashboard.dr.async_get',return_value=devices):
@@ -46,6 +47,13 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
         self.assertNotIn('sensor.slm_max_current',text)
         self.assertIn('sensor.slm_line_voltage',text)
         self.assertEqual(text.count('name: Målegrunnlag'),1)
+        wrappers = [row for card in parsed['cards'] for row in card.get('entities', [])
+                    if isinstance(row, dict) and row.get('type') == 'conditional']
+        self.assertEqual(len(wrappers), 4)
+        self.assertIn('number.renamed_manual', [row['row']['entity'] for row in wrappers])
+        for row in wrappers:
+            self.assertTrue(all(c['entity'] == row['row']['entity'] for c in row['conditions']))
+
         markdown=parsed['cards'][0]['content']
         self.assertNotIn('sensor.slm_charger_status',markdown)
         self.assertNotIn('sensor.slm_control_reason',markdown)
@@ -272,3 +280,22 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                     self.assertNotIn('HAN-målingen er ikke oppdatert',rendered)
             finally:
                 await hass.async_stop(force=True)
+
+    async def test_pause_and_manual_rows_hide_unavailable_controls_independently(self):
+        from pathlib import Path
+        for name, count in [('one.yaml', 2), ('two.yaml', 4)]:
+            parsed = yaml.safe_load((Path(__file__).parents[1]/
+                'custom_components/smart_load_manager/dashboard'/name).read_text())
+            rows = [r for c in parsed['cards'] for r in c.get('entities', [])
+                    if isinstance(r, dict) and r.get('type') == 'conditional']
+            self.assertEqual(len(rows), count)
+            for wrapper in rows:
+                entity = wrapper['row']['entity']
+                self.assertTrue(entity.startswith(('switch.slm_charging_pause_', 'number.slm_manual_current_')))
+                self.assertEqual(wrapper['conditions'], [
+                    {'entity':entity, 'state_not':'unavailable'},
+                    {'entity':entity, 'state_not':'unknown'}])
+                # Availability is independent per entity, not per charger/card.
+                for state in ('unavailable', 'unknown', 'on', 'off', '6', '12'):
+                    visible = all(state != c['state_not'] for c in wrapper['conditions'])
+                    self.assertEqual(visible, state not in ('unavailable', 'unknown'))

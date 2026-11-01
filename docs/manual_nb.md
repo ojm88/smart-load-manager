@@ -7,7 +7,7 @@ SLM tilpasser ladingen til boligens valgte timebudsjett. Målet er å redusere u
 - Home Assistant 2026.2 eller nyere.
 - Easee-integrasjonen og EnergyTariff må være satt opp.
 - Bruk HAN-sensoren som EnergyTariff benytter (W eller kW).
-- Aktiver **Spenning/Voltage på hver Easee-lader**, også lader nummer to: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter og vent på en målt verdi.
+- Aktiver **Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader**, også lader nummer to: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter og vent på en målt verdi.
 
 ## Installasjon og oppsett
 
@@ -85,7 +85,7 @@ SLM erstatter ikke vern eller installasjonens elektriske begrensninger. Automati
 
 Hele oppsettet skjer i Home Assistants vanlige dialog, også i Companion-appen. Velg **Elbillading – Easee**, velg første lader i enhetsvelgeren med integrasjonslogo, og fullfør med én eller legg til en til.
 
-Når du legger til en lader, står den første allerede som valgt. Behold den og bruk det tomme feltet under til å velge én ny lader. Home Assistant utelater de valgte enhetene fra dette legg-til-feltet. Bekreft deretter valgene i samme dialog. Bruk **Fjern lader** for å fjerne en konfigurert lader; tillegging erstatter aldri eksisterende oppsett.
+Når du legger til en lader, beholdes den første automatisk. Velg én ny lader fra listen over ledige Easee-ladere. Listen utelater allerede valgte ladere og har bare ett valgfelt. Maksimalt to ladere kan konfigureres. Bruk **Fjern lader** for å fjerne en konfigurert lader; tillegging erstatter aldri eksisterende oppsett.
 
 Ved senere tillegging brukes **Legg til lader** under Konfigurer → Ladere. Eksisterende lader og innstillinger beholdes. Avbryter du førstegangsoppsettet før fullføring, opprettes ingen delvis installasjon.
 
@@ -134,3 +134,6 @@ Fra beta 20 er Ladepause utilgjengelig når Easee melder Completed eller frakobl
 
 
 Beta 21 (klargjort): Ved to ladere skal en ubrukt lader ikke blokkere den andre fordi nullmålingene står uendret. Med gyldige nødvendige målinger, kjent hvilestatus, 0 W og under 1 A hvilestrøm kreves ingen ny nullrapport for å starte eller gjenoppta. Reell reduksjon på en aktiv lader må fortsatt bekreftes før strøm økes på den andre. Pause, tidsstyring og strømgrenser gjelder som før. Diagnostikken viser ventende reduksjonsgrense og ventetid samt hendelsene reduction_wait_started, reduction_confirmed og reduction_not_required_idle. Eksisterende YAML kan beholdes.
+
+
+Beta 21-kortet skjuler Ladepause og Manuell ladestrøm hver for seg når den aktuelle kontrollen er utilgjengelig. En aktiv SLM-pause er fortsatt synlig slik at den kan oppheves. Etter oppdatering: kjør get_dashboard-handlingen på nytt og erstatt kortets YAML for å få denne visningen. Tidligere kopiert YAML endres ikke automatisk.

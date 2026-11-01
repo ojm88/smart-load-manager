@@ -545,3 +545,16 @@ class ControlEventTests(IsolatedAsyncioTestCase):
                 self.assertFalse(self.site.pending_reductions)
         finally:
             await peer.async_shutdown()
+
+    async def test_manual_row_availability_follows_measurement_and_schedule_guards(self):
+        from smart_load_manager.number import ChargingCurrentLimit
+        await self.refresh()
+        await AutomaticLoadControl.async_turn_off(NS(coordinator=self.c, async_write_ha_state=Mock()))
+        number = ChargingCurrentLimit(self.c, self.entry)
+        number.hass = self.hass
+        self.assertTrue(number.available)
+        for key in ('inputs_valid', 'han_fresh', 'schedule_allowed'):
+            self.c.data[key] = False
+            self.assertFalse(number.available, key)
+            self.c.data[key] = True
+        self.assertTrue(number.available)
