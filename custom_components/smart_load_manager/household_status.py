@@ -4,6 +4,7 @@ Future load adapters contribute rows here. Dashboard Markdown reads this single
 household description contract rather than implementing a second control model.
 """
 from __future__ import annotations
+from math import isfinite
 from .charger_status import normalize_status, allows_automatic_current, status_explanation
 
 
@@ -24,6 +25,9 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         recommended = data.get("recommended_current_a")
         ready = bool(data and data.get("inputs_valid") and data.get("han_fresh")
                      and data.get("site_control_ready", True) and load.get("available", True))
+        other_running = any((other.get("data") or {}).get("recommended_current_a", 0) or 0
+                            for other in loads if other["id"] != load["id"])
+        priority_wait = bool(priority_name and load["id"] != priority and other_running)
         stage = "waiting"
         if not data or not load.get("available", True):
             explanation = tr("Opplysninger fra laderen mangler. Status kan ikke bekreftes.",
@@ -64,28 +68,61 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         elif data.get("last_sent_current_a") is not None and recommended != data["last_sent_current_a"]:
             sent = data["last_sent_current_a"]
             stage = "automatic" if sent > 0 and status == "charging" else "waiting"
-            explanation = tr(
-                f"Anbefalingen er nå {recommended} A. Laderen beholder sist satte grense på {sent} A frem til regulering.",
-                f"The recommendation is now {recommended} A. The charger keeps its last limit of {sent} A until regulation.")
+            if sent == 0 and recommended > 0:
+                explanation = tr(
+                    f"SLM holder ladingen på 0 A. Nå er det plass til {recommended} A; avventer neste regulering.",
+                    f"SLM is holding charging at 0 A. There is now room for {recommended} A; waiting for the next adjustment.")
+            elif recommended <= 0 and priority_wait:
+                explanation = tr(
+                    f"{priority_name} får lade først. Laderen beholder {sent} A frem til regulering.",
+                    f"{priority_name} charges first. The charger keeps {sent} A until adjustment.")
+            elif recommended <= 0:
+                explanation = tr(
+                    f"SLM anbefaler stopp for å holde forbruksgrensen. Laderen beholder {sent} A frem til regulering.",
+                    f"SLM recommends stopping to stay within the consumption limit. The set limit remains {sent} A until adjustment.")
+            else:
+                explanation = tr(
+                    f"Anbefalingen er nå {recommended} A. Laderen beholder sist satte grense på {sent} A frem til regulering.",
+                    f"The recommendation is now {recommended} A. The charger keeps its last limit of {sent} A until adjustment.")
         elif recommended <= 0:
-            other_running = any((other.get("data") or {}).get("recommended_current_a", 0) or 0
-                                for other in loads if other["id"] != load["id"])
-            if priority_name and load["id"] != priority and other_running:
+            if priority_wait:
                 explanation = (tr(f"{priority_name} får lade først. Denne laderen venter på tur.",
                                   f"{priority_name} charges first. This charger is waiting its turn.")
                                if mode == "one_at_a_time" else
                                tr(f"Det er bare plass til én lader nå. {priority_name} får lade først.",
                                   f"There is room for only one charger now. {priority_name} charges first."))
             else:
-                explanation = tr("Ladingen venter for å holde boligen under valgt forbruksgrense.",
-                                 "Charging is waiting to keep the home within its selected consumption limit.")
+                explanation = tr("Ladingen venter for å holde boligen under valgt forbruksgrense. Starter automatisk når det blir plass.",
+                                 "Charging is waiting to keep the home within its selected consumption limit. It resumes automatically when there is room.")
+                minimum = data.get("control_minimum_current_a")
+                factor = data.get("kw_per_amp")
+                if (isinstance(minimum, (int, float)) and isfinite(minimum) and minimum > 0
+                        and isinstance(factor, (int, float)) and isfinite(factor) and factor > 0):
+                    explanation += tr(
+                        f" Minste lading krever {minimum * factor:.1f} kW. Reduser annet forbruk for å frigjøre kapasitet.",
+                        f" Minimum charging requires {minimum * factor:.1f} kW. Reduce other consumption to free capacity.")
         else:
             stage = "automatic"
             explanation = tr("Ladestrømmen tilpasses slik at resten av boligen også har plass innenfor forbruksgrensen.",
                              "Charging current is adjusted to leave room for the rest of the home within the consumption limit.")
             if status != "charging":
-                explanation = tr("Det er satt av strøm til lading, men bilen har ikke startet å lade.",
-                                 "Current is available for charging, but the car has not started charging.")
+                sent = data.get("last_sent_current_a")
+                explanation = (tr(
+                    f"SLM har satt {sent} A. Easee melder fortsatt venting. Kontroller bilens ladeplan eller ladegrense hvis dette vedvarer.",
+                    f"SLM has set {sent} A. Easee still reports waiting. Check the vehicle schedule or charge limit if this persists.") if sent is not None and sent > 0 else
+                    tr("Avventer bekreftet strømgrense fra SLM.", "Waiting for a confirmed SLM current limit."))
+        if (automatic and ready and not paused and data.get('schedule_allowed', True)
+                and data.get('electrical_ready') is not False
+                and not data.get('awaiting_reduction')
+                and status == 'charging' and recommended == 0
+                and data.get('last_sent_current_a') == 0):
+            explanation = tr(
+                "SLM har satt 0 A for å holde forbruksgrensen. Avventer at laderen stanser.",
+                "SLM has set 0 A to stay within the consumption limit. Waiting for the charger to stop.")
+            if priority_wait:
+                explanation = tr(
+                    f"SLM har satt 0 A slik at {priority_name} får lade først. Avventer at laderen stanser.",
+                    f"SLM has set 0 A so {priority_name} can charge first. Waiting for the charger to stop.")
         # Actual Easee charging is visible even while a stop is being applied.
         if not data or not load.get('available', True):
             label = tr('Utilgjengelig', 'Unavailable')
@@ -117,33 +154,50 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             label = tr('Avventer målinger', 'Waiting for measurements')
         else:
             label = tr('Venter', 'Waiting')
-        # One status per load. The compact detail adds a cause/action only;
-        # generic repeated stage and connection sentences stay out of Markdown.
+        # Compact detail uses the same decision explanation as the full payload.
+        # A live recommendation is not a sent command or proof of physical draw.
         detail = ''
         if status not in {'disconnected', 'completed'}:
             if not data or not load.get('available', True):
                 detail = tr('Kontroller tilkoblingen til laderen.', 'Check the charger connection.')
+            elif not allows_automatic_current(status):
+                detail = explanation
             elif data.get('electrical_ready') is False:
                 detail = explanation
             elif paused:
                 detail = (tr('Ladepause er aktiv; avventer at laderen stanser.', 'Pause is active; waiting for the charger to stop.')
                           if status == 'charging' else
                           tr('Slå av ladepause for å fortsette.', 'Turn off charging pause to continue.'))
-            elif not ready:
-                detail = data.get('control_reason') or tr('Avventer gyldige målinger.', 'Waiting for valid measurements.')
-            elif not data.get('schedule_allowed', True):
-                start = str(data.get('schedule_start_time', ''))[:5]
-                detail = tr(f'Starttid kl. {start}.' if start else 'Kontroller valgt ladetid.',
-                            f'Start time {start}.' if start else 'Check the selected schedule.')
-            elif data.get('awaiting_reduction'):
-                detail = tr('Avventer bekreftet reduksjon før mer strøm tildeles.',
-                            'Waiting for confirmed reduction before assigning more current.')
-            elif not allows_automatic_current(status):
+            elif automatic and not ready:
+                detail = data.get('control_reason') or explanation
+            elif not automatic or not data.get('schedule_allowed', True):
                 detail = explanation
-            elif automatic and recommended is not None and recommended <= 0 and status != 'charging':
+            elif (data.get('awaiting_reduction') or recommended is None
+                  or not data.get('kw_per_amp') or not data.get('max_current_a')
+                  or recommended <= 0 or recommended != data.get('last_sent_current_a')
+                  or status != 'charging'):
                 detail = explanation
-            elif status != 'charging':
-                detail = tr('Venter på at bilen starter.', 'Waiting for the car to start.')
+        if (not detail and automatic and ready and status == 'charging'
+                and data.get('charger_power_w') == 0):
+            detail = tr("Easee melder lading, men målt effekt er 0 W. Avventer oppdaterte lademålinger.",
+                        "Easee reports charging, but measured power is 0 W. Waiting for updated charging measurements.")
+        show_waiting_check = bool(automatic and ready and not paused
+                                  and data.get('schedule_allowed', True)
+                                  and allows_automatic_current(status) and status != 'charging'
+                                  and data.get('electrical_ready') is not False
+                                  and not data.get('awaiting_reduction')
+                                  and recommended is not None and data.get('kw_per_amp')
+                                  and data.get('max_current_a') and data.get('next_regulation_at'))
+        if (automatic and ready and not paused and data.get('schedule_allowed', True)
+                and data.get('electrical_ready') is not False
+                and allows_automatic_current(status) and status != 'charging'):
+            if data.get('awaiting_reduction'):
+                label = tr('Avventer reduksjon', 'Waiting for reduction')
+            elif recommended is not None and recommended <= 0:
+                label = tr('Venter på kapasitet', 'Waiting for capacity')
+            elif recommended and data.get('last_sent_current_a') == 0:
+                label = tr('Venter på regulering', 'Waiting for adjustment')
+        # One status per load; normal unchanged charging needs no repeated prose.
         advice = str(data.get("phase_advice", ""))
         any_advice |= advice.startswith("Enfase på begge")
         rows.append({
@@ -153,6 +207,7 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "automatic_control": automatic, "paused": paused,
             "mode_label": tr("Auto", "Auto") if automatic else tr("Manuell", "Manual"),
             "detail": detail, "show_charging_details": status == "charging",
+            "show_waiting_check": show_waiting_check,
             "manual_current_setting_a": data.get("manual_current_setting_a"),
             "first_priority": load["id"] == priority if len(loads) > 1 else None,
             "current_a": data.get("charger_current_a"),

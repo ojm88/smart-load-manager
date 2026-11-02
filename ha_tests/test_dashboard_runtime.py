@@ -305,3 +305,39 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                 for state in ('unavailable', 'unknown', 'on', 'off', '6', '12'):
                     visible = all(state != c['state_not'] for c in wrapper['conditions'])
                     self.assertEqual(visible, state not in ('unavailable', 'unknown'))
+
+    async def test_rendered_waiting_sequence_keeps_cause_and_next_assessment(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from smart_load_manager.household_status import build_household_status
+        env=Environment()
+        env.filters['timestamp_custom']=lambda value,*args: {1000:'23:09',1300:'23:14',1600:'23:19'}.get(value,'23:24')
+        base=dict(status='awaiting_start',auto_control=True,inputs_valid=True,han_fresh=True,
+                  site_control_ready=True,electrical_ready=True,schedule_allowed=True,
+                  kw_per_amp=.718,max_current_a=16,control_minimum_current_a=6,
+                  charger_power_w=0,charger_current_a=.06,recommended_current_a=0,
+                  last_sent_current_a=0,next_regulation_at=1000)
+        # Anonymous numeric reproduction of the uploaded 23:04–23:19 wait.
+        sequence=[({},'forbruksgrense','23:09'),
+                  ({'next_regulation_at':1300},'forbruksgrense','23:14'),
+                  ({'recommended_current_a':6,'next_regulation_at':1600},'plass til 6 A','23:19'),
+                  ({'recommended_current_a':6,'last_sent_current_a':6},'har satt 6 A','23:09')]
+        root=Path(__file__).parents[1]
+        paths=[root/'custom_components/smart_load_manager/dashboard'/n for n in ('one.yaml','two.yaml')]
+        paths += [root/'examples/lovelace'/n for n in ('charging_card.yaml','two_chargers_card.yaml')]
+        for changes,reason,clock in sequence:
+            for count in (1,2):
+                state,payload=build_household_status([
+                    dict(id='a',name='Garasje',data=dict(base,**changes))]+([
+                    dict(id='b',name='Ute',data=dict(base,status='disconnected'))] if count==2 else []),limit_kwh=10)
+                env.globals.update(states=lambda _:state,state_attr=lambda _,k:payload.get(k))
+                for path in paths:
+                    text=env.from_string(yaml.safe_load(path.read_text())['cards'][0]['content']).render()
+                    self.assertIn(reason,text)
+                    self.assertIn('Neste vurdering:',text)
+                    self.assertIn(clock,text)
+                    self.assertNotIn('Venter på at bilen starter',text)
+                    self.assertNotIn('None',text)
+                    if reason=='forbruksgrense':
+                        self.assertIn('4.3 kW',text)
+                        self.assertIn('Reduser annet forbruk',text)

@@ -2,6 +2,8 @@
 
 ## Unreleased — beta 22 preparation
 
+- Keep actionable Markdown explanations visible across repeated capacity waits and pending regulation. Distinguish zero sent current from a positive recommendation, positive offers awaiting Easee/vehicle response, pending stop feedback, manual control, source faults and priority waits. Show minimum required power and a household-load reduction suggestion for budget waits; show the next ordinary assessment during eligible waiting. Regenerate dashboard YAML to include the waiting assessment time.
+
 - Refine offered-power reservations after three minutes of stable positive charging draw: forecast measured demand with 100 W headroom instead of indefinitely reserving unused offered power. Keep settled observations through temporary waiting/zero-power pauses and stop/resume commands. Reuse only after matching positive draw resumes, without a new three-minute wait. Completed/disconnected sessions and invalid inputs reset learning; changed demand/context or higher offers remain conservative. Apply to forecast and settled manual reservation, not electrical maxima or outgoing charger limits. Record reserved_power_kw in diagnostic traces.
 
 - Keep generated status content Norwegian independently of HA server language.
