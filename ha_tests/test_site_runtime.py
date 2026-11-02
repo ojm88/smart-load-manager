@@ -890,3 +890,78 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
                        dict(charger_power_w=1), dict(charger_power_w=None)]:
             with self.subTest(change=change):
                 self.assertFalse(SiteController._idle_without_transfer({**valid, **change}))
+
+    async def test_session_reservation_survives_pause_but_not_completion(self):
+        for single in (True, False):
+            with self.subTest(single=single):
+                site = self.setup_regulation(single=single)
+                for c in site.controllers.values():
+                    c.auto_control = False
+                    c.last_commanded_current = 20
+                    c._async_sample.return_value.update(status='charging', max_current_a=20)
+                await self.refresh_at(site, 0)
+                data = await self.refresh_at(site, 180)
+                self.assertAlmostEqual(data['reserved_power_kw'],2.4)
+                a = site.controllers['a']
+                d = a._async_sample.return_value
+                await a._async_send_current(0)
+                d.update(status='awaiting_load_balancing',charger_power_w=0,charger_current_a=0)
+                data = await self.refresh_at(site,181)
+                self.assertEqual(data['reserved_power_kw'],0)
+                if not single:
+                    self.assertAlmostEqual(site.latest_samples['b']['reserved_power_kw'],2.4)
+                await a._async_send_current(20)
+                data = await self.refresh_at(site,182)
+                self.assertAlmostEqual(data['reserved_power_kw'],4.6)
+                d.update(status='charging')  # status arrives before positive power
+                data = await self.refresh_at(site,183)
+                self.assertAlmostEqual(data['reserved_power_kw'],4.6)
+                d.update(charger_power_w=2300,charger_current_a=10)
+                data = await self.refresh_at(site,184)
+                self.assertAlmostEqual(data['reserved_power_kw'],2.4)
+                d.update(status='completed',charger_power_w=0,charger_current_a=0)
+                await self.refresh_at(site,185)
+                d.update(status='charging',charger_power_w=2300,charger_current_a=10)
+                data = await self.refresh_at(site,186)
+                self.assertAlmostEqual(data['reserved_power_kw'],4.6)
+                data = await self.refresh_at(site,366)
+                self.assertAlmostEqual(data['reserved_power_kw'],2.4)
+                d.update(status='disconnected',charger_power_w=0,charger_current_a=0)
+                await self.refresh_at(site,367)
+                d.update(status='charging',charger_power_w=2300,charger_current_a=10)
+                data = await self.refresh_at(site,368)
+                self.assertAlmostEqual(data['reserved_power_kw'],4.6)
+                self.assertEqual(self.commands,[('a',0),('a',20)])
+
+    async def test_automatic_budget_stop_and_resume_reuses_session_observation(self):
+        from datetime import timedelta
+        for single in (True, False):
+            with self.subTest(single=single):
+                site = self.setup_regulation(single=single)
+                for c in site.controllers.values():
+                    c.last_commanded_current = 20
+                    c._async_sample.return_value.update(status='charging',max_current_a=20)
+                await self.refresh_at(site,0)
+                data = await self.refresh_at(site,180)
+                self.assertAlmostEqual(data['reserved_power_kw'],2.4)
+                for c in site.controllers.values():
+                    c._async_sample.return_value['energy_used_kwh']=9.6
+                await self.refresh_at(site,181)
+                await self.refresh_at(site,211)
+                self.assertEqual(self.commands,[(key,0) for key in site.controllers])
+                for key,c in site.controllers.items():
+                    c._async_sample.return_value.update(status='awaiting_start',energy_used_kwh=5,
+                        han_power_w=1000,charger_current_a=0,charger_power_w=0)
+                    for suffix in ('power','current'):
+                        self.states[key+'_'+suffix]=NS(state='0',last_updated=self.now+timedelta(seconds=212))
+                await self.refresh_at(site,212)
+                self.assertFalse(site.pending_reductions)
+                await self.refresh_at(site,511)
+                self.assertTrue(all(c.last_commanded_current > 0 for c in site.controllers.values()))
+                for c in site.controllers.values():
+                    c._async_sample.return_value.update(status='charging',charger_current_a=10,
+                                                        charger_power_w=2300)
+                data=await self.refresh_at(site,512)
+                self.assertAlmostEqual(data['reserved_power_kw'],2.4)
+                if not single:
+                    self.assertAlmostEqual(site.latest_samples['b']['reserved_power_kw'],2.4)

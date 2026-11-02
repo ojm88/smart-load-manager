@@ -1,8 +1,10 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-11-01
+Updated: 2026-11-02
 
 ## Beta 22 preparation — not published
+
+Session-pause follow-up: settled demand now survives temporary waiting/zero draw and stop/resume commands. Reuse requires matching positive charging, unchanged phase/mode context and no offer above the observed offer. Completed/disconnected, invalid inputs and demand/context changes require new learning. Unsettled observations never mature through pauses. Validation: 104 pure tests and 164 runtime tests on each supported HA/Python environment pass; new regressions reject the preceding beta-22 implementation. Full scope is recorded in BETA22_VERIFICATION.md. No publication, production HA writes or physical acceptance.
 
 2026-11-02: observed-demand reservation refinement implemented for lower consumption invisible as an app limit in HA. Settled positive draw after 180 seconds adjusts forecasts/manual reservations, not physical maxima or automatic allocation demand caps. New commands/demand/input changes retain conservative offer reservation. 97 pure tests and 162 runtime tests on each supported HA/Python version pass. Software sequence verification recorded in BETA22_VERIFICATION.md; no physical acceptance or publication.
 

@@ -2,7 +2,7 @@
 
 ## Unreleased — beta 22 preparation
 
-- Refine offered-power reservations after three minutes of stable positive charging draw: forecast measured demand with 100 W headroom instead of indefinitely reserving unused offered power. New commands, changing demand, waiting/zero draw and invalid measurements retain/reset offer-based reservation. Apply to forecast and settled manual reservation, not electrical maxima or outgoing charger limits. Record reserved_power_kw in diagnostic traces.
+- Refine offered-power reservations after three minutes of stable positive charging draw: forecast measured demand with 100 W headroom instead of indefinitely reserving unused offered power. Keep settled observations through temporary waiting/zero-power pauses and stop/resume commands. Reuse only after matching positive draw resumes, without a new three-minute wait. Completed/disconnected sessions and invalid inputs reset learning; changed demand/context or higher offers remain conservative. Apply to forecast and settled manual reservation, not electrical maxima or outgoing charger limits. Record reserved_power_kw in diagnostic traces.
 
 - Keep generated status content Norwegian independently of HA server language.
 - Remove the combined charging automation card from generated YAML; retain individual controls. Retire the obsolete category switch and empty device without changing saved per-charger choices. Add read-only charging overview and measured total-power sensors on the household device, with participation and capacity attributes and anonymous diagnostic summary.
