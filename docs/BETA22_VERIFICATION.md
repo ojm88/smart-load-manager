@@ -19,3 +19,10 @@ Not published; manifest remains beta 21. Owner confirms beta 21 starts charging 
 No production HA writes, physical charging commands or phone rendering during this preparation. Dialog logo placement/rendering must be checked in Companion; it is not restored inside individual dropdown options. Regenerate YAML after installing a future release to get the removed card and changed source references. A two-car hardware test remains part of beta 21 acceptance.
 
 Real registry tests verify renamed/disabled old-toggle cleanup, idempotence, preserved individual settings/entity identity and retention of unrelated device entities. Summary tests cover mixed automatic/manual draw and missing/nonfinite peer power. Individual-control test verifies toggling one charger leaves its peer enabled. These replace tests of the deliberately removed global toggle.
+
+
+## Observed consumption reservation — 2026-11-02
+
+Added a separate consumption forecast estimator; it never changes configured maxima. 180-second stable positive charging draw permits measured power +100 W rather than an indefinite full-offer reservation. New commands/demand changes, zero/waiting and invalid inputs reset observation. Settled manual reservation uses the same estimate; pending manual requests still reserve their whole target. Existing automatic allocation does not gain a learned demand cap. Four pure sequence tests cover hidden caps, startup, restart/rising demand, invalid/zero states and unequal phase/manual operation. A site runtime regression checks the actual forecast argument and retains serialized apply. No live app changes, physical acceptance or production HA writes.
+
+Reservation refinement validation: 97 pure tests and 162 runtime tests pass on EACH HA 2026.2.3/Python 3.13.16 and HA 2026.10.4/Python 3.14.8. Compilation and whitespace checks pass. Physical hidden-app-limit change and demand rebound remain unverified.

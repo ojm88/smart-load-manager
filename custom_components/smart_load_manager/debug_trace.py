@@ -3,7 +3,7 @@ from collections import deque
 from datetime import datetime, UTC
 from math import isfinite
 
-NUMBER_FIELDS = ('han_power_w', 'han_age_seconds', 'energy_used_kwh',
+NUMBER_FIELDS = ('reserved_power_kw', 'han_power_w', 'han_age_seconds', 'energy_used_kwh',
     'energy_estimate_kwh', 'minutes_left', 'safety_margin_kwh', 'hourly_limit_kwh',
     'charger_current_a', 'charger_power_w', 'max_current_a',
     'control_minimum_current_a', 'kw_per_amp', 'recommended_current_a',

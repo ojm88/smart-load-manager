@@ -29,6 +29,20 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
             site.controllers[key] = c
         return site
 
+    async def test_forecast_uses_settled_demand_not_unused_offer(self):
+        from unittest.mock import Mock
+        site=self.setup_site()
+        site.cadence=Mock()
+        site.cadence.decide.return_value='hold'
+        samples={k:dict(charger_power_w=1150,kw_per_amp=.23,reserved_power_kw=1.25,
+                       max_current_a=20,control_minimum_current_a=6) for k in ['a','b']}
+        site._apply=AsyncMock()
+        reference=dict(han_power_w=3300,energy_used_kwh=1,safety_margin_kwh=.3,minutes_left=30)
+        await site._regulated_apply({'a':10,'b':10},samples,reference,self.entries[0],['a','b'])
+        self.assertAlmostEqual(site.cadence.decide.call_args.kwargs['held_power_kw'],3.5)
+        # A higher new offer still goes through the existing serialized apply.
+        self.assertEqual(site._apply.call_args.args[0],{'a':10,'b':10})
+
     async def test_no_increase_until_reduction_confirmed_by_new_measurement(self):
         site = self.setup_site()
         sample = {key: {'charger_current_a': 10, 'charger_power_w': 2300, 'kw_per_amp': .23} for key in ['a','b']}

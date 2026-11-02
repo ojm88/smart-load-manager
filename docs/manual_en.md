@@ -138,3 +138,8 @@ The generated status card is always Norwegian, including on an English HA server
 Setup and Configure → Household offer an optional sensor for estimated total consumption in the current clock hour, in kWh. EnergyTariff `energy_estimate_this_hour`, Tibber **Estimated consumption current hour**, or an equivalent source can be selected. It is display-only and does not replace measured **energy used this hour**. Missing/invalid estimates do not stop charging. Existing installations default to `sensor.energy_estimate_this_hour` when no source is selected. EnergyTariff remains recommended for its additional useful sensors. Generate new dashboard YAML after changing the source or layout.
 
 The household has read-only **Charging** (summary with participation, counts, power and existing calculated charging capacity attributes) and **Total charging power** (W, including manual chargers). Missing power inputs yield an unknown total. Neither sensor sends commands.
+
+
+### Offered versus measured power
+
+New current offers reserve their full power. After 180 seconds of stable positive charging draw, consumption forecasts and settled manual reservations use measured power plus 100 W. Changed demand/commands or invalid measurements reset this observation; waiting and zero draw never establish a lower demand. This is not a learned electrical maximum or a current-limit command. Hidden app limits need not be copied into SLM. When demand rises, SLM still depends on telemetry and regulation; brief power excursions remain possible. Fixed installation limits are unchanged.

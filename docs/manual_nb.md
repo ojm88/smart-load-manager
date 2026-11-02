@@ -145,3 +145,10 @@ Statuskortet er alltid på norsk, også med engelsk språk på HA-serveren. Fell
 Under oppsett eller Konfigurer → Boligens målinger kan du velge et valgfritt anslag for samlet forbruk i inneværende klokktime, i kWh. EnergyTariff `energy_estimate_this_hour` eller Tibber **Estimated consumption current hour** kan brukes. Estimatet vises bare som informasjon og erstatter ikke **energi brukt denne timen**. Uten valg beholdes tidligere standard `sensor.energy_estimate_this_hour` hvis den finnes. Ugyldig eller manglende estimat stopper ikke lading. EnergyTariff anbefales fortsatt for sine flere nyttige sensorer. Hent ny dashboard-YAML etter endring av kilde eller kort.
 
 Boligen får sensorene **Lading** (samlet status med deltakelse, antall ladere, effekt og beregnet ladekapasitet i attributtene) og **Samlet ladeeffekt** (W, inkludert manuell lading). Ved manglende effektmåling er totalen ukjent. Ingen av sensorene sender kommandoer.
+
+
+### Tilbudt strøm og faktisk forbruk
+
+SLM reserverer tilbudt effekt ved oppstart og nye strømkommandoer. Etter tre minutter med stabilt positivt forbruk under aktiv lading brukes målt effekt med 100 W tillegg i forbruksprognosen og reservasjonen for etablert manuell lading. Endret forbruk, ny kommando eller ugyldige målinger starter vurderingen på nytt. Venting og nullforbruk tolkes ikke som bevis på en lavere ladegrense.
+
+Dette er et anslag på forbruk, ikke en ny fysisk maksgrense. En skjult begrensning i Easee-appen behøver ikke kopieres til SLM. Dersom appgrensen økes, må SLM fortsatt få målingene og regulere etter dem; treminuttersregelen garanterer ikke mot kortvarige effekthopp. Installasjonens faste grenser beholdes. La appens brukergrense stå på ønsket tillatt nivå når SLM skal få utnytte kapasiteten.
