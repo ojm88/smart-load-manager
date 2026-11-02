@@ -130,8 +130,8 @@ SENSOR_EXPLANATIONS = {
         "Instantaneous power from the selected HAN meter.",
     ),
     "energy_used": (
-        "Energi brukt hittil i denne timen, levert av EnergyTariff.",
-        "Energy used so far this hour, supplied by EnergyTariff.",
+        "Energi brukt hittil i denne klokktimen fra valgt målekilde.",
+        "Measured energy used so far this clock hour from the selected source.",
     ),
     "energy_estimate": (
         "Valgt sensors anslag for totalt forbruk denne timen. Vises kun til informasjon.",

@@ -73,12 +73,21 @@ async def async_register_dashboard_service(hass):
 
                 # Headings are quoted by the YAML serializer below when needed.
                 parsed = yaml.safe_load(text)
+                graph_suffix = "_CHARGER_SUFFIX" if second else "_FIRST_CHARGER_SUFFIX"
+                graph_labels = {
+                    "sensor.slm_recommended_current" + graph_suffix: "Anbefalt ladestrøm",
+                    "sensor.slm_charger_current" + graph_suffix: "Målt ladestrøm",
+                }
                 for card in parsed.get("cards", []):
                     if "title" in card:
                         card["title"] = card["title"].replace(
                             label, name or entry.title
                         )
                     for row in card.get("entities", []):
+                        if card.get("type") == "history-graph":
+                            if isinstance(row, dict) and row.get("entity") in graph_labels:
+                                row["name"] = f"{graph_labels[row['entity']]} – {name or entry.title}"
+                            continue
                         if isinstance(row, dict) and "name" in row:
                             row["name"] = row["name"].replace(
                                 label, name or entry.title

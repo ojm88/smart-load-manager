@@ -12,6 +12,8 @@ Home Assistant integration that adjusts one or two Easee chargers to leave room 
 
 [🇳🇴 Norsk brukerveiledning](docs/manual_nb.md) · [English guide](docs/manual_en.md)
 
+[Setup](#configuration) · [Controls](#everyday-controls) · [Dashboard](#ready-made-dashboard-yaml) · [Troubleshooting](#when-charging-waits)
+
 ## Why this is useful in Norway
 
 Many Norwegian grid companies use household capacity steps based on hourly consumption peaks. At [Glitre Nett](https://www.glitrenett.no/kunde/nettleie-og-priser/nettleiepriser-privatkunde), the capacity charge is based on the average of the three highest daily hourly peaks in a month. Charging alongside cooking, heating and hot water can push a home into a higher step.
@@ -21,7 +23,7 @@ SLM reduces charging when the home needs more power and gives charging more room
 ## Requirements
 
 - Home Assistant **2026.2 or newer**.
-- Easee chargers configured in Home Assistant, with enabled **Current (A)** and **Voltage (V)** sensors and a measured value on each charger.
+- Easee chargers configured in Home Assistant. On **each** charger, enable **Current (A)** and **Voltage (V)** under **Settings → Devices & services → Easee → charger → Entities**. Show disabled entities, enable both and wait for measured values. Charging power must also be available.
 - A HAN power sensor in W or kW.
 - A sensor for **energy used since the start of the current clock hour**, in kWh, is required. **[EnergyTariff](https://github.com/epaulsen/energytariff) is recommended** because it supplies this and several other useful sensors. Equivalent sources, such as Tibber’s accumulated consumption current hour, can also be selected. A spot-price sensor cannot replace hourly energy.
 - Optional: estimated total consumption for the current clock hour in kWh, from EnergyTariff (`energy_estimate_this_hour`), [Tibber](https://www.home-assistant.io/integrations/tibber/) (**Estimated consumption current hour**) or another compatible integration. Select it during setup or under **Configure → Household**; it is informational and does not replace measured hourly consumption. Existing installations retain `sensor.energy_estimate_this_hour` as the default when no source is selected.
@@ -39,17 +41,17 @@ Download a [release](https://github.com/ojm88/smart-load-manager/releases), copy
 ## Configuration
 
 1. Open **Settings → Devices & services → Add integration → Smart Load Manager OJM**.
-2. Select HAN power, energy used this hour, the optional hourly estimate, and the safety margin.
-3. Choose EV charging, select the first charger and confirm its physical supply/wired phases, then finish or add a second with its own connection.
-4. Set the household consumption target on **SLM – Boligen**. Enable automatic control deliberately on each charger, with no competing automation controlling it.
+2. Select **Household power (HAN)** and **Energy used this hour**. The hourly estimate is optional. The default **0.3 kWh safety margin** reserves part of the budget for delays and changing consumption; a larger margin leaves less charging capacity.
+3. Choose **EV charging – Easee**, select the first charger and confirm its actual supply/wired phases. Finish with one charger or add a second; only unused chargers are offered. At most two chargers are supported.
+4. Set the household consumption target on **SLM – Boligen** and check measurement readiness. Disable older automations that adjust the same charging limits, then enable automatic control on each charger you want SLM to regulate. No user-created helpers are required.
 
 Choose **230 V IT/TT – single phase / three phase** or **400/230 V TN – single phase / three phase** for each charger’s actual wiring. This does not set a fixed calculation voltage: SLM uses measured Easee voltages. Phase-mode control appears only for three-phase connections. Confirm existing chargers under **Configure → Chargers → Charger connections** before enabling control.
 
-**Boligen / Household** contains the shared budget and status. **Lading / Charging** contains the chargers. Use **Configure** to edit household sources or add/remove a charger while retaining the others.
+**SLM – Boligen** contains the shared budget, status, measurement readiness, read-only charging overview and total measured charging power. **Lading / Charging** groups the chargers and their individual controls. Use **Configure → Household sources and safety margin** to change sources, or **Chargers and connections** to add/remove chargers and correct physical wiring. Existing settings are retained; changing physical wiring sends 0 A and disables automation on the affected charger. [Full setup and maintenance guide](docs/manual_en.md#changing-setup-later).
 
 ## Choose a realistic household target
 
-**Forbruksgrense** is the home's total hourly energy target, including charging. It is not a separate charging allowance or an instantaneous fuse limit. For example, 10 kWh during one clock hour corresponds to 10 kW average power over that hour; SLM also reserves the configured safety margin.
+**Forbruksgrense** is the home's total hourly energy target, including charging. Choose 4.5–20 kWh in 0.5 kWh steps. It is not a separate charging allowance or an instantaneous fuse limit. For example, 10 kWh during one clock hour corresponds to 10 kW average power over that hour; SLM also reserves the configured safety margin.
 
 Choose a target that fits normal household demand, your grid tariff and how much charging you need. **If it is too low, the home may use nearly the whole budget before charging gets a turn.** With too little room for the charger's minimum charging current, charging waits. Two chargers share the same remaining budget; they do not each receive the full target. The lowest selectable step is therefore not necessarily a useful choice for your home.
 
@@ -60,11 +62,24 @@ Choose a target that fits normal household demand, your grid tariff and how much
 | Shared household budget | Combines hourly energy, current HAN power and a safety margin to adjust charging limits. |
 | One or two chargers | Charge both or one at a time, with a selectable first priority. |
 | Per-charger controls | Independent schedule, pause, manual current and phase selection. |
-| Measurements | Live status, power, current, recommended current, active phases and voltage. |
+| Measurements | Live status, charging power, measured/recommended charging current, active phases and voltage. |
+| Actual consumption | After three minutes of stable positive draw, forecasts and settled manual reservations can use measured power +100 W instead of unused offers. Settled observations survive temporary pauses; completion or disconnection starts learning again. |
 | Completed sessions | Completed sessions confirmed at zero power release unused capacity and receive no ordinary budget commands. A new request triggers immediate minimum-current assessment. Easee status is displayed as reported. |
 | Regulation | Recalculates on source changes. Evaluates connection, schedule boundaries and user start/stop controls immediately. Otherwise adjusts limits every five minutes; forecast risks and invalid measurements can require earlier reductions. |
-| Explanations | Each charger shows its name, charging/waiting/paused status and its own reason. |
+| Explanations | Separate capacity waits, pending regulation and positive offers awaiting charger/vehicle response. Show minimum charging power, relevant advice and the next ordinary assessment during eligible waiting. |
 | Dashboard | `smart_load_manager.get_dashboard` returns a compact Manual card using actual registered entity IDs. Connected/disconnected status is explicit; charging details appear while charging. |
+
+## Everyday controls
+
+Each charger has its own **Automatic load control**, **Charging pause**, **Manual charging current**, **Schedule/start time** and, for three-phase wiring, **Phase selection**. There is no combined automation switch.
+
+- Turning automation **off** requests the lowest valid manual charging current; it is not a stop command. Choose a manual current afterwards if needed. Pause, schedules and measurement guards still apply.
+- Use **Charging pause** to stop at 0 A. The manual slider is hidden while unavailable. Existing pauses can be removed even if charging has completed.
+- Scheduling allows a daily **12-hour window**, e.g. 23:00–11:00. It also applies to manual charging; disable scheduling to charge without that window.
+- With two chargers, choose **Charge both** or **One at a time** and set **First priority**. Both share the remaining household capacity; only eligible automatic chargers participate in this allocation.
+- New chargers start with automation off. Saved automation, pause, schedule, manual and household choices survive ordinary restart/update. Easee stores phase mode.
+
+Easee's configured installation/user limits and internal circuit sharing still apply. SLM sets charging offers against the household budget; it does not replace Easee's internal limits or electrical protection. Minimum current is 11 A for measured 230 V three-phase charging, otherwise 6 A. Maximum comes from Easee; do not copy app limits into SLM. A consumption observation is a forecast, not a new electrical maximum. See [how regulation works](docs/manual_en.md#how-charging-is-regulated) for pause/relearning and timing details.
 
 ## Sensors and explanations
 
@@ -76,11 +91,12 @@ Household information is grouped under **SLM – Boligen**. Each charger's measu
 | Measurement status | Whether the shared measurement inputs are ready. Attributes identify source entities and the age of the HAN reading. |
 | Charging status | The charger's reported state, such as charging, waiting, completed or disconnected. |
 | Power to car | Present charging power in W. |
-| Current to car | Present current measured by Easee in A. |
+| Measured charging current | Present current measured by Easee in A. |
 | Recommended charging current | The current limit SLM recommends now, in A; this is not measured current or proof that charging is running. |
 | Phases in use | Number of phases actually drawing current during charging. |
 | Voltage | Charging voltage from relevant Easee measurements. Single-phase TN shows phase–neutral; three-phase TN shows inferred line voltage. The confirmed supply determines which terminal pairs are used. |
 | Charging priority | With two chargers, a diagnostic showing first or second priority in SLM. |
+| Charging / Total charging power | Read-only overview and measured sum, including manual chargers. Missing readings yield an unknown total. |
 
 ## Ready-made dashboard YAML
 
@@ -97,24 +113,39 @@ Generate a complete card for your configured charger or chargers:
 3. Copy the **`yaml`** value from the response.
 4. Edit your dashboard, add a **Manual card** inside an existing section, and paste the YAML.
 
-The generator uses your actual registered entity IDs, including custom names. The card combines household explanations, charger measurements and controls. Ready-made [one-charger](examples/lovelace/charging_card.yaml) and [two-charger](examples/lovelace/two_chargers_card.yaml) YAML templates are also available; generating the card avoids manually adapting their entity IDs.
+The generator uses your actual registered entity IDs and charger names, including custom names. Both chargers are named in the **Anbefalt ladestrøm** (recommended charging current) and **Målt ladestrøm** (measured charging current) graph legends. The status card is always Norwegian, even on English HA servers. It combines household explanations, charger measurements and controls. Ready-made [one-charger](examples/lovelace/charging_card.yaml) and [two-charger](examples/lovelace/two_chargers_card.yaml) YAML templates are also available; generating the card avoids manually adapting their entity IDs.
 
 ### When to generate the card again
 
 The YAML card is a saved snapshot of the configured layout, entity references and charger labels. It is **not automatically regenerated** when setup changes. Run `smart_load_manager.get_dashboard` again and replace the existing Manual card YAML after:
 
 - Adding, removing or replacing a charger.
-- Changing a charger’s physical connection, the HAN source or entity IDs referenced by the card.
+- Changing a charger’s physical connection, measurement sources or entity IDs referenced by the card.
 - Renaming chargers when their names are used in the card's headings or labels.
 - Installing a feature that changes the generated card layout or entities.
 
+Generate new YAML when updating to beta 22 to adopt the revised controls, waiting times and named graph legends.
+
 Normal changes to the consumption target, safety margin, priority, charging mode, schedule, phase selection or pause do **not** require new YAML. Their states and measurements update through the existing entity references. Regenerating the card replaces the generated layout; keep a copy of any manual customizations first.
+
+## When charging waits
+
+| Explanation | What it means / what to check |
+| --- | --- |
+| Waiting for capacity | The remaining budget cannot support minimum charging power. Reduce other consumption or wait; check that the household target is realistic. |
+| Waiting for regulation | A recommendation has changed, but the last sent limit still applies. Check the next ordinary assessment time; this is not a promised charging start. |
+| Positive limit sent, Easee still waiting | SLM has offered current. If persistent, check vehicle schedules, charge limits and Easee restrictions. |
+| Waiting for measurements | Open Measurement status. Check HAN, measured hourly energy, enabled Easee current/voltage/power and reported limits. |
+| Waiting for reduction | New measured confirmation is needed before capacity transfers between chargers. An idle unused charger does not need to repeat unchanged zero readings. |
+| Schedule / Pause / Manual | Check that charger's independent controls. |
+
+Valid HAN reports are accepted for up to 120 seconds, including unchanged values reported again. Invalid or missing required inputs hold automatic charging; recovery is assessed immediately. A valid unchanged Easee power reading does not expire just because its timestamp is old. Download diagnostics while a persistent issue is present, before restart/reload: **integration entry → ⋮ → Download diagnostics**. The last 4096 anonymous events are kept in memory. [Detailed troubleshooting](docs/manual_en.md#when-charging-waits).
 
 ## Limitations and testing
 
-This project is under development. Physical charging validation of the current version, including two-charger operation, is pending. Automated tests cover calculations, allocation and Home Assistant setup; see [validation status](docs/PROJECT_STATUS.md).
+This project is under development. Physical acceptance of all new behavior, simultaneous two-car operation and actual Companion rendering remains pending. Software tests do not establish hardware acceptance. Automated tests cover calculations, allocation and Home Assistant setup; see [validation status](docs/PROJECT_STATUS.md).
 
-- Automatic control starts **off for new chargers**. From beta 20, the saved choice survives restart/update.
+- Automatic control starts **off for new chargers**; saved choices survive restart/update.
 - Missing or stale required meter data pauses automatic allocation. Reductions must be confirmed by subsequent measurements before capacity is reassigned.
 - Phase changes are manual. There is no spot-price optimization or vehicle battery control.
 - Hot-water and floor-heating control are not implemented. SLM does not replace electrical protection.
@@ -134,12 +165,3 @@ More chargers, hot-water tanks and floor-heating zones sharing the household bud
 ## Acknowledgements
 
 Thanks to [Home Assistant](https://www.home-assistant.io/), the Easee integration maintainers and [EnergyTariff / Erling Paulsen](https://github.com/epaulsen/energytariff). These projects are independently maintained.
-
-
-Before configuring chargers, enable **Current (A)** and **Voltage (V)** on **each Easee charger**: Settings → Devices & services → Easee → charger → Entities → include disabled entities. Enable both and wait for measured values. Beta 21 uses a single unused-charger list for adding a second device; a third slot is not offered.
-
-The generated status card is always in Norwegian, independently of the HA server language. Automatic control is shown per charger; the combined charging-category switch is omitted from the generated YAML. The obsolete combined switch and its empty SLM – Lading device are retired on update. Each charger retains its saved automatic/manual choice. Read-only **Lading** and **Samlet ladeeffekt** sensors live under SLM – Boligen; the overview attributes show participation, measured totals and existing calculated charging capacity. Missing power readings produce an unknown total, not zero.
-
-SLM distinguishes newly offered power from settled measured charging demand. After three minutes of stable positive draw, forecasts and settled manual reservations use measured power plus 100 W. This avoids indefinitely reserving unused offers when an app or vehicle draws less. A settled observation survives temporary waiting/zero-power pauses within the same session. Positive matching draw after resume reuses it without another three-minute wait; while waiting, the complete offer remains reserved. Completed/disconnected sessions, invalid inputs, changed phase context, higher offers or changed demand require new observation. This is a consumption forecast, not a replacement for installation limits or a guarantee against short demand increases.
-
-The status card explains capacity waits, pending current adjustments and positive limits awaiting charger/vehicle response separately. Capacity waits show the minimum charging power and suggest reducing other household loads. Eligible waiting states show the next ordinary assessment time; changing consumption can alter the decision. Regenerate dashboard YAML to adopt the waiting-time row.
