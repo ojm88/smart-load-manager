@@ -2,6 +2,10 @@
 
 Updated: 2026-11-04
 
+## Next beta
+
+Manual charging now reports the scheduled start and wait reason when the SLM charging window is closed. The presenter regression covers waiting and reopening.
+
 ## Current beta — 0.1.1-beta.22
 
 Published 2026-11-04 as a [GitHub pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.22). The tag points to PR #18 merge commit 883380fcbcb0f341527cf2204a41fb3695b36aac. All four jobs passed in release-candidate CI run 41795719670, and the merge tree matches the tested tree. Regenerate dashboard YAML after updating.

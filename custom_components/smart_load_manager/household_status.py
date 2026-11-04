@@ -50,11 +50,11 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         elif automatic and not ready:
             explanation = tr("Laststyringen venter på gyldige målinger før ladingen kan reguleres.",
                              "Load control is waiting for valid measurements before adjusting charging.")
-        elif automatic and not data.get("schedule_allowed", True):
+        elif not data.get("schedule_allowed", True):
             start = str(data.get("schedule_start_time", ""))[:5]
-            explanation = (tr(f"Ladingen venter på valgt ladetid fra kl. {start}.",
-                              f"Charging is waiting for its selected start time of {start}.") if start
-                           else tr("Ladingen venter på valgt ladetid.", "Charging is waiting for its scheduled time."))
+            explanation = (tr(f"Tidsstyring holder igjen ladingen til kl. {start}.",
+                              f"The charging schedule holds charging until {start}.") if start
+                           else tr("Tidsstyring holder igjen ladingen til ladevinduet åpner.", "Charging is waiting for its scheduled time."))
         elif not automatic:
             stage = "manual"
             explanation = tr("Automatisk laststyring er av. Laderen følger den sist satte strømgrensen.",
@@ -138,7 +138,8 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             label = tr('Feil', 'Fault')
         elif stage == 'paused':
             label = tr('Pauset', 'Paused')
-        elif automatic and not data.get('schedule_allowed', True):
+        elif (not data.get('schedule_allowed', True) and allows_automatic_current(status)
+              and data.get('electrical_ready') is not False and (not automatic or ready)):
             label = tr('Venter på starttid', 'Waiting for schedule')
         elif status in {'authenticating', 'awaiting_authorization', 'de_authorizing'}:
             label = tr('Venter på godkjenning', 'Waiting for authorization')

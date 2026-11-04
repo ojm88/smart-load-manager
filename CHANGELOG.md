@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Show the scheduled start time and wait reason when the charging window is closed in manual mode.
+
 ## 0.1.1-beta.22
 
 - Consolidate README and Norwegian/English setup guides around current beta-22 behavior; remove obsolete user instructions and simplify native setup field help. Explain required/optional sources, controls, regulation, estimates, troubleshooting and Easee/SLM responsibilities.

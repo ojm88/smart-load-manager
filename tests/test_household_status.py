@@ -43,6 +43,21 @@ class HouseholdStatusTests(unittest.TestCase):
         self.assertEqual(state,'paused')
         self.assertIn('ladepause',paused['controlled_loads'][0]['explanation'])
 
+    def test_manual_charging_shows_schedule_block_and_clears_it_when_open(self):
+        load = self.load(auto_control=False, status="awaiting_start",
+                         schedule_enabled=True, schedule_allowed=False,
+                         schedule_start_time="21:30:00")
+        _, payload = build_household_status([load], limit_kwh=10)
+        row = payload["controlled_loads"][0]
+        self.assertEqual(row["mode_label"], "Manuell")
+        self.assertEqual(row["status_label"], "Venter på starttid")
+        self.assertIn("Tidsstyring", row["detail"])
+        self.assertIn("21:30", row["detail"])
+        load["data"]["schedule_allowed"] = True
+        _, payload = build_household_status([load], limit_kwh=10)
+        self.assertEqual(payload["controlled_loads"][0]["status_label"], "Venter")
+        self.assertNotIn("21:30", payload["controlled_loads"][0]["detail"])
+
     def test_phase_advice_is_given_once_and_supports_english(self):
         loads=[self.load(phase_advice='Enfase på begge laderne kan gi plass.'),
                self.load('b',phase_advice='Enfase på begge laderne kan gi plass.')]
