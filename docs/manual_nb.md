@@ -20,9 +20,14 @@ Bruk Marketplace på **Home Assistant 2026.11 eller nyere**.
 
 [![Åpne Smart Load Manager OJM i Home Assistant Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=ojm88&repository=smart-load-manager&category=integration)
 
-1. Åpne lenken ovenfor i din Home Assistant-instans.
-2. Koble til GitHub hvis du blir bedt om det, og bekreft at Smart Load Manager OJM legges til som et egendefinert integrasjonsrepo.
-3. Installer Smart Load Manager OJM i Marketplace. Start Home Assistant på nytt hvis du blir bedt om det. Legg deretter til integrasjonen under **Innstillinger → Enheter og tjenester → Legg til integrasjon**.
+Bruk knappen ovenfor som snarvei, eller legg til repoet fra Marketplace-menyen:
+
+1. Åpne **Innstillinger → Marketplace → ⋮ → Custom repositories**.
+2. Koble til GitHub hvis du blir bedt om det.
+3. Lim inn `https://github.com/ojm88/smart-load-manager`, velg **Integration** og trykk **Add**.
+4. Søk etter **Smart Load Manager OJM** i Marketplace og velg **Install**.
+
+Ved førstegangsinstallasjon kan du gå rett til **Innstillinger → Enheter og tjenester → Legg til integrasjon** og velge **Smart Load Manager OJM**. Ved oppdatering av en allerede lastet integrasjon ber Home Assistant om omstart.
 
 [Home Assistants veiledning for Marketplace-repoer](https://contributors.home-assistant.io/marketplace/guides/catalog/#the-link-to-your-repository)
 
