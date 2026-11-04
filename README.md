@@ -22,7 +22,7 @@ SLM reduces charging when the home needs more power and gives charging more room
 
 ## Requirements
 
-- Home Assistant **2026.2 or newer**.
+- Install and configure the [latest Easee integration](https://github.com/nordicopen/easee_hass/releases/latest). Easee v2026.11.0 requires **Home Assistant 2026.10.0 or newer**.
 - Easee chargers configured in Home Assistant. On **each** charger, enable **Current (A)** and **Voltage (V)** under **Settings → Devices & services → Easee → charger → Entities**. Show disabled entities, enable both and wait for measured values. Charging power must also be available.
 - A HAN power sensor in W or kW.
 - A sensor for **energy used since the start of the current clock hour**, in kWh, is required. **[EnergyTariff](https://github.com/epaulsen/energytariff) is recommended** because it supplies this and several other useful sensors. Equivalent sources, such as Tibber’s accumulated consumption current hour, can also be selected. A spot-price sensor cannot replace hourly energy.

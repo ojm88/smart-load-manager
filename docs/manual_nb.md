@@ -6,7 +6,7 @@ SLM tilpasser én eller to Easee-ladere til boligens timebudsjett. Når boligen 
 
 ## Før du begynner
 
-- Home Assistant **2026.2 eller nyere**, med Easee-integrasjonen konfigurert.
+- Installer og konfigurer [nyeste Easee-integrasjon](https://github.com/nordicopen/easee_hass/releases/latest). Easee v2026.11.0 krever **Home Assistant 2026.10.0 eller nyere**.
 - **HAN-effekt** for hele boligen, i W eller kW.
 - **Energi brukt denne timen**, i kWh, som nullstilles ved hver hele time. [EnergyTariff](https://github.com/epaulsen/energytariff) anbefales; tilsvarende måling fra for eksempel Tibber kan brukes. Spotpris, døgnforbruk og totalmåler kan ikke erstatte denne sensoren.
 - Aktiver **Strøm/Current (A)** og **Spenning/Voltage (V)** på **hver** Easee-lader: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge og vent på målte verdier. Ladeeffekten må også være tilgjengelig.

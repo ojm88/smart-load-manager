@@ -6,7 +6,7 @@ SLM adjusts one or two Easee chargers to the home's hourly energy budget. Chargi
 
 ## Before you start
 
-- Home Assistant **2026.2 or newer**, with the Easee integration configured.
+- Install and configure the [latest Easee integration](https://github.com/nordicopen/easee_hass/releases/latest). Easee v2026.11.0 requires **Home Assistant 2026.10.0 or newer**.
 - Whole-home **HAN power**, in W or kW.
 - **Energy used this hour**, in kWh, resetting at every clock-hour boundary. [EnergyTariff](https://github.com/epaulsen/energytariff) is recommended; equivalent Tibber or other measurements can be used. Spot price, daily consumption and lifetime totals cannot replace hourly energy.
 - Enable **Current (A)** and **Voltage (V)** on **each** Easee charger: Settings → Devices & services → Easee → charger → Entities. Show disabled entities, enable both and wait for measured values. Charging power must also be available.
