@@ -6,7 +6,8 @@ from pathlib import Path
 import re
 from homeassistant.core import SupportsResponse
 from homeassistant.helpers import entity_registry as er, device_registry as dr
-from .const import DOMAIN, CONF_HAN_POWER_ENTITY
+from .const import (DOMAIN, CONF_HAN_POWER_ENTITY, CONF_TARIFF_USED_ENTITY,
+                    CONF_ESTIMATE_ENTITY, TARIFF_USED_ENTITY, TARIFF_ESTIMATE_ENTITY)
 from .entity_ids import ENTITY_OBJECT_IDS
 from .site import site_entry
 
@@ -24,7 +25,9 @@ async def async_register_dashboard_service(hass):
         text = await hass.async_add_executor_job(path.read_text)
         registry = er.async_get(hass)
         replacements = {
-            "sensor.SLM_HAN_POWER_SOURCE": owner.data[CONF_HAN_POWER_ENTITY]
+            "sensor.SLM_HAN_POWER_SOURCE": owner.data[CONF_HAN_POWER_ENTITY],
+            TARIFF_USED_ENTITY: owner.data.get(CONF_TARIFF_USED_ENTITY, TARIFF_USED_ENTITY),
+            TARIFF_ESTIMATE_ENTITY: owner.data.get(CONF_ESTIMATE_ENTITY) or TARIFF_ESTIMATE_ENTITY
         }
         for entry in [owner] + others:
             if entry.data.get("electrical_connection") not in {"it_3", "tn_3"}:
@@ -42,7 +45,6 @@ async def async_register_dashboard_service(hass):
                 for key, base in mapping.items():
                     shared = key in {
                         "household_status",
-                        "charging_automatic_control",
                         "measurement_status",
                         "consumption_limit",
                         "allocation_mode",
@@ -71,12 +73,21 @@ async def async_register_dashboard_service(hass):
 
                 # Headings are quoted by the YAML serializer below when needed.
                 parsed = yaml.safe_load(text)
+                graph_suffix = "_CHARGER_SUFFIX" if second else "_FIRST_CHARGER_SUFFIX"
+                graph_labels = {
+                    "sensor.slm_recommended_current" + graph_suffix: "Anbefalt ladestrøm",
+                    "sensor.slm_charger_current" + graph_suffix: "Målt ladestrøm",
+                }
                 for card in parsed.get("cards", []):
                     if "title" in card:
                         card["title"] = card["title"].replace(
                             label, name or entry.title
                         )
                     for row in card.get("entities", []):
+                        if card.get("type") == "history-graph":
+                            if isinstance(row, dict) and row.get("entity") in graph_labels:
+                                row["name"] = f"{graph_labels[row['entity']]} – {name or entry.title}"
+                            continue
                         if isinstance(row, dict) and "name" in row:
                             row["name"] = row["name"].replace(
                                 label, name or entry.title

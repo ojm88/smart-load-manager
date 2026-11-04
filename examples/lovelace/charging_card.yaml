@@ -85,6 +85,13 @@ cards:
 
     {% endif %}
 
+    {% if load.show_waiting_check | default(false) %}
+
+
+    Neste vurdering: **{{ load.next_regulation_at | timestamp_custom(''%H:%M'', true) }}**.
+
+    {% endif %}
+
     {% if load.show_charging_details | default(load.status == ''charging'') %}
 
 
@@ -163,7 +170,7 @@ cards:
   - entity: sensor.slm_charger_status_FIRST_CHARGER_SUFFIX
     name: Ladestatus
   - entity: sensor.slm_charger_current_FIRST_CHARGER_SUFFIX
-    name: Strøm til bilen
+    name: Målt ladestrøm
   - entity: sensor.slm_charger_power_FIRST_CHARGER_SUFFIX
     name: Ladeeffekt
   - entity: sensor.slm_recommended_current_FIRST_CHARGER_SUFFIX
@@ -189,11 +196,11 @@ cards:
   hours_to_show: 12
   entities:
   - entity: sensor.slm_recommended_current_FIRST_CHARGER_SUFFIX
-    name: Anbefalt strøm
+    name: Anbefalt ladestrøm – første lader
   - entity: sensor.energy_used_this_hour
     name: Brukt
   - entity: sensor.slm_charger_current_FIRST_CHARGER_SUFFIX
-    name: Målt ladestrøm
+    name: Målt ladestrøm – første lader
   - entity: sensor.energy_estimate_this_hour
     name: Timeestimat
   - entity: sensor.average_peak_hour_energy

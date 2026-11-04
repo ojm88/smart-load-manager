@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1-beta.22
+
+- Consolidate README and Norwegian/English setup guides around current beta-22 behavior; remove obsolete user instructions and simplify native setup field help. Explain required/optional sources, controls, regulation, estimates, troubleshooting and Easee/SLM responsibilities.
+- Name every charger in current-history graph legends, including the first. Use Anbefalt ladestrøm / Målt ladestrøm consistently, preserve entity IDs and handle custom names safely. Regenerate dashboard YAML for new labels.
+
+- Keep actionable Markdown explanations visible across repeated capacity waits and pending regulation. Distinguish zero sent current from a positive recommendation, positive offers awaiting Easee/vehicle response, pending stop feedback, manual control, source faults and priority waits. Show minimum required power and a household-load reduction suggestion for budget waits; show the next ordinary assessment during eligible waiting. Regenerate dashboard YAML to include the waiting assessment time.
+
+- Refine offered-power reservations after three minutes of stable positive charging draw: forecast measured demand with 100 W headroom instead of indefinitely reserving unused offered power. Keep settled observations through temporary waiting/zero-power pauses and stop/resume commands. Reuse only after matching positive draw resumes, without a new three-minute wait. Completed/disconnected sessions and invalid inputs reset learning; changed demand/context or higher offers remain conservative. Apply to forecast and settled manual reservation, not electrical maxima or outgoing charger limits. Record reserved_power_kw in diagnostic traces.
+
+- Keep generated status content Norwegian independently of HA server language.
+- Remove the combined charging automation card from generated YAML; retain individual controls. Retire the obsolete category switch and empty device without changing saved per-charger choices. Add read-only charging overview and measured total-power sensors on the household device, with participation and capacity attributes and anonymous diagnostic summary.
+- Add optional hourly estimate selection (EnergyTariff, Tibber or equivalent kWh source), preserve the existing default, and use chosen source IDs in graphs. Missing estimates remain display-only.
+- Show Easee branding in second/add dialogs while retaining the unused-only native text list. The logo is in the dialog, not each dropdown option.
+
+
 ## 0.1.1-beta.21
 
 - Hide unavailable pause/manual-current rows independently in generated one- and two-charger YAML. Regenerate the card after updating to adopt the conditions.

@@ -3,16 +3,18 @@
     "step": {
       "household": {
         "title": "Boligens målinger",
-        "description": "Velg felles HAN-effekt og EnergyTariff timeforbruk én gang for boligen. Forbruksgrensen endres senere fra boligenheten. {validation_error}",
+        "description": "Velg målingene SLM skal bruke. HAN-effekt og energi brukt denne timen er påkrevd. Timeestimat er valgfritt. EnergyTariff anbefales; tilsvarende målinger fra Tibber eller andre integrasjoner kan brukes. {validation_error}",
         "data": {
-          "han_power_entity": "Husmåling – HAN-effektmåler",
-          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
-          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
+          "han_power_entity": "Boligens effekt (HAN)",
+          "tariff_used_entity": "Energi brukt denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin – kWh",
+          "energy_estimate_entity": "Forventet forbruk denne timen – valgfritt"
         },
         "data_description": {
-          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
-          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
-          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+          "han_power_entity": "Velg øyeblikkelig effekt fra boligens HAN-måler, i W eller kW.",
+          "tariff_used_entity": "Målt forbruk siden starten av denne klokktimen, i kWh. Velg for eksempel EnergyTariff eller Tibbers akkumulerte timeforbruk. Ikke velg døgnforbruk, totalmåler eller estimat.",
+          "safety_margin_kwh": "Reservert del av timebudsjettet. Standard 0,3 kWh gir rom for måleforsinkelse og endringer i forbruk. Høyere margin gir mindre plass til lading.",
+          "energy_estimate_entity": "Anslag for samlet forbruk denne klokktimen, i kWh. Brukes bare i visningen. Uten valg brukes sensor.energy_estimate_this_hour hvis den finnes."
         }
       },
       "load_type": {
@@ -28,13 +30,14 @@
       },
       "charging": {
         "title": "Elbillading",
-        "description": "Velg første Easee-lader. Du kan fullføre med én lader eller legge til én til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
+        "description": "Velg første Easee-lader og dens fysiske tilkobling. Du kan fullføre med én lader eller legge til én til.\n\nFør du velger lader: Aktiver Strøm/Current (A) og Spenning/Voltage (V) under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge og vent på målte verdier. {validation_error}",
         "data": {
           "charger_device": "Første Easee-lader",
           "electrical_connection": "Laderens fysiske tilkobling"
         },
         "data_description": {
-          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget."
+          "electrical_connection": "Velg faktisk nettype og antall tilkoblede faser. Dette endrer ikke installasjonen. SLM bruker målte spenninger; ønsket lademodus velges senere under Fasevalg ved trefasetilkobling.",
+          "charger_device": "Velg Easee-enheten som skal styres. Gi gjerne laderen et tydelig navn i HA."
         }
       },
       "charging_next": {
@@ -46,13 +49,14 @@
       },
       "second_charger": {
         "title": "Andre Easee-lader",
-        "description": "Eksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
+        "description": "<img src=\"https://brands.home-assistant.io/easee/icon.png\" alt=\"Easee\" width=\"40\">\n\nVelg én ny lader. Listen viser bare ladere som ikke er lagt til. Eksisterende lader og innstillinger beholdes. SLM støtter inntil to ladere.\n\nFør du velger lader: Aktiver Strøm/Current (A) og Spenning/Voltage (V) under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge og vent på målte verdier. {validation_error}",
         "data": {
           "charger_device": "Ny Easee-lader",
           "electrical_connection": "Den nye laderens fysiske tilkobling"
         },
         "data_description": {
-          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget."
+          "electrical_connection": "Velg faktisk nettype og antall tilkoblede faser. Dette endrer ikke installasjonen. SLM bruker målte spenninger; ønsket lademodus velges senere under Fasevalg ved trefasetilkobling.",
+          "charger_device": "Bare ladere som ikke er lagt til, vises. Den eksisterende laderen beholdes."
         }
       }
     },
@@ -101,7 +105,7 @@
         "name": "Maksimal ladestrøm"
       },
       "charger_current": {
-        "name": "Strøm til bilen"
+        "name": "Målt ladestrøm"
       },
       "charger_power": {
         "name": "Effekt til bilen"
@@ -173,6 +177,21 @@
           "primary": "Førsteprioritet",
           "secondary": "Andreprioritet"
         }
+      },
+      "charging_overview": {
+        "name": "Lading",
+        "state": {
+          "waiting": "Avventer",
+          "automatic": "Automatisk styring",
+          "manual": "Manuell styring",
+          "paused": "Lading pauset",
+          "disconnected": "Ingen bil tilkoblet",
+          "completed": "Lading avsluttet",
+          "mixed": "Ulik status på laderne"
+        }
+      },
+      "charging_power": {
+        "name": "Samlet ladeeffekt"
       }
     },
     "switch": {
@@ -187,14 +206,11 @@
       },
       "charging_priority": {
         "name": "Førsteprioritet"
-      },
-      "charging_automatic_control": {
-        "name": "Automatisk laststyring – lading"
       }
     },
     "number": {
       "manual_current_limit": {
-        "name": "Manuell strøm (auto av)"
+        "name": "Manuell ladestrøm (auto av)"
       }
     },
     "time": {
@@ -232,21 +248,23 @@
         "title": "Innstillinger",
         "menu_options": {
           "household": "Boligens målekilder og sikkerhetsmargin",
-          "chargers": "Legg til eller fjern lader"
+          "chargers": "Ladere og tilkobling"
         }
       },
       "household": {
         "title": "Boligens målinger",
-        "description": "Velg felles HAN-effekt og EnergyTariff timeforbruk én gang for boligen. Forbruksgrensen endres senere fra boligenheten. {validation_error}",
+        "description": "Velg målingene SLM skal bruke. HAN-effekt og energi brukt denne timen er påkrevd. Timeestimat er valgfritt. EnergyTariff anbefales; tilsvarende målinger fra Tibber eller andre integrasjoner kan brukes. {validation_error}",
         "data": {
-          "han_power_entity": "Husmåling – HAN-effektmåler",
-          "tariff_used_entity": "Timeforbruk – EnergyTariff brukt denne timen",
-          "safety_margin_kwh": "Sikkerhetsmargin – kWh"
+          "han_power_entity": "Boligens effekt (HAN)",
+          "tariff_used_entity": "Energi brukt denne timen",
+          "safety_margin_kwh": "Sikkerhetsmargin – kWh",
+          "energy_estimate_entity": "Forventet forbruk denne timen – valgfritt"
         },
         "data_description": {
-          "han_power_entity": "Velg øyeblikkelig effekt fra HAN-måleren som EnergyTariff bruker. Sensoren må være oppgitt i W eller kW; kWh-tellere kan ikke brukes.",
-          "tariff_used_entity": "Velg EnergyTariff-sensoren for energi brukt i inneværende time. Dette er nødvendig for beregningen.",
-          "safety_margin_kwh": "Trekkes fra tilgjengelig energi for å gi rom for måleforsinkelse og forbruk som endres raskt."
+          "han_power_entity": "Velg øyeblikkelig effekt fra boligens HAN-måler, i W eller kW.",
+          "tariff_used_entity": "Målt forbruk siden starten av denne klokktimen, i kWh. Velg for eksempel EnergyTariff eller Tibbers akkumulerte timeforbruk. Ikke velg døgnforbruk, totalmåler eller estimat.",
+          "safety_margin_kwh": "Reservert del av timebudsjettet. Standard 0,3 kWh gir rom for måleforsinkelse og endringer i forbruk. Høyere margin gir mindre plass til lading.",
+          "energy_estimate_entity": "Anslag for samlet forbruk denne klokktimen, i kWh. Brukes bare i visningen. Uten valg brukes sensor.energy_estimate_this_hour hvis den finnes."
         }
       },
       "chargers": {
@@ -259,13 +277,14 @@
       },
       "add_charger": {
         "title": "Legg til lader",
-        "description": "Eksisterende lader beholdes. Velg én ny lader fra listen; listen viser bare ledige ladere. Maksimalt to ladere kan legges til. Aktiver både Strøm/Current (A) og Spenning/Voltage (V) på hver Easee-lader før oppsett: Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge sensorene og vent på målte verdier. {validation_error}",
+        "description": "<img src=\"https://brands.home-assistant.io/easee/icon.png\" alt=\"Easee\" width=\"40\">\n\nVelg én ny lader. Listen viser bare ladere som ikke er lagt til. Eksisterende lader og innstillinger beholdes. SLM støtter inntil to ladere.\n\nFør du velger lader: Aktiver Strøm/Current (A) og Spenning/Voltage (V) under Innstillinger → Enheter og tjenester → Easee → laderen → Entiteter. Vis deaktiverte entiteter, aktiver begge og vent på målte verdier. {validation_error}",
         "data": {
           "charger_device": "Ny Easee-lader",
           "electrical_connection": "Den nye laderens fysiske tilkobling"
         },
         "data_description": {
-          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget."
+          "electrical_connection": "Velg faktisk nettype og antall tilkoblede faser. Dette endrer ikke installasjonen. SLM bruker målte spenninger; ønsket lademodus velges senere under Fasevalg ved trefasetilkobling.",
+          "charger_device": "Bare ladere som ikke er lagt til, vises. Den eksisterende laderen beholdes."
         }
       },
       "remove_charger": {
@@ -277,14 +296,14 @@
       },
       "connection": {
         "title": "Laderens fysiske tilkobling",
-        "description": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget. {validation_error}",
+        "description": "Endre bare hvis den lagrede tilkoblingen er feil eller installasjonen er endret. Den valgte laderen får 0 A, og automatisk styring slås av på denne laderen. Kontroller valget før du aktiverer styringen igjen. {validation_error}",
         "data": {
           "charger_device": "Lader",
           "electrical_connection": "Laderens fysiske tilkobling"
         },
         "data_description": {
           "charger_device": "Velg laderen som skal endres.",
-          "electrical_connection": "Velg installasjonens faktiske nettype og tilkoblede faser, ikke ønsket lademodus. Easees målte spenning brukes i beregningen. Énfasetilkobling skjuler fasevalget. Endring sender 0 A til den lastede laderen og laster SLM på nytt med automatisk styring av."
+          "electrical_connection": "Velg faktisk nettype og antall tilkoblede faser. Dette endrer ikke installasjonen. SLM bruker målte spenninger; ønsket lademodus velges senere under Fasevalg ved trefasetilkobling."
         }
       }
     },

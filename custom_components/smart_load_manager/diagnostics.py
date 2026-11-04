@@ -29,5 +29,16 @@ async def async_get_config_entry_diagnostics(hass, entry):
             'completed_allowance_a': site._completed_limits.get(key),
             'connection': c.entry.data.get('electrical_connection')
                 if c.entry.data.get('electrical_connection') in {'it_1','it_3','tn_1','tn_3'} else 'unspecified'})
+    from .household_status import charging_summary
+    rows = []
+    for load, controller in zip(result['loads'], site.controllers.values(), strict=True):
+        sample = load['sample']
+        rows.append({'name': load['load'], 'load_type': 'ev_charger',
+                     'source_available': bool(controller.data) and getattr(controller, 'last_update_success', True), 'status': sample.get('status'),
+                     'automatic_control': load['automatic'],
+                     'power_w': sample.get('charger_power_w')})
+    summary = charging_summary({'controlled_loads': rows})
+    summary.pop('loads')
+    result['charging_summary'] = summary
     result['trace'] = site.debug_trace.export()
     return result

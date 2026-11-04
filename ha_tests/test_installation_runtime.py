@@ -81,6 +81,35 @@ class InstallationTests(IsolatedAsyncioTestCase):
         with patch.object(self.hass.config_entries, "async_remove", side_effect=remove):
             await async_migrate_entry(self.hass, entries[0])
 
+    async def test_retire_group_toggle_preserves_individual_settings_and_identity(self):
+        from smart_load_manager.installation import retire_charging_category_control
+        entry=self.entry('a','Garage')
+        device=self.devices.async_get_or_create(config_entry_id=entry.entry_id,
+            identifiers={('smart_load_manager','charging_category')},name='SLM – Lading')
+        old=self.registry.async_get_or_create('switch','smart_load_manager',
+            'a_charging_automatic_control',config_entry=entry,device_id=device.id)
+        self.registry.async_update_entity(old.entity_id,new_entity_id='switch.custom_group_name')
+        individual=self.registry.async_get_or_create('switch','smart_load_manager',
+            'a_automatic_control',config_entry=entry)
+        options=dict(entry.options)
+        retire_charging_category_control(self.hass,entry)
+        retire_charging_category_control(self.hass,entry)  # Repeated reload is harmless.
+        self.assertIsNone(self.registry.async_get('switch.custom_group_name'))
+        self.assertIsNone(self.devices.async_get(device.id))
+        self.assertIsNotNone(self.registry.async_get(individual.entity_id))
+        self.assertEqual(dict(entry.options),options)
+
+    async def test_retire_group_device_preserves_unrelated_registered_entity(self):
+        from smart_load_manager.installation import retire_charging_category_control
+        entry=self.entry('a','Garage')
+        device=self.devices.async_get_or_create(config_entry_id=entry.entry_id,
+            identifiers={('smart_load_manager','charging_category')},name='SLM – Lading')
+        unrelated=self.registry.async_get_or_create('sensor','smart_load_manager',
+            'unrelated',config_entry=entry,device_id=device.id)
+        retire_charging_category_control(self.hass,entry)
+        self.assertIsNotNone(self.devices.async_get(device.id))
+        self.assertIsNotNone(self.registry.async_get(unrelated.entity_id))
+
     async def test_beta4_consolidation_preserves_unique_ids_preferences_and_history_identity(
         self,
     ):

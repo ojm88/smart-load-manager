@@ -3,13 +3,13 @@ from datetime import UTC, datetime, time, timedelta
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace as NS
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 from homeassistant.core import HomeAssistant
 from smart_load_manager.coordinator import ChargingCoordinator
 from smart_load_manager.entity_resolution import EaseeEntities
 from smart_load_manager.site import SiteController
-from smart_load_manager.switch import AutomaticLoadControl, ChargingAutomationControl
+from smart_load_manager.switch import AutomaticLoadControl
 from smart_load_manager.time import ChargingScheduleStartTime
 
 
@@ -261,41 +261,23 @@ class ControlEventTests(IsolatedAsyncioTestCase):
         self.assertEqual(self.commands,[0])
         self.assertEqual(self.c.manual_current_setting,0)
 
-    async def test_charging_category_operates_both_and_preserves_individual_choice(self):
+    async def test_individual_automatic_choice_does_not_change_peer(self):
         peer_entry=NS(entry_id='second',title='Carport',options={},data=dict(self.entry.data))
         peer=ChargingCoordinator(self.hass,peer_entry)
         peer.auto_control=True
         peer.last_commanded_current=16
         peer._async_sample=self.c._async_sample
-        sent=[]
-        async def send(value):
-            sent.append(value);peer.last_commanded_current=value;peer._last_command_at=self.now.timestamp()
-        peer._async_send_current=send
-        group=ChargingAutomationControl(self.c,self.entry)
-        group.hass=self.hass
-        group.async_write_ha_state=Mock()
+        peer._async_send_current=AsyncMock()
+        control=AutomaticLoadControl(self.c,self.entry)
+        control.hass=self.hass
+        control.async_write_ha_state=Mock()
         self.c.last_commanded_current=16
         with patch('smart_load_manager.site.charger_entries',return_value=[self.entry,peer_entry]):
-            await group.async_turn_off()
-            self.assertEqual(self.commands,[6])
-            self.assertEqual(sent,[6])
-            self.assertFalse(group.is_on)
-            self.assertFalse(self.c.auto_control)
-            self.assertFalse(peer.auto_control)
-            # Mixed state is explicit when an individual charger is enabled.
-            peer.auto_control=True
-            self.assertTrue(group.is_on)
-            self.assertEqual(group.extra_state_attributes['control_mode'],'mixed')
+            await control.async_turn_off()
+        self.assertFalse(self.c.auto_control)
+        self.assertTrue(peer.auto_control)
+        peer._async_send_current.assert_not_awaited()
         await peer.async_shutdown()
-
-    async def test_category_startup_off_does_not_start_manual_charging_on_its_own(self):
-        self.c.auto_control=False
-        group=ChargingAutomationControl(self.c,self.entry)
-        group.hass=self.hass
-        group.async_write_ha_state=Mock()
-        self.assertFalse(group.is_on)
-        self.assertIsNone(self.c.manual_current_setting)
-        self.assertEqual(self.commands,[])
 
     async def test_unchanged_han_reports_keep_completed_session_quiet(self):
         # Real sampler, fresh repeated report but an unchanged value for hours.

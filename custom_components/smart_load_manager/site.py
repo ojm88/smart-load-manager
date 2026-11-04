@@ -38,6 +38,8 @@ class SiteController:
         self.controllers = {}
         self.lock = asyncio.Lock()
         self.pending_reductions = {}
+        from .power_reservation import PowerReservations
+        self.power_reservations = PowerReservations()
         self.manual_requests = {}
         self.latest_samples = {}
         self._permissions = {}
@@ -147,6 +149,7 @@ class SiteController:
                 owner = site_entry(self.hass)
                 reference = samples[owner.entry_id]
                 if not all(d.get("inputs_valid") and d.get("han_fresh") for d in samples.values()):
+                    self.power_reservations.observations.clear()
                     raise MeasurementPending("Automatisk laststyring avventer gyldige målinger for alle konfigurerte ladere.")
                 # Every charger power must be known before removing it from HAN.
                 for key, c in self.controllers.items():
@@ -179,6 +182,15 @@ class SiteController:
                     limit_kwh=consumption_limit_value(owner), used_kwh=reference["energy_used_kwh"],
                     margin_kwh=reference["safety_margin_kwh"], minutes_left=reference["minutes_left"],
                     han_w=reference["han_power_w"], managed_power_w=managed)
+                now = dt_util.now().timestamp()
+                for key, d in samples.items():
+                    c = self.controllers[key]
+                    d['reserved_power_kw'] = self.power_reservations.estimate(
+                        key, d, offered_a=c.last_commanded_current,
+                        command_at=getattr(c, '_last_command_at', None), now=now)
+                    self.debug_trace.record('power_reservation', key, data=d)
+                self.power_reservations.observations = {
+                    k: v for k, v in self.power_reservations.observations.items() if k in samples}
                 # Manual charging remains outside automatic allocation. Reserve
                 # its commanded capacity too while HAN is catching up.
                 for key, d in samples.items():
@@ -187,7 +199,8 @@ class SiteController:
                     if key in self.manual_requests:
                         manual_limit = self._manual_target(c, d, manual_limit)
                     if not c.auto_control and manual_limit and d.get("kw_per_amp"):
-                        expected = manual_limit * d["kw_per_amp"]
+                        expected = (manual_limit * d["kw_per_amp"] if key in self.manual_requests
+                                    else d.get("reserved_power_kw", manual_limit * d["kw_per_amp"]))
                         capacity = max(0, capacity - max(0, expected - d["charger_power_w"] / 1000))
                 demands = []
                 eligible = []
@@ -266,6 +279,7 @@ class SiteController:
                         self._publish(c, d)
                 return samples[requester.entry.entry_id]
             except MeasurementPending as err:
+                self.power_reservations.observations.clear()
                 self._measurement_waiting = True
                 self.debug_trace.record("measurement_wait")
                 # Missing input is a control wait, not a loss of every diagnostic
@@ -322,6 +336,7 @@ class SiteController:
                         self._publish(self.controllers[key], d)
                 return samples[requester.entry.entry_id]
             except Exception as err:
+                self.power_reservations.observations.clear()
                 self.debug_trace.record("control_failure")
                 # Do not keep a peer on an old positive command after a failed
                 # sample or command. Never let a failed reduction enable a rise.
@@ -449,7 +464,7 @@ class SiteController:
 
     async def _regulated_apply(self, targets, samples, reference, owner, eligible):
         now = dt_util.now().timestamp()
-        # Reserve the commanded power, even while the vehicle draws less. HAN
+        # Reserve new offers; sustained active draw can refine the forecast. HAN
         # already includes measured charging and all unmanaged household loads.
         held_kw = max(reference['han_power_w'] / 1000,
                       sum(d['charger_power_w'] for d in samples.values()) / 1000)
@@ -458,7 +473,7 @@ class SiteController:
             factor = d.get('kw_per_amp')
             if (factor and controller.last_commanded_current is not None
                     and key not in self._released_completed):
-                held_kw += max(0, controller.last_commanded_current * factor
+                held_kw += max(0, d.get("reserved_power_kw", controller.last_commanded_current * factor)
                                - d['charger_power_w'] / 1000)
         mode = self.cadence.decide(
             now=now, limit_kwh=consumption_limit_value(owner),

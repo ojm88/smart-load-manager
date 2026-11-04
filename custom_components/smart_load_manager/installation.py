@@ -183,3 +183,22 @@ def reconcile_pair_entities(hass, parent):
 
 def shared_identity(entry):
     return getattr(getattr(entry, "parent", None), "entry_id", entry.entry_id)
+
+
+def retire_charging_category_control(hass, entry):
+    """Remove only SLM's obsolete group toggle; never alter load choices."""
+    from homeassistant.helpers import entity_registry as er, device_registry as dr
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "switch", DOMAIN, f"{entry.entry_id}_charging_automatic_control")
+    if entity_id:
+        entity = registry.async_get(entity_id)
+        if entity.config_entry_id == entry.entry_id:
+            registry.async_remove(entity_id)
+    devices = dr.async_get(hass)
+    device = devices.async_get_device(identifiers={(DOMAIN, "charging_category")})
+    owners = ({device.config_entry_id} if hasattr(device, "config_entry_id")
+              else set(device.config_entries) if device else set())
+    if (device and owners == {entry.entry_id}
+            and not er.async_entries_for_device(registry, device.id, include_disabled_entities=True)):
+        devices.async_remove_device(device.id)

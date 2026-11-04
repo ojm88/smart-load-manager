@@ -99,3 +99,67 @@ class HouseholdStatusTests(unittest.TestCase):
         _,payload=build_household_status([self.load(status='disconnected'),self.load('b',status='unknown')],limit_kwh=10)
         self.assertNotIn('Bil tilkoblet:',payload['summary'])
         self.assertNotIn('Ingen biler',payload['summary'])
+
+    def test_capacity_pause_reason_survives_repeated_calculation_periods(self):
+        for deadline in (1000,1300,1600,1900):
+            _,p=build_household_status([self.load(status='awaiting_start',recommended_current_a=0,
+                last_sent_current_a=0,charger_power_w=0,kw_per_amp=.718,
+                next_regulation_at=deadline)],limit_kwh=10)
+            row=p['controlled_loads'][0]
+            self.assertEqual(row['status_label'],'Venter på kapasitet')
+            self.assertIn('forbruksgrense',row['detail'])
+            self.assertIn('4.3 kW',row['detail'])
+            self.assertIn('Reduser annet forbruk',row['detail'])
+            self.assertTrue(row['show_waiting_check'])
+            self.assertNotIn('bilen starter',row['detail'])
+
+    def test_available_recommendation_is_not_a_sent_restart(self):
+        _,p=build_household_status([self.load(status='awaiting_start',recommended_current_a=6,
+            last_sent_current_a=0,charger_power_w=0,next_regulation_at=1600)],limit_kwh=10)
+        row=p['controlled_loads'][0]
+        self.assertEqual(row['status_label'],'Venter på regulering')
+        self.assertIn('0 A',row['detail']);self.assertIn('plass til 6 A',row['detail'])
+        self.assertIn('neste regulering',row['detail'])
+        self.assertNotIn('bilen starter',row['detail'])
+
+    def test_positive_offer_explains_waiting_without_claiming_vehicle_cause(self):
+        _,p=build_household_status([self.load(status='awaiting_start',recommended_current_a=6,
+            last_sent_current_a=6,charger_power_w=0)],limit_kwh=10)
+        row=p['controlled_loads'][0]
+        self.assertIn('har satt 6 A',row['detail'])
+        self.assertIn('Easee melder fortsatt venting',row['detail'])
+        self.assertIn('hvis dette vedvarer',row['detail'])
+
+    def test_live_stop_recommendation_and_stop_feedback_are_visible_while_charging(self):
+        for sent,expected in ((10,'beholder 10 A'),(0,'Avventer at laderen stanser')):
+            _,p=build_household_status([self.load(recommended_current_a=0,last_sent_current_a=sent)],limit_kwh=10)
+            row=p['controlled_loads'][0]
+            self.assertEqual(row['status_label'],'Lader')
+            self.assertIn(expected,row['detail'])
+            self.assertIn('forbruksgrense',row['detail'])
+
+    def test_explanations_cover_controls_faults_priority_and_missing_limits(self):
+        for changes,expected in (
+            (dict(auto_control=False,status='awaiting_start'),'Automatisk laststyring er av'),
+            (dict(schedule_allowed=False,status='awaiting_start',schedule_start_time='02:00'),'02:00'),
+            (dict(charging_paused=True,status='awaiting_start'),'Slå av ladepause'),
+            (dict(status='error',inputs_valid=False),'Easee rapporterer en feil'),
+            (dict(status='awaiting_start',recommended_current_a=None),'opplysninger'),
+            (dict(awaiting_reduction=True),'reduksjonen er bekreftet'),
+            (dict(inputs_valid=False,control_reason='HAN mangler.'),'HAN mangler.'),
+        ):
+            with self.subTest(changes=changes):
+                _,p=build_household_status([self.load(**changes)],limit_kwh=10)
+                self.assertIn(expected,p['controlled_loads'][0]['detail'])
+        _,p=build_household_status([self.load(),self.load('b',status='awaiting_start',
+            recommended_current_a=0,last_sent_current_a=0)],limit_kwh=10,priority='a',mode='one_at_a_time')
+        self.assertIn('Garasje får lade først',p['controlled_loads'][1]['detail'])
+        self.assertNotIn('Reduser annet forbruk',p['controlled_loads'][1]['detail'])
+
+    def test_zero_power_feedback_is_explicit_and_idle_stays_compact(self):
+        _,p=build_household_status([self.load(charger_power_w=0,last_sent_current_a=7)],limit_kwh=10)
+        self.assertIn('målt effekt er 0 W',p['controlled_loads'][0]['detail'])
+        for status in ('completed','disconnected'):
+            _,p=build_household_status([self.load(status=status)],limit_kwh=10)
+            self.assertEqual(p['controlled_loads'][0]['detail'],'')
+            self.assertFalse(p['controlled_loads'][0]['show_waiting_check'])

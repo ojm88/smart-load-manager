@@ -121,9 +121,13 @@ class SensorConsolidationTests(unittest.IsolatedAsyncioTestCase):
             await async_setup_entry(hass,entry,sensors.extend)
         return sensors
 
-    async def test_new_first_charger_has_six_sensors_and_two_shared_status_entities(self):
+    async def test_new_first_charger_has_six_sensors_and_household_summary_entities(self):
         sensors=await self.configured_sensors()
-        self.assertEqual(len(sensors),9)
+        self.assertEqual(len(sensors),11)
+        for item in sensors:
+            if item._key in {'charging_overview','charging_power'}:
+                self.assertEqual(item.device_info['identifiers'],{('smart_load_manager','household')})
+                self.assertFalse(item.entity_id.endswith('_garage_123'))
         shared=[s for s in sensors if s._key=='measurement_status']
         self.assertEqual(len(shared),1)
         household=next(s for s in sensors if s._key=='household_status')
@@ -189,3 +193,50 @@ class SensorConsolidationTests(unittest.IsolatedAsyncioTestCase):
         entity=ConsumptionLimitSelect(NS(),NS(entry_id='owner',data={}))
         self.assertEqual(entity.device_info['identifiers'],{('smart_load_manager','household')})
         self.assertEqual(entity.device_info['name'],'SLM – Boligen')
+
+
+class NorwegianDashboardTests(unittest.IsolatedAsyncioTestCase):
+    async def test_household_card_is_norwegian_on_english_server(self):
+        from types import SimpleNamespace as NS
+        from pathlib import Path
+        from jinja2 import Environment
+        import yaml
+        owner=NS(entry_id='a',title='Smart Load Manager OJM – Outside',data={},options={})
+        coordinator=NS(entry=owner,data={'status':'disconnected'},last_update_success=True)
+        entity=NS(coordinator=coordinator,hass=NS(config=NS(language='en')))
+        state,payload=ChargingDiagnosticSensor._household_payload(entity)
+        env=Environment()
+        env.globals.update(states=lambda _:state,state_attr=lambda _,key:payload.get(key))
+        for filename in ['one.yaml','two.yaml']:
+            template=yaml.safe_load((Path(__file__).parents[1]/'custom_components/smart_load_manager/dashboard'/filename).read_text())['cards'][0]['content']
+            rendered=env.from_string(template).render()
+            self.assertIn('Lading',rendered)
+            self.assertIn('Ingen bil',rendered)
+            self.assertNotIn('Charging',rendered)
+            self.assertNotIn('No cars',rendered)
+
+
+class ChargingSummaryTests(unittest.TestCase):
+    def test_summary_combines_manual_and_automatic_draw_without_mutation(self):
+        from smart_load_manager.household_status import build_household_status, charging_summary
+        from copy import deepcopy
+        loads=[dict(id='a',name='Outside',data=dict(status='charging',auto_control=True,
+                   charger_power_w=2300,inputs_valid=True,han_fresh=True,recommended_current_a=10,kw_per_amp=.23,max_current_a=16)),
+               dict(id='b',name='Garage',data=dict(status='charging',auto_control=False,charger_power_w=4600))]
+        original=deepcopy(loads)
+        _,payload=build_household_status(loads,limit_kwh=10)
+        summary=charging_summary(payload)
+        self.assertEqual(summary['total_power_w'],6900)
+        self.assertEqual(summary['automatic_mode'],'mixed')
+        self.assertEqual(summary['automatic_charger_names'],['Outside'])
+        self.assertEqual(summary['charging_chargers'],2)
+        self.assertEqual(loads,original)
+
+    def test_partial_peer_never_becomes_false_zero_total(self):
+        from smart_load_manager.household_status import build_household_status, charging_summary
+        for peer in [None,dict(status='completed',charger_power_w=None),dict(status='unavailable',charger_power_w=0),dict(status='unknown',charger_power_w=float('nan'))]:
+            _,payload=build_household_status([dict(id='a',name='A',data=dict(status='disconnected',charger_power_w=0)),
+                 dict(id='b',name='B',data=peer)],limit_kwh=10)
+            summary=charging_summary(payload)
+            self.assertIsNone(summary['total_power_w'])
+            self.assertFalse(summary['power_measurements_complete'])

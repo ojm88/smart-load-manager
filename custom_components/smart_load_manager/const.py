@@ -16,6 +16,7 @@ CONF_HOURLY_LIMIT_KWH = "hourly_limit_kwh"
 CONF_CONSUMPTION_LIMIT_KWH = "consumption_limit_kwh"
 DEFAULT_CONSUMPTION_LIMIT_KWH = 15.0
 CONF_TARIFF_USED_ENTITY = "tariff_used_entity"
+CONF_ESTIMATE_ENTITY = "energy_estimate_entity"
 CONF_SAFETY_MARGIN_KWH = "safety_margin_kwh"
 CONF_SCHEDULE_START_TIME = "schedule_start_time"
 CONF_SCHEDULE_ENABLED = "schedule_enabled"

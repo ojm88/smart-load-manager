@@ -1,8 +1,24 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-11-01
+Updated: 2026-11-04
 
-## Current release — 0.1.1-beta.21
+## 0.1.1-beta.22 release candidate
+
+Prepared for publication as a GitHub pre-release. Code CI run 41430427126 passed on the implementation commit. See GitHub Releases for publication status.
+
+Setup/documentation follow-up: README and both manuals consolidated around current behavior, historical instructions removed, wizard labels/field help simplified in Norwegian/English. Graph legends now name both chargers and consistently use recommended/measured charging current; existing entity IDs are retained. Validation: 110 pure and 166 runtime tests on each supported HA environment pass; graph regression rejects the preceding generator/templates. Details in BETA22_VERIFICATION.md. Regenerate YAML for revised graph labels.
+
+Markdown wait explanations corrected: snapshot-derived capacity/pending-regulation/positive-offer waits remain distinct through repeated periods, with minimum-power advice and an eligible waiting assessment time. Manual/schedule/pause/fault/priority and charging-stop feedback remain explicit. 110 pure tests and 165 runtime tests on each supported HA environment pass (final follow-up verification below). No control-policy change or physical/UI-phone acceptance; regenerate YAML for the waiting-time row.
+
+Session-pause follow-up: settled demand now survives temporary waiting/zero draw and stop/resume commands. Reuse requires matching positive charging, unchanged phase/mode context and no offer above the observed offer. Completed/disconnected, invalid inputs and demand/context changes require new learning. Unsettled observations never mature through pauses. Validation: 104 pure tests and 164 runtime tests on each supported HA/Python environment pass; new regressions reject the preceding beta-22 implementation. Full scope is recorded in BETA22_VERIFICATION.md. No publication, production HA writes or physical acceptance.
+
+2026-11-02: observed-demand reservation refinement implemented for lower consumption invisible as an app limit in HA. Settled positive draw after 180 seconds adjusts forecasts/manual reservations, not physical maxima or automatic allocation demand caps. New commands/demand/input changes retain conservative offer reservation. 97 pure tests and 162 runtime tests on each supported HA/Python version pass. Software sequence verification recorded in BETA22_VERIFICATION.md; no physical acceptance or publication.
+
+**Responsibility clarification:** Easee retains its configured circuit/user limits and internal circuit coordination. Beta 22 does not duplicate that allocator or require users to copy hidden app limits into SLM. The forecast observation handles offered-versus-measured consumption; it is not a learned electrical ceiling. Earlier circuit-aware redesign wording was broader than the agreed beta-22 scope. Physical same-circuit/two-car acceptance remains pending.
+
+Owner confirms beta 21 starts physical charging on the outside charger with only one car connected in the paired installation. This is initial one-car/two-configured-charger acceptance, not full paired load transfer acceptance. Owner additionally removes the global category toggle entirely and moves read-only charging overview/total power to the household. Saved individual choices and the Charging grouping remain. Registry cleanup and anonymous diagnostics are covered. Requested refinements: always-Norwegian status card, no combined charging automation card in YAML, optional configurable hourly estimate from Tibber/EnergyTariff and continued EnergyTariff recommendation. Native unused-only SelectSelector has no option-image support; Easee branding is added to dialog description without changing eligibility or leaving Companion. Physical phone rendering remains pending. Validation: 93 pure tests, 161 runtime tests on each of HA 2026.10.4/Python 3.14 and HA 2026.2.3/Python 3.13, plus one Node test pass. The server-English regression renders Norwegian empty-state Markdown. Selected-provider estimate events update live, invalid/missing estimates retain valid control inputs, and graph replacement tests cover provider-specific IDs. No live HA modifications or phone/logo render verification. See BETA22_VERIFICATION.md.
+
+## Previous beta — 0.1.1-beta.21
 
 Published 2026-11-01 as [Pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.21). PR #17 merge/tag 56f5c87e78063120051009d74416908b4e6c3aed; tagged tree 0c5f32b8331eaec8da38e47f993d7065a1435295 equals the tested release-preparation tree. Final CI 41333407932 passed all four jobs for b64f196fa2e4a67a060aa8595ae667e1df6389b7. Public Pre-release page and manifest verified. No production installation or physical commands performed. Regenerate dashboard YAML after updating.
 

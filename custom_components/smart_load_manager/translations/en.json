@@ -3,16 +3,18 @@
     "step": {
       "household": {
         "title": "Household measurements",
-        "description": "Select the shared HAN power and EnergyTariff energy used this hour once for the home. Set the consumption limit on the household device after setup. {validation_error}",
+        "description": "Choose the measurements SLM will use. HAN power and energy used this hour are required. The hourly estimate is optional. EnergyTariff is recommended; equivalent Tibber or other sources can be used. {validation_error}",
         "data": {
-          "han_power_entity": "Home measurement – HAN power meter",
-          "tariff_used_entity": "Hourly energy – EnergyTariff used this hour",
-          "safety_margin_kwh": "Safety margin – kWh"
+          "han_power_entity": "Household power (HAN)",
+          "tariff_used_entity": "Energy used this hour",
+          "safety_margin_kwh": "Safety margin – kWh",
+          "energy_estimate_entity": "Estimated consumption this hour – optional"
         },
         "data_description": {
-          "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
-          "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
-          "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
+          "han_power_entity": "Select instantaneous household HAN power in W or kW.",
+          "tariff_used_entity": "Measured energy since the start of this clock hour, in kWh. Use EnergyTariff or Tibber accumulated consumption current hour, for example. Do not choose daily use, a lifetime total or a forecast.",
+          "safety_margin_kwh": "Energy reserved from the hourly budget. The default 0.3 kWh allows for measurement delays and changing consumption. A higher margin leaves less room for charging.",
+          "energy_estimate_entity": "Estimated total consumption for this clock hour, in kWh. Display only. If omitted, sensor.energy_estimate_this_hour is used when available."
         }
       },
       "load_type": {
@@ -28,13 +30,14 @@
       },
       "charging": {
         "title": "EV charging",
-        "description": "Select the first Easee charger. Finish with one or add one more. Before setup, enable both Current (A) and Voltage (V) on each Easee charger: Settings → Devices & services → Easee → charger → Entities. Include disabled entities, enable both sensors and wait for measured values. {validation_error}",
+        "description": "Select the first Easee charger and its physical connection. Finish with one charger or add a second.\n\nBefore selecting a charger: enable Current (A) and Voltage (V) under Settings → Devices & services → Easee → charger → Entities. Show disabled entities, enable both and wait for measured values. {validation_error}",
         "data": {
           "charger_device": "First Easee charger",
           "electrical_connection": "Physical charger connection"
         },
         "data_description": {
-          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control."
+          "electrical_connection": "Choose the actual supply and number of wired phases. This does not change the installation. SLM uses measured voltage; choose a charging mode later under Phase selection for three-phase wiring.",
+          "charger_device": "Choose the Easee device to control. A clear charger name in HA makes it easier to identify."
         }
       },
       "charging_next": {
@@ -46,13 +49,14 @@
       },
       "second_charger": {
         "title": "Second Easee charger",
-        "description": "The existing charger is retained. Select one new charger; only unused chargers are listed. At most two chargers are supported. Before setup, enable both Current (A) and Voltage (V) on each Easee charger: Settings → Devices & services → Easee → charger → Entities. Include disabled entities, enable both sensors and wait for measured values. {validation_error}",
+        "description": "<img src=\"https://brands.home-assistant.io/easee/icon.png\" alt=\"Easee\" width=\"40\">\n\nSelect one new charger. Only chargers not already added are listed. Existing chargers and settings are retained. SLM supports up to two chargers.\n\nBefore selecting a charger: enable Current (A) and Voltage (V) under Settings → Devices & services → Easee → charger → Entities. Show disabled entities, enable both and wait for measured values. {validation_error}",
         "data": {
           "charger_device": "New Easee charger",
           "electrical_connection": "Physical connection of the new charger"
         },
         "data_description": {
-          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control."
+          "electrical_connection": "Choose the actual supply and number of wired phases. This does not change the installation. SLM uses measured voltage; choose a charging mode later under Phase selection for three-phase wiring.",
+          "charger_device": "Only chargers not already added are listed. The existing charger is retained."
         }
       }
     },
@@ -101,7 +105,7 @@
         "name": "Maximum charging current"
       },
       "charger_current": {
-        "name": "Current to car"
+        "name": "Measured charging current"
       },
       "charger_power": {
         "name": "Power to car"
@@ -173,6 +177,21 @@
           "primary": "First priority",
           "secondary": "Second priority"
         }
+      },
+      "charging_overview": {
+        "name": "Charging",
+        "state": {
+          "waiting": "Waiting",
+          "automatic": "Automatic control",
+          "manual": "Manual control",
+          "paused": "Charging paused",
+          "disconnected": "No car connected",
+          "completed": "Charging ended",
+          "mixed": "Different charger states"
+        }
+      },
+      "charging_power": {
+        "name": "Total charging power"
       }
     },
     "switch": {
@@ -187,14 +206,11 @@
       },
       "charging_priority": {
         "name": "First priority"
-      },
-      "charging_automatic_control": {
-        "name": "Automatic load control – charging"
       }
     },
     "number": {
       "manual_current_limit": {
-        "name": "Manual current (auto off)"
+        "name": "Manual charging current (auto off)"
       }
     },
     "time": {
@@ -232,21 +248,23 @@
         "title": "Settings",
         "menu_options": {
           "household": "Household sources and safety margin",
-          "chargers": "Add or remove charger"
+          "chargers": "Chargers and connections"
         }
       },
       "household": {
         "title": "Household measurements",
-        "description": "Select the shared HAN power and EnergyTariff energy used this hour once for the home. Set the consumption limit on the household device after setup. {validation_error}",
+        "description": "Choose the measurements SLM will use. HAN power and energy used this hour are required. The hourly estimate is optional. EnergyTariff is recommended; equivalent Tibber or other sources can be used. {validation_error}",
         "data": {
-          "han_power_entity": "Home measurement – HAN power meter",
-          "tariff_used_entity": "Hourly energy – EnergyTariff used this hour",
-          "safety_margin_kwh": "Safety margin – kWh"
+          "han_power_entity": "Household power (HAN)",
+          "tariff_used_entity": "Energy used this hour",
+          "safety_margin_kwh": "Safety margin – kWh",
+          "energy_estimate_entity": "Estimated consumption this hour – optional"
         },
         "data_description": {
-          "han_power_entity": "Select instantaneous power from the HAN meter used by EnergyTariff. The unit must be W or kW; energy counters in kWh cannot be used.",
-          "tariff_used_entity": "Select the EnergyTariff sensor for energy used during the current hour. This value is required for the calculation.",
-          "safety_margin_kwh": "Subtracted from the available energy to allow for meter delay and changing household load."
+          "han_power_entity": "Select instantaneous household HAN power in W or kW.",
+          "tariff_used_entity": "Measured energy since the start of this clock hour, in kWh. Use EnergyTariff or Tibber accumulated consumption current hour, for example. Do not choose daily use, a lifetime total or a forecast.",
+          "safety_margin_kwh": "Energy reserved from the hourly budget. The default 0.3 kWh allows for measurement delays and changing consumption. A higher margin leaves less room for charging.",
+          "energy_estimate_entity": "Estimated total consumption for this clock hour, in kWh. Display only. If omitted, sensor.energy_estimate_this_hour is used when available."
         }
       },
       "chargers": {
@@ -259,13 +277,14 @@
       },
       "add_charger": {
         "title": "Add charger",
-        "description": "The existing charger is retained. Select one new charger; only unused chargers are listed. At most two chargers are supported. Before setup, enable both Current (A) and Voltage (V) on each Easee charger: Settings → Devices & services → Easee → charger → Entities. Include disabled entities, enable both sensors and wait for measured values. {validation_error}",
+        "description": "<img src=\"https://brands.home-assistant.io/easee/icon.png\" alt=\"Easee\" width=\"40\">\n\nSelect one new charger. Only chargers not already added are listed. Existing chargers and settings are retained. SLM supports up to two chargers.\n\nBefore selecting a charger: enable Current (A) and Voltage (V) under Settings → Devices & services → Easee → charger → Entities. Show disabled entities, enable both and wait for measured values. {validation_error}",
         "data": {
           "charger_device": "New Easee charger",
           "electrical_connection": "Physical connection of the new charger"
         },
         "data_description": {
-          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control."
+          "electrical_connection": "Choose the actual supply and number of wired phases. This does not change the installation. SLM uses measured voltage; choose a charging mode later under Phase selection for three-phase wiring.",
+          "charger_device": "Only chargers not already added are listed. The existing charger is retained."
         }
       },
       "remove_charger": {
@@ -277,14 +296,14 @@
       },
       "connection": {
         "title": "Physical charger connection",
-        "description": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control. {validation_error}",
+        "description": "Change only if the saved connection is wrong or the installation has changed. The selected charger receives 0 A and its automatic control is disabled. Check the choice before enabling control again. {validation_error}",
         "data": {
           "charger_device": "Charger",
           "electrical_connection": "Physical charger connection"
         },
         "data_description": {
           "charger_device": "Select the charger to configure.",
-          "electrical_connection": "Select the actual supply and wired phases, not the desired charging mode. Calculations use measured Easee voltage. Single-phase wiring hides the phase control. A change sends 0 A to the loaded charger and reloads SLM with automatic control off."
+          "electrical_connection": "Choose the actual supply and number of wired phases. This does not change the installation. SLM uses measured voltage; choose a charging mode later under Phase selection for three-phase wiring."
         }
       }
     },

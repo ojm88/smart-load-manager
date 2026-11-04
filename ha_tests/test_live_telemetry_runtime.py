@@ -104,7 +104,7 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.hass.states.async_set('sensor.source_power', 0, {'unit_of_measurement': 'W'})
         self.hass.states.async_set('sensor.source_han', 17339, {'unit_of_measurement': 'W'})
         self.hass.states.async_set('sensor.energy_used_this_hour', 7.87)
-        self.hass.states.async_set('sensor.energy_estimate_this_hour', 9.49)
+        self.hass.states.async_set('sensor.energy_estimate_this_hour', 9.49, {'unit_of_measurement':'kWh'})
         with patch('smart_load_manager.site.site_entry', return_value=c.entry), patch(
                 'smart_load_manager.coordinator.recommended_current_a') as calculate:
             await c._async_publish_telemetry()
@@ -118,13 +118,29 @@ class LiveTelemetryTests(IsolatedAsyncioTestCase):
         self.assertEqual(c.data['energy_estimate_kwh'], 9.49)
         self.assertIsNone(c.data['recommended_current_a'])
 
+    async def test_selected_provider_estimate_updates_live_and_failure_is_display_only(self):
+        c = self.coordinator
+        await self.test_real_sampling_does_not_recalculate_or_command()
+        c.entry.data['energy_estimate_entity'] = 'sensor.provider_estimate'
+        with patch('smart_load_manager.site.site_entry', return_value=c.entry):
+            c.async_start_source_updates()
+            self.hass.states.async_set('sensor.provider_estimate', 3.2, {'unit_of_measurement':'kWh'})
+            await self.hass.async_block_till_done()
+            self.assertEqual(c.data['energy_estimate_kwh'], 3.2)
+            self.assertTrue(c.data['inputs_valid'])
+            self.hass.states.async_set('sensor.provider_estimate', 'unavailable')
+            await self.hass.async_block_till_done()
+            self.assertIsNone(c.data['energy_estimate_kwh'])
+            self.assertTrue(c.data['inputs_valid'])
+            c._async_send_current.assert_not_awaited()
+
     async def test_missing_charger_source_keeps_available_household_readings(self):
         from homeassistant.helpers.update_coordinator import UpdateFailed
         c = self.coordinator
         c._async_sample.side_effect = UpdateFailed('missing charger voltage')
         self.hass.states.async_set('sensor.source_han', 17.339, {'unit_of_measurement': 'kW'})
         self.hass.states.async_set('sensor.energy_used_this_hour', 7.87)
-        self.hass.states.async_set('sensor.energy_estimate_this_hour', 9.49)
+        self.hass.states.async_set('sensor.energy_estimate_this_hour', 9.49, {'unit_of_measurement':'kWh'})
         await c._async_publish_telemetry()
         self.assertEqual(c.data['han_power_w'], 17339)
         self.assertEqual(c.data['energy_used_kwh'], 7.87)
