@@ -2,9 +2,9 @@
 
 Updated: 2026-11-04
 
-## 0.1.1-beta.22 release candidate
+## Current beta — 0.1.1-beta.22
 
-Prepared for publication as a GitHub pre-release. Code CI run 41430427126 passed on the implementation commit. See GitHub Releases for publication status.
+Published 2026-11-04 as a [GitHub pre-release](https://github.com/ojm88/smart-load-manager/releases/tag/0.1.1-beta.22). The tag points to PR #18 merge commit 883380fcbcb0f341527cf2204a41fb3695b36aac. All four jobs passed in release-candidate CI run 41795719670, and the merge tree matches the tested tree. Regenerate dashboard YAML after updating.
 
 Setup/documentation follow-up: README and both manuals consolidated around current behavior, historical instructions removed, wizard labels/field help simplified in Norwegian/English. Graph legends now name both chargers and consistently use recommended/measured charging current; existing entity IDs are retained. Validation: 110 pure and 166 runtime tests on each supported HA environment pass; graph regression rejects the preceding generator/templates. Details in BETA22_VERIFICATION.md. Regenerate YAML for revised graph labels.
 
