@@ -1,6 +1,6 @@
 # Beta 22 preparation — 2026-11-01
 
-Not published; manifest remains beta 21. Owner confirms beta 21 starts charging on the outside charger with one connected car and two configured chargers. This does not yet establish simultaneous paired capacity transfer.
+Initial preparation preceded the release version bump. Owner confirms beta 21 starts charging on the outside charger with one connected car and two configured chargers. This does not yet establish simultaneous paired capacity transfer.
 
 ## Scope and source contracts
 
@@ -50,4 +50,4 @@ README and both manuals are consolidated around current setup and behavior: requ
 
 Graph legends explicitly identify each charger, including the first, using registry-selected names and source-series identity. Recommended/measured charging-current terminology is aligned across templates/examples and display metadata. No entity IDs or user registry names are migrated. New YAML is required for revised legends.
 
-Validation: 110 pure tests and 166 runtime tests pass on each HA 2026.2.3/Python 3.13.16 and HA 2026.10.4/Python 3.14.8; compile, JSON/YAML, local documentation link and whitespace checks pass. The new graph regression generates real card YAML with one/two chargers, custom registry entity IDs, SLM user names, YAML punctuation and old placeholder words inside real names. It rejects the preceding generator/templates in both one/two-charger subcases. Setup/lifecycle/control and rendering regressions remain green. No physical charger command or actual phone-render acceptance occurred; manifest remains beta 21 and beta 22 is not published.
+Validation: 110 pure tests and 166 runtime tests pass on each HA 2026.2.3/Python 3.13.16 and HA 2026.10.4/Python 3.14.8; compile, JSON/YAML, local documentation link and whitespace checks pass. The new graph regression generates real card YAML with one/two chargers, custom registry entity IDs, SLM user names, YAML punctuation and old placeholder words inside real names. It rejects the preceding generator/templates in both one/two-charger subcases. Setup/lifecycle/control and rendering regressions remain green. No physical charger command or actual phone-render acceptance occurred; the implementation commit was tested before the release version bump.

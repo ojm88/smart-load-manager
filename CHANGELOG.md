@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — beta 22 preparation
+## 0.1.1-beta.22
 
 - Consolidate README and Norwegian/English setup guides around current beta-22 behavior; remove obsolete user instructions and simplify native setup field help. Explain required/optional sources, controls, regulation, estimates, troubleshooting and Easee/SLM responsibilities.
 - Name every charger in current-history graph legends, including the first. Use Anbefalt ladestrøm / Målt ladestrøm consistently, preserve entity IDs and handle custom names safely. Regenerate dashboard YAML for new labels.
