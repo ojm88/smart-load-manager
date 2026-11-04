@@ -42,3 +42,18 @@ phone UI and physical charging separately. Test count is coverage context,
 not a reliability claim. Keep release records internally consistent and batch
 related agreed fixes where useful; do not ask for additional approval for
 routine authorized work or publish a new beta merely to validate an assumption.
+
+## Regression checks for every functional change
+
+Use [the regression matrix](docs/REGRESSION_MATRIX.md) before implementing and
+before marking a PR ready. Record the expected command, resulting state and
+short dashboard reason for each affected scenario. Add a regression for each
+reported defect and an explicit expected outcome for each new supported state.
+Include both single and paired installations when a shared decision can affect
+either. Preserve established behavior unless the approved change explicitly
+replaces it. Keep the prior regression assertions for unaffected behavior.
+
+Review the complete matrix and record which scenarios are affected, which
+existing checks cover the rest, and which results still require hardware or
+Companion. Require the existing GitHub Actions suites to pass before merging
+functional changes or tagging a release.

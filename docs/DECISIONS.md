@@ -733,3 +733,10 @@ Use the central household presenter for actionable detail as well as full explan
 Owner requests complete but simple GitHub guidance and native setup text aligned with beta 22. Consolidate README and both manuals into current preparation/setup/controls/regulation/measurements/dashboard/maintenance/troubleshooting sections; remove superseded beta-by-beta user instructions. Explain required measured hourly energy separately from optional estimates, actual wiring versus phase mode, automation-off manual minimum, saved controls, two-charger allocation, pause/completion forecasting and diagnostics. Simplify both languages' wizard help without changing validation/schema/control behavior. Clarify the owner's responsibility boundary: Easee retains internal electrical/circuit coordination; SLM handles household-budget offers and measured consumption forecasts. This supersedes the earlier suggestion to duplicate Easee circuit allocation as required beta-22 work; physical acceptance is still separate.
 
 Graph legends must name the first charger as well as the second, using the same device-name precedence as the rest of the dashboard. Resolve legend text by the current series' source entity placeholder, not broad name substitution; names may themselves contain old placeholder words or YAML punctuation. Use Anbefalt ladestrøm and Målt ladestrøm in cards, examples and measured-current display metadata. Do not rename entity IDs or user registry names. Regenerate saved YAML after this layout/label update.
+
+## Regression coverage for future changes
+
+Every functional PR reviews the maintained regression matrix, runs the full
+automated suite and records the scenarios it changes. New states need an
+expected behavior and concise status reason. Reported defects need a reproducing
+regression. Hardware and Companion acceptance are recorded separately.

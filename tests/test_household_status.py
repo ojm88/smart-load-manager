@@ -178,3 +178,38 @@ class HouseholdStatusTests(unittest.TestCase):
             _,p=build_household_status([self.load(status=status)],limit_kwh=10)
             self.assertEqual(p['controlled_loads'][0]['detail'],'')
             self.assertFalse(p['controlled_loads'][0]['show_waiting_check'])
+
+    def test_wait_reasons_across_supported_charger_counts_and_modes(self):
+        cases = (
+            ("schedule", {"schedule_allowed": False, "schedule_enabled": True,
+                          "schedule_start_time": "21:30:00"}, "21:30"),
+            ("pause", {"charging_paused": True}, "Slå av ladepause"),
+            ("offline", {"status": "offline"}, "frakoblet"),
+            ("fault", {"status": "error"}, "Kontroller laderen"),
+            ("easee schedule", {"status": "awaiting_scheduled_start"}, "egen ladeplan"),
+            ("equalizer", {"status": "paused_due_to_equalizer"}, "Equalizer"),
+            ("wiring", {"electrical_ready": False,
+                        "electrical_error": "Kontroller tilkoblingen."}, "Kontroller tilkoblingen"),
+        )
+        automatic_cases = (
+            ("stale HAN", {"han_fresh": False}, "gyldige målinger"),
+            ("capacity", {"recommended_current_a": 0}, "forbruksgrense"),
+            ("transfer", {"awaiting_reduction": True}, "reduksjonen er bekreftet"),
+            ("pending increase", {"last_sent_current_a": 0}, "neste regulering"),
+            ("sent offer", {"last_sent_current_a": 7}, "SLM har satt 7 A"),
+        )
+        for count in (1, 2):
+            for automatic in (True, False):
+                for name, changes, expected in cases + (automatic_cases if automatic else ()):
+                    with self.subTest(count=count, automatic=automatic, reason=name):
+                        data = {"status": "awaiting_start", "auto_control": automatic,
+                                "charger_power_w": 0, "charger_current_a": 0}
+                        loads = [self.load(**(data | changes))]
+                        if count == 2:
+                            loads.append(self.load("b", status="completed"))
+                        _, payload = build_household_status(loads, limit_kwh=10)
+                        row = payload["controlled_loads"][0]
+                        self.assertIn(expected, row["detail"])
+                        self.assertFalse(row["show_charging_details"])
+                        if count == 2:
+                            self.assertEqual(payload["controlled_loads"][1]["status_label"], "Fullført")

@@ -321,7 +321,9 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
         sequence=[({},'forbruksgrense','23:09'),
                   ({'next_regulation_at':1300},'forbruksgrense','23:14'),
                   ({'recommended_current_a':6,'next_regulation_at':1600},'plass til 6 A','23:19'),
-                  ({'recommended_current_a':6,'last_sent_current_a':6},'har satt 6 A','23:09')]
+                  ({'recommended_current_a':6,'last_sent_current_a':6},'har satt 6 A','23:09'),
+                  ({'auto_control':False,'schedule_enabled':True,'schedule_allowed':False,
+                    'schedule_start_time':'21:30:00'},'Tidsstyring holder igjen ladingen til kl. 21:30.',None)]
         root=Path(__file__).parents[1]
         paths=[root/'custom_components/smart_load_manager/dashboard'/n for n in ('one.yaml','two.yaml')]
         paths += [root/'examples/lovelace'/n for n in ('charging_card.yaml','two_chargers_card.yaml')]
@@ -334,8 +336,13 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                 for path in paths:
                     text=env.from_string(yaml.safe_load(path.read_text())['cards'][0]['content']).render()
                     self.assertIn(reason,text)
-                    self.assertIn('Neste vurdering:',text)
-                    self.assertIn(clock,text)
+                    if clock is None:
+                        self.assertIn('Venter på starttid', text)
+                        self.assertIn('Manuell', text)
+                        self.assertNotIn('Neste vurdering:', text)
+                    else:
+                        self.assertIn('Neste vurdering:',text)
+                        self.assertIn(clock,text)
                     self.assertNotIn('Venter på at bilen starter',text)
                     self.assertNotIn('None',text)
                     if reason=='forbruksgrense':
