@@ -16,7 +16,15 @@ SLM tilpasser én eller to Easee-ladere til boligens timebudsjett. Når boligen 
 
 Last ned ønsket [utgivelse](https://github.com/ojm88/smart-load-manager/releases), kopier `custom_components/smart_load_manager` til `config/custom_components/`, og start HA på nytt. Ved oppdatering erstatter du integrasjonsmappen og starter HA på nytt. Ta sikkerhetskopi før oppdatering.
 
-På HA **2026.11 eller nyere** kan repoet også legges til som egendefinert **Integration** i **Innstillinger → Marketplace**: `https://github.com/ojm88/smart-load-manager`.
+Bruk Marketplace på **Home Assistant 2026.11 eller nyere**.
+
+[![Åpne Smart Load Manager OJM i Home Assistant Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=ojm88&repository=smart-load-manager&category=integration)
+
+1. Åpne lenken ovenfor i din Home Assistant-instans.
+2. Koble til GitHub hvis du blir bedt om det, og bekreft at Smart Load Manager OJM legges til som et egendefinert integrasjonsrepo.
+3. Installer Smart Load Manager OJM i Marketplace. Start Home Assistant på nytt hvis du blir bedt om det. Legg deretter til integrasjonen under **Innstillinger → Enheter og tjenester → Legg til integrasjon**.
+
+[Home Assistants veiledning for Marketplace-repoer](https://contributors.home-assistant.io/marketplace/guides/catalog/#the-link-to-your-repository)
 
 ## Oppsett steg for steg
 

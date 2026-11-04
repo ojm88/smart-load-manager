@@ -32,7 +32,15 @@ SLM reduces charging when the home needs more power and gives charging more room
 
 ### Marketplace
 
-On HA **2026.11 or newer**, add `https://github.com/ojm88/smart-load-manager` as a custom **Integration** repository in **Settings → Marketplace**. Install Smart Load Manager OJM and restart Home Assistant. See the [Marketplace guide](https://contributors.home-assistant.io/marketplace/how-it-works/).
+Use Marketplace on **Home Assistant 2026.11 or newer**.
+
+[![Open Smart Load Manager OJM in Home Assistant Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=ojm88&repository=smart-load-manager&category=integration)
+
+1. Open the link above in your Home Assistant instance.
+2. Connect GitHub if prompted, then confirm adding Smart Load Manager OJM as a custom integration repository.
+3. Install Smart Load Manager OJM in Marketplace. Restart Home Assistant if prompted, then add the integration under **Settings → Devices & services → Add integration**.
+
+[Home Assistant Marketplace repository guide](https://contributors.home-assistant.io/marketplace/guides/catalog/#the-link-to-your-repository)
 
 ### Manual
 
