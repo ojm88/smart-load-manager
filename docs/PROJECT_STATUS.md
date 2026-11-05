@@ -1,6 +1,12 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-11-04
+Updated: 2026-11-05
+
+## Release candidate — 0.1.1-beta.23
+
+Manual charging reports the scheduled start and wait reason when the SLM charging window is closed. The presenter regression covers waiting and reopening. Deadline regressions verify that regulation uses the latest valid inputs available at the decision. The regulation policy is unchanged.
+
+The regression matrix and PR checklist cover control, setup, measurements, limits and dashboard explanations. README and both manuals describe first install through Marketplace. Automated checks use synthetic inputs and Home Assistant runtime tests. Physical charger, Marketplace UI and Companion acceptance remain pending.
 
 ## Current beta — 0.1.1-beta.22
 

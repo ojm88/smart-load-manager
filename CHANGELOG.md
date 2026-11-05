@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1-beta.23
+
+- Show the scheduled start time and wait reason when the charging window is closed in manual mode.
+- Verify that scheduled regulation uses the latest valid readings available at the decision, including for paired chargers.
+- Add a regression checklist for control, setup, measurements, limits and dashboard explanations.
+- Document installing through Home Assistant Marketplace, including adding a custom integration repository and proceeding directly to setup after first install.
+
 ## 0.1.1-beta.22
 
 - Consolidate README and Norwegian/English setup guides around current beta-22 behavior; remove obsolete user instructions and simplify native setup field help. Explain required/optional sources, controls, regulation, estimates, troubleshooting and Easee/SLM responsibilities.

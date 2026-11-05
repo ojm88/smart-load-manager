@@ -227,9 +227,17 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
                 self.assertGreater(data['recommended_current_a'], 10)
                 self.assertEqual(data['last_sent_current_a'], 10)
                 self.assertEqual(self.commands, [])
+            before_tick = {key: sample['recommended_current_a']
+                           for key, sample in site.latest_samples.items()}
+            # The energy meter reports more usage just as the deadline falls due.
+            for controller in site.controllers.values():
+                controller._async_sample.return_value['energy_used_kwh'] = 6.2
             await self.refresh_at(site, 300)
-            self.assertTrue(self.commands)
-            self.assertTrue(all(value > 10 for _, value in self.commands))
+            self.assertEqual(len(self.commands), len(site.controllers))
+            for key, value in self.commands:
+                self.assertGreater(value, 10)
+                self.assertLess(value, before_tick[key])
+                self.assertEqual(value, site.latest_samples[key]['recommended_current_a'])
             sent = list(self.commands)
             await self.refresh_at(site, 301)
             self.assertEqual(self.commands, sent)
