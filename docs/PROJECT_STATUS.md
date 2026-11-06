@@ -2,6 +2,10 @@
 
 Updated: 2026-11-06
 
+## Next candidate
+
+Confirmed completion at 0 A remains stopped when Easee falls back to awaiting start at zero measured draw. A ready-to-charge signal can still request a new offer.
+
 ## 0.1.1-beta.26
 
 The Markdown card shows stable measured charging current below the sent limit, using the existing power observation.

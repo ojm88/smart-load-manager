@@ -851,14 +851,14 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         d.update(status='completed',charger_power_w=0,charger_current_a=.02,
                  han_power_w=1000,energy_used_kwh=9.69)
         for seconds,status in [(1,'completed'),(2,'awaiting_start'),(3,'ready_to_charge'),
-                               (4,'completed'),(5,'ready_to_charge')]:
+                               (4,'completed'),(5,'awaiting_start')]:
             d['status']=status
             await self.refresh_at(site,seconds)
             self.assertEqual(c.last_commanded_current,0)
         self.assertEqual(self.commands,[])
         # Valid capacity returns; the next status assessment can restore an
         # offer even though the remembered completion initially had zero A.
-        d.update(energy_used_kwh=5,status='awaiting_start')
+        d.update(energy_used_kwh=5,status='ready_to_charge')
         await self.refresh_at(site,6)
         self.assertEqual(self.commands,[('a',6)])
         for seconds,status in [(7,'ready_to_charge'),(8,'completed'),(9,'awaiting_start')]:
@@ -869,6 +869,24 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         d['status']='charging'
         await self.refresh_at(site,10)
         self.assertEqual(self.commands,[('a',6),('a',16)])
+
+    async def test_completed_zero_limit_stays_zero_when_easee_reports_awaiting_start(self):
+        site = self.setup_regulation(single=True)
+        c = site.controllers['a']
+        c.last_commanded_current = 0
+        d = c._async_sample.return_value
+        d.update(status='completed', charger_power_w=0, charger_current_a=.27,
+                 han_power_w=1000)
+        await self.refresh_at(site, 1)
+        d['status'] = 'awaiting_start'
+        for seconds in (4, 305, 605):
+            result = await self.refresh_at(site, seconds)
+            self.assertEqual(result['recommended_current_a'], 0)
+            self.assertTrue(result['completion_released'])
+            self.assertEqual(self.commands, [])
+        d['status'] = 'ready_to_charge'
+        await self.refresh_at(site, 606)
+        self.assertEqual(self.commands, [('a', 6)])
 
     async def test_completed_trace_budget_shortfall_never_causes_pause(self):
         site=self.setup_regulation(single=True)

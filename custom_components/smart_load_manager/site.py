@@ -134,9 +134,14 @@ class SiteController:
                 released = set()
                 for key, d in samples.items():
                     c = self.controllers[key]
+                    standby_after_completion = (
+                        key in self._released_completed and c.last_commanded_current == 0
+                        and normalize_status(d['status']) == 'awaiting_start'
+                        and self._measured_standby(d)
+                    )
                     quiet = (c.auto_control and not c.charging_paused
                              and d.get('schedule_allowed') and d.get('inputs_valid')
-                             and d.get('han_fresh') and self._quiet_completed(d)
+                             and d.get('han_fresh') and (self._quiet_completed(d) or standby_after_completion)
                              and d.get('kw_per_amp') and d.get('control_minimum_current_a')
                              and c.last_commanded_current is not None
                              and c.last_commanded_current <= d.get('max_current_a', 0)
@@ -451,9 +456,12 @@ class SiteController:
     @staticmethod
     def _quiet_completed(data):
         """Require both raw completion and measured no draw; tolerate standby A."""
+        return normalize_status(data.get('status')) == 'completed' and SiteController._measured_standby(data)
+
+    @staticmethod
+    def _measured_standby(data):
         power, current = data.get('charger_power_w'), data.get('charger_current_a')
-        return (normalize_status(data.get('status')) == 'completed'
-                and isinstance(power, (int, float)) and math.isfinite(power) and power == 0
+        return (isinstance(power, (int, float)) and math.isfinite(power) and power == 0
                 and isinstance(current, (int, float)) and math.isfinite(current)
                 and 0 <= current < 1)
 

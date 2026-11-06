@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Keep a stopped, completed Easee session at 0 A while it reports only awaiting start with no measured draw.
+
 ## 0.1.1-beta.26
 
 - Keep the Markdown charging row stable as the live recommendation and measured power change during startup. Describe waiting with a positive limit as waiting for charging to start.
