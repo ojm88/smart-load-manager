@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Keep recommended and set charging current on one row during charging. Show a short hourly-limit reason for a 0 A recommendation and retain detailed explanations for actual waits and faults. Regenerate dashboard YAML to adopt the layout.
+
 ## 0.1.1-beta.23
 
 - Show the scheduled start time and wait reason when the charging window is closed in manual mode.

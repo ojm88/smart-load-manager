@@ -2,7 +2,11 @@
 
 Updated: 2026-11-05
 
-## Release candidate — 0.1.1-beta.23
+## Next beta
+
+Keep the charging current row stable as the recommendation changes. Show a short hourly-budget note on that row and retain actionable wait and fault explanations. Regenerate the dashboard YAML to use the revised layout.
+
+## Published — 0.1.1-beta.23
 
 Manual charging reports the scheduled start and wait reason when the SLM charging window is closed. The presenter regression covers waiting and reopening. Deadline regressions verify that regulation uses the latest valid inputs available at the decision. The regulation policy is unchanged.
 

@@ -182,6 +182,16 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 and data.get('charger_power_w') == 0):
             detail = tr("Easee melder lading, men målt effekt er 0 W. Avventer oppdaterte lademålinger.",
                         "Easee reports charging, but measured power is 0 W. Waiting for updated charging measurements.")
+        compact_regulation = (
+            automatic and ready and status == 'charging' and not paused
+            and data.get('schedule_allowed', True)
+            and data.get('electrical_ready') is not False
+            and not data.get('awaiting_reduction')
+            and recommended is not None and (recommended > 0 or not priority_wait)
+            and data.get('last_sent_current_a') is not None
+            and data['last_sent_current_a'] > 0 and (data.get('charger_power_w') or 0) > 0
+            and data.get('kw_per_amp') and data.get('max_current_a')
+        )
         show_waiting_check = bool(automatic and ready and not paused
                                   and data.get('schedule_allowed', True)
                                   and allows_automatic_current(status) and status != 'charging'
@@ -209,6 +219,9 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "mode_label": tr("Auto", "Auto") if automatic else tr("Manuell", "Manual"),
             "detail": detail, "show_charging_details": status == "charging",
             "show_waiting_check": show_waiting_check,
+            "compact_regulation": bool(compact_regulation),
+            "regulation_note": tr("For lite plass innenfor timegrensen", "Insufficient room within the hourly limit")
+            if compact_regulation and recommended <= 0 else "",
             "manual_current_setting_a": data.get("manual_current_setting_a"),
             "first_priority": load["id"] == priority if len(loads) > 1 else None,
             "current_a": data.get("charger_current_a"),
