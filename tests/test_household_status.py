@@ -128,6 +128,15 @@ class HouseholdStatusTests(unittest.TestCase):
             self.assertTrue(row['show_waiting_check'])
             self.assertNotIn('bilen starter',row['detail'])
 
+    def test_waiting_with_a_sent_limit_does_not_flip_to_capacity_wait(self):
+        for recommended in (0, 11, 12):
+            _, payload = build_household_status([self.load(
+                status='awaiting_start', recommended_current_a=recommended,
+                last_sent_current_a=11, charger_power_w=0)], limit_kwh=10)
+            row = payload['controlled_loads'][0]
+            self.assertEqual(row['status_label'], 'Venter på ladestart')
+            self.assertIn('SLM har satt 11 A', row['detail'])
+
     def test_available_recommendation_is_not_a_sent_restart(self):
         _,p=build_household_status([self.load(status='awaiting_start',recommended_current_a=6,
             last_sent_current_a=0,charger_power_w=0,next_regulation_at=1600)],limit_kwh=10)

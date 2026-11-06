@@ -194,6 +194,10 @@ class SiteController:
                     d['reserved_power_kw'] = self.power_reservations.estimate(
                         key, d, offered_a=c.last_commanded_current,
                         command_at=getattr(c, '_last_command_at', None), now=now)
+                    offered_a = c.last_commanded_current
+                    if (offered_a and d.get('kw_per_amp')
+                            and d['reserved_power_kw'] < offered_a * d['kw_per_amp']):
+                        d['settled_offer_a'] = offered_a
                     self.debug_trace.record('power_reservation', key, data=d)
                 self.power_reservations.observations = {
                     k: v for k, v in self.power_reservations.observations.items() if k in samples}
