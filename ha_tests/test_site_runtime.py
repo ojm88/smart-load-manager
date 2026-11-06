@@ -285,6 +285,49 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         with patch('smart_load_manager.site.dt_util.now', return_value=self.now+timedelta(seconds=seconds)):
             return await site.refresh(next(iter(site.controllers.values())))
 
+    async def test_budget_selector_regulates_before_deadline_with_existing_guards(self):
+        from datetime import timedelta
+        from smart_load_manager.select import ConsumptionLimitSelect
+
+        for single in (True, False):
+            for blocked in (None, 'pause', 'schedule', 'measurements'):
+                with self.subTest(single=single, blocked=blocked):
+                    site = self.setup_regulation(single=single)
+                    for c in site.controllers.values():
+                        c.last_commanded_current = 0
+                        c.charging_paused = blocked == 'pause'
+                        c._async_sample.return_value.update(
+                            status='awaiting_start', charger_current_a=0, charger_power_w=0,
+                            energy_used_kwh=9.8, inputs_valid=blocked != 'measurements',
+                            schedule_allowed=blocked != 'schedule',
+                        )
+                    owner = self.entries[0]
+                    c = site.controllers['a']
+                    c.site = site
+                    c.async_publish_sample = c.async_set_updated_data
+                    c.async_request_refresh = AsyncMock()
+                    selector = ConsumptionLimitSelect(c, owner)
+                    selector.hass = site.hass
+
+                    def save_options(hass, entry, *, options):
+                        entry.options = options
+
+                    with (
+                        patch('smart_load_manager.select.update_load', side_effect=save_options),
+                        patch('smart_load_manager.site.dt_util.now',
+                              return_value=self.now + timedelta(seconds=10)),
+                    ):
+                        await selector.async_select_option('15')
+                        self.assertEqual(owner.options['consumption_limit_kwh'], 15)
+                        if blocked:
+                            self.assertEqual(self.commands, [])
+                        else:
+                            self.assertEqual({key for key, amps in self.commands if amps >= 6},
+                                             set(site.controllers))
+                            self.commands.clear()
+                            await selector.async_select_option('10')
+                            self.assertEqual(self.commands, [(key, 0) for key in site.controllers])
+
     async def test_live_recommendations_do_not_change_limits_between_five_minute_ticks(self):
         for single in (True, False):
             site = self.setup_regulation(single=single)

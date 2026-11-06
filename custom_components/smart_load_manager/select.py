@@ -76,13 +76,13 @@ class ConsumptionLimitSelect(
         return consumption_limit_option(self._entry)
 
     async def async_select_option(self, option: str) -> None:
-        """Persist the selected threshold and refresh the current recommendation."""
+        """Persist the selected threshold and apply it immediately."""
         if option not in self._attr_options:
             raise ValueError(f"Unsupported consumption limit: {option}")
         options = dict(self._entry.options)
         options[CONF_CONSUMPTION_LIMIT_KWH] = float(option)
         update_load(self.hass, self._entry, options=options)
-        await self.coordinator.async_request_refresh()
+        await async_refresh_control(self.coordinator)
 
 
 class ChargerPhaseModeSelect(ChargerNameMixin, CoordinatorEntity[ChargingCoordinator], SelectEntity):
