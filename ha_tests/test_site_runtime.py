@@ -69,14 +69,62 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         }
         with patch('smart_load_manager.site.dt_util.now', side_effect=lambda: self.now):
             await site._apply({'a': 0, 'b': 14}, samples)
-            site._update_stop_feedback(samples)
+            await site._update_stop_feedback(samples)
             self.assertFalse(samples['a']['stop_unconfirmed'])
             self.now += timedelta(seconds=61)
             await site._apply({'a': 0, 'b': 14}, samples)
-            site._update_stop_feedback(samples)
+            await site._update_stop_feedback(samples)
             self.assertTrue(samples['a']['stop_unconfirmed'])
             self.assertEqual(self.commands, [('a', 0), ('a', 0)])
             self.assertIn('a', site.pending_reductions)
+
+    async def test_reserve_pause_and_resume_with_fresh_feedback(self):
+        from datetime import timedelta
+        for paired in (False, True):
+            with self.subTest(paired=paired):
+                site = self.setup_site()
+                if not paired:
+                    site.controllers.pop('b')
+                c = site.controllers['a']
+                c.entry.data = {'charger_device': 'test-device'}
+
+                async def action(domain, service, payload, *, blocking):
+                    self.assertEqual((domain, service, blocking), ('easee', 'action_command', True))
+                    self.assertEqual(payload['device_id'], 'test-device')
+                    self.commands.append(('a', payload['action_command']))
+
+                site.hass.services = NS(has_service=lambda *_: True, async_call=action)
+                samples = {'a': dict(status='charging', charger_current_a=22,
+                                     charger_power_w=8771, kw_per_amp=.4,
+                                     inputs_valid=True, han_fresh=True)}
+                targets = {'a': 0}
+                if paired:
+                    samples['b'] = dict(status='charging', charger_current_a=10,
+                                        charger_power_w=2300, kw_per_amp=.23)
+                    targets['b'] = 14
+                with patch('smart_load_manager.site.dt_util.now', side_effect=lambda: self.now):
+                    await site._apply(targets, samples)
+                    self.now += timedelta(seconds=61)
+                    for entity in (c.easee.current, c.easee.power):
+                        self.states[entity] = NS(state='22', last_updated=self.now)
+                    await site._update_stop_feedback(samples)
+                    await site._update_stop_feedback(samples)
+                    self.assertEqual(self.commands, [('a', 0), ('a', 'pause')])
+
+                    # Old zero readings cannot release capacity or restart charging.
+                    samples['a'].update(status='awaiting_start', charger_current_a=0, charger_power_w=0)
+                    targets['a'] = 8
+                    await site._apply(targets, samples)
+                    self.assertEqual(self.commands, [('a', 0), ('a', 'pause')])
+                    self.now += timedelta(seconds=1)
+                    for entity in (c.easee.current, c.easee.power):
+                        self.states[entity] = NS(state='0', last_updated=self.now)
+                    targets['a'] = 0
+                    await site._apply(targets, samples)
+                    self.assertNotIn(('a', 'resume'), self.commands)
+                    targets['a'] = 8
+                    await site._apply(targets, samples)
+                    self.assertEqual(self.commands[-2:], [('a', 8), ('a', 'resume')])
 
     async def test_new_takeover_first_establishes_zero(self):
         site = self.setup_site()

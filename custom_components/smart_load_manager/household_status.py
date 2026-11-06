@@ -185,8 +185,14 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         if data.get('stop_unconfirmed'):
             detail = tr("Stopp ikke bekreftet. Easee rapporterer fortsatt belastning. Kontroller ladingen i Easee-appen.",
                         "Stop not confirmed. Easee still reports load. Check charging in the Easee app.")
+        elif data.get('reserve_stop_pending'):
+            detail = tr("Avventer ferske målinger som bekrefter at Easee har stoppet.",
+                        "Waiting for fresh measurements confirming that Easee has stopped.")
+        elif data.get('reserve_resume_failed'):
+            detail = tr("Easee kunne ikke bekrefte gjenopptakelse. Kontroller ladingen i Easee-appen.",
+                        "Easee could not confirm resumption. Check charging in the Easee app.")
         compact_regulation = (
-            not data.get('stop_unconfirmed')
+            not any(data.get(key) for key in ('stop_unconfirmed', 'reserve_stop_pending', 'reserve_resume_failed'))
             and automatic and ready and status == 'charging' and not paused
             and data.get('schedule_allowed', True)
             and data.get('electrical_ready') is not False

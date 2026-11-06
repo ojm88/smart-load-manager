@@ -140,6 +140,8 @@ Grafene viser ladestrøm og valgte energi-/estimatsensorer de siste 12 timene. *
 
 En vellykket 0 A-kommando er ikke i seg selv en målt bekreftelse på fysisk stopp. Vanlig omstart og oppdatering beholder automatikk, manuell innstilling, pause, tidsstyring og boligens valg. Easee lagrer fasevalget.
 
+Hvis Easee fremdeles melder lading med ferske målinger 60 sekunder etter at SLM ba om 0 A, forsøker SLM én separat pausekommando. SLM gjenopptar sin egen reservepause først når ferske målinger viser stopp og styringen tillater lading igjen.
+
 ## Hvis ladingen venter
 
 | Det kortet viser | Hva du kan gjøre |

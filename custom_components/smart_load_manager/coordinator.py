@@ -479,6 +479,8 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
             self.async_publish_sample(await self.site.refresh(self))
             return
         async with self.site.lock:
+            if current > 0 and self.entry.entry_id in self.site._reserve_pauses:
+                raise HomeAssistantError("Easee reservepause avventer regulering fra SLM.")
             self.site.manual_requests.pop(self.entry.entry_id, None)
             await self._async_send_current(current)
             if multiple:

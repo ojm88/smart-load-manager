@@ -140,6 +140,8 @@ Open **Settings → Devices & services → Smart Load Manager OJM → Configure*
 
 Successful 0 A service calls are not measured proof of a physical stop. Ordinary restart/update retains automation, manual settings, pause, schedules and household choices. Easee stores phase selection.
 
+If fresh readings still show charging 60 seconds after SLM requests 0 A, SLM tries a separate Easee pause once. SLM resumes its own reserve pause only when fresh measurements show that charging has stopped and control allows charging again.
+
 ## When charging waits
 
 | Card explanation | What to do |
