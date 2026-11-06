@@ -83,6 +83,7 @@ SLM bruker minste ladestrøm 11 A ved målt 230 V trefaselading, ellers 6 A. Mak
 - **Målinger og anbefalt ladestrøm** beregnes ved kildeendringer. En kontroll hvert 30. sekund følger også tid og målingenes gyldighet.
 - **Vanlige strømendringer** skjer hvert femte minutt. En uendret grense sendes normalt ikke på nytt.
 - **Endring av boligens timegrense** utløser regulering med én gang. Målinger, ladepause og tidsvindu gjelder fortsatt.
+- **På 230 V IT/TT med trefase aktivert** beregner SLM budsjettet for trefaselading selv om målingene kortvarig viser færre faser.
 - **Tilkobling, brukerbetjening, tidsgrenser og gjenopprettede målinger** vurderes straks. Nødvendig kapasitet og øvrige tillatelser må fortsatt være på plass.
 - **Risiko for å bruke opp timebudsjettet** kan gi tidligere reduksjon etter 30 sekunder; ved akutt risiko reduseres det straks. Etter tidlig reduksjon holdes ordinær økning igjen i minst fem minutter.
 - **To ladere:** Reell reduksjon på en aktiv lader må bekreftes med nye målinger før kapasitet flyttes. En kjent, ubrukt lader med 0 W og under 1 A hvilestrøm behøver ikke rapportere samme nullverdi på nytt.

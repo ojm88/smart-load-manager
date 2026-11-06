@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1-beta.25
+
+- Keep the three-phase IT/TT budget basis when the charger is configured for three phases, even if a single sample reports fewer active conductors.
+
 ## 0.1.1-beta.24
 
 - Apply changes to the household hourly consumption limit immediately, using the same measurement and charging permission checks as ordinary regulation.

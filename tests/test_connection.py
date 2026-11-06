@@ -4,7 +4,7 @@ from math import sqrt
 import unittest
 
 from custom_components.smart_load_manager.calculations import (
-    ElectricalSnapshot, detect_electrical_setup, kw_per_ampere,
+    ElectricalSnapshot, detect_electrical_setup, kw_per_ampere, recommended_current_a,
 )
 
 
@@ -21,6 +21,34 @@ class ConnectionTests(unittest.TestCase):
             replace(sample, currents_a={"T4": 8}))))
         self.assertIsNone(kw_per_ampere(detect_electrical_setup(
             replace(sample, voltages_v={}))))
+
+    def test_it_budget_replays_cabin_recovery_without_25_amp_offer(self):
+        sample = ElectricalSnapshot(
+            connection="it_3", phase_mode=3, output_phase=22, status="charging",
+            starting=True, voltages_v={"T2T3": 232, "T2T4": 237, "T3T4": 236},
+        )
+        # Easee reported the second conductor 0.16 s after the first.
+        readings = (
+            ({"T2": 5.5, "T3": .2, "T4": .2}, 0),
+            ({"T2": 5.5, "T3": 5.5, "T4": .2}, 158),
+            ({"T2": 5.5, "T3": 5.5, "T4": 5.5}, 158),
+            ({"T2": 5.5, "T3": 5.5, "T4": .2}, 158),
+        )
+        offers = []
+        for currents, power in readings:
+            electrical = detect_electrical_setup(replace(sample, currents_a=currents))
+            offers.append(recommended_current_a(
+                hourly_limit_kwh=10, energy_used_kwh=3.81, han_power_w=5008,
+                charger_power_w=power, minutes_left=26.04, safety_margin_kwh=.3,
+                max_current_a=25, min_current_a=electrical.minimum_current_a,
+                kw_per_amp=kw_per_ampere(electrical),
+            ))
+        self.assertEqual(offers, [None, 21, 21, 21])
+        self.assertEqual(electrical.active_phases, 1)
+
+        missing_voltage = replace(sample, currents_a=readings[1][0],
+                                  voltages_v={"T2T3": 232})
+        self.assertIsNone(kw_per_ampere(detect_electrical_setup(missing_voltage)))
 
     def test_confirmed_it_capture_ignores_unused_t5_and_pe(self):
         sample = ElectricalSnapshot(connection="it_3", phase_mode=3,

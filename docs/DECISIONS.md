@@ -750,3 +750,9 @@ feedback before allowing paired increases or resuming the reserve-paused
 charger. Resume follows a normally permitted positive limit. Manual Easee
 actions were verified on the cabin charger with SLM removed. The integrated
 sequence and the original stuck case still require physical verification.
+
+For confirmed 230 V IT/TT wiring with a three-phase configuration or assignment,
+budget using the highest valid measured line voltage and the three-phase power
+factor while displaying measured active phases. An isolated lower phase count
+cannot raise the offer. Keep incomplete current and voltage guards, and keep
+the explicitly selected single-phase calculation.
