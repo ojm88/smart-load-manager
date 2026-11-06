@@ -2,11 +2,11 @@
 
 Updated: 2026-11-06
 
-## Next candidate
+## 0.1.1-beta.26
 
 The Markdown card shows stable measured charging current below the sent limit, using the existing power observation.
 
-## 0.1.1-beta.25
+## Published — 0.1.1-beta.25
 
 Cabin beta.24 trace replay: 25 → 21 → 25 A recommendations after a transient phase reading become 21 → 21 → 21 A. An incomplete current sample still stops regulation. Physical verification remains open.
 

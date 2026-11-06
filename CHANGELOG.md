@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1-beta.26
 
 - Keep the Markdown charging row stable as the live recommendation and measured power change during startup. Describe waiting with a positive limit as waiting for charging to start.
 
