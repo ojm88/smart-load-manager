@@ -757,13 +757,16 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         self.assertEqual(self.commands,[('b',16)])
         a['status']='awaiting_start'
         await self.refresh_at(site,2)
+        self.assertEqual(self.commands,[('b',16)])
+        a['status']='ready_to_charge'
+        await self.refresh_at(site,3)
         self.assertEqual(self.commands,[('b',16),('b',0)])
         b=site.controllers['b']._async_sample.return_value
         b.update(charger_power_w=0,charger_current_a=0)
-        stamp=self.now+timedelta(seconds=3)
+        stamp=self.now+timedelta(seconds=4)
         for suffix in ('power','current'):
             self.states['b_'+suffix]=NS(state='0',last_updated=stamp,last_reported=stamp)
-        await self.refresh_at(site,3)
+        await self.refresh_at(site,4)
         self.assertEqual(self.commands,[('b',16),('b',0),('a',6)])
 
     async def test_schedule_open_restores_standby_offer_after_unknown_completion(self):

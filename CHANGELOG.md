@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1-beta.27
 
 - Keep a stopped, completed Easee session at 0 A while it reports only awaiting start with no measured draw.
 
