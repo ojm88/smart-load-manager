@@ -72,6 +72,7 @@ class ElectricalSnapshot:
     currents_a: Mapping[str, float] | None = None
     voltages_v: Mapping[str, float] | None = None
     connection: str | None = None
+    starting: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -243,7 +244,10 @@ def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
     if supply_phases == 1 and active > 1:
         return result("Målt fasebruk avviker fra bekreftet énfasetilkobling")
     if not tn and charging and count == 1:
-        return result("Mangler sammenhengende strømmålinger fra IT-faselederne")
+        if not snapshot.starting or max(currents.values()) >= 2:
+            return result("Mangler sammenhengende strømmålinger fra IT-faselederne")
+        # During ramp-up the two IT conductors can cross 1 A in different reports.
+        # Retain the conservative configured phase count and measured voltages.
 
     def measured(pair):
         value = voltages.get(pair)

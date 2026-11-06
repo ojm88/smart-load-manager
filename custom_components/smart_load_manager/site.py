@@ -3,6 +3,7 @@ from __future__ import annotations
 from .installation import charger_entries
 import asyncio
 import math
+import logging
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from .debug_trace import DebugTrace
 from .allocation import Demand, allocate, available_charging_kw
@@ -13,6 +14,9 @@ from .charger_status import allows_automatic_current, normalize_status
 from homeassistant.util import dt as dt_util
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_call_later
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class MeasurementPending(ValueError):
@@ -38,6 +42,7 @@ class SiteController:
         self.controllers = {}
         self.lock = asyncio.Lock()
         self.pending_reductions = {}
+        self._stop_unconfirmed_since = {}
         from .power_reservation import PowerReservations
         self.power_reservations = PowerReservations()
         self.manual_requests = {}
@@ -271,6 +276,7 @@ class SiteController:
                 for key, d in samples.items():
                     d["last_sent_current_a"] = self.controllers[key].last_commanded_current
                     d["next_regulation_at"] = self.cadence.next_regular_at
+                self._update_stop_feedback(samples)
                 self.latest_samples = samples
                 self._arm_check()
                 for key, d in samples.items():
@@ -329,6 +335,7 @@ class SiteController:
                 for key, d in samples.items():
                     d["last_sent_current_a"] = self.controllers[key].last_commanded_current
                     d["next_regulation_at"] = self.cadence.next_regular_at
+                self._update_stop_feedback(samples)
                 self.latest_samples = samples
                 self._arm_check()
                 for key, d in samples.items():
@@ -352,6 +359,25 @@ class SiteController:
                 raise UpdateFailed(str(err)) from err
             finally:
                 self._command_samples = None
+
+    def _update_stop_feedback(self, samples):
+        now = dt_util.now().timestamp()
+        for key in self._stop_unconfirmed_since.keys() - self.controllers.keys():
+            self._stop_unconfirmed_since.pop(key)
+        for key, data in samples.items():
+            controller = self.controllers[key]
+            power = data.get('charger_power_w')
+            current = data.get('charger_current_a')
+            still_drawing = ((isinstance(power, (int, float)) and power > 100)
+                             or (isinstance(current, (int, float)) and current >= 1))
+            if controller.last_commanded_current != 0 or not still_drawing:
+                self._stop_unconfirmed_since.pop(key, None)
+                continue
+            since = self._stop_unconfirmed_since.setdefault(key, controller._last_command_at)
+            data['stop_unconfirmed'] = now - since >= 60
+            if data['stop_unconfirmed'] and not self.latest_samples.get(key, {}).get('stop_unconfirmed'):
+                _LOGGER.warning("SLM requested 0 A, but the charger still reports load")
+                self.debug_trace.record('stop_unconfirmed', key, data=data, target=0)
 
     @staticmethod
     def _quiet_completed(data):
@@ -599,6 +625,11 @@ class SiteController:
                 self.pending_reductions[key] = (reduction, c._last_command_at)
                 self.debug_trace.record('reduction_wait_started', key,
                                         data=samples[key], target=reduction)
+            elif (pending is not None and pending[0] == target == 0
+                  and self._current_above_limit(samples[key], 0)
+                  and dt_util.now().timestamp() - c._last_command_at >= 60):
+                # A retry must not discard the original reduction confirmation window.
+                await c._async_send_current(0)
         if self.pending_reductions:
             return
         for key, target in targets.items():

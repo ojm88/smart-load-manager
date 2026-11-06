@@ -117,12 +117,12 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 and status == 'charging' and recommended == 0
                 and data.get('last_sent_current_a') == 0):
             explanation = tr(
-                "SLM har satt 0 A for å holde forbruksgrensen. Avventer at laderen stanser.",
-                "SLM has set 0 A to stay within the consumption limit. Waiting for the charger to stop.")
+                "SLM har bedt om 0 A for å holde forbruksgrensen. Avventer at laderen stanser.",
+                "SLM requested 0 A to stay within the consumption limit. Waiting for the charger to stop.")
             if priority_wait:
                 explanation = tr(
-                    f"SLM har satt 0 A slik at {priority_name} får lade først. Avventer at laderen stanser.",
-                    f"SLM has set 0 A so {priority_name} can charge first. Waiting for the charger to stop.")
+                    f"SLM har bedt om 0 A slik at {priority_name} får lade først. Avventer at laderen stanser.",
+                    f"SLM requested 0 A so {priority_name} can charge first. Waiting for the charger to stop.")
         # Actual Easee charging is visible even while a stop is being applied.
         if not data or not load.get('available', True):
             label = tr('Utilgjengelig', 'Unavailable')
@@ -182,8 +182,12 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 and data.get('charger_power_w') == 0):
             detail = tr("Easee melder lading, men målt effekt er 0 W. Avventer oppdaterte lademålinger.",
                         "Easee reports charging, but measured power is 0 W. Waiting for updated charging measurements.")
+        if data.get('stop_unconfirmed'):
+            detail = tr("Stopp ikke bekreftet. Easee rapporterer fortsatt belastning. Kontroller ladingen i Easee-appen.",
+                        "Stop not confirmed. Easee still reports load. Check charging in the Easee app.")
         compact_regulation = (
-            automatic and ready and status == 'charging' and not paused
+            not data.get('stop_unconfirmed')
+            and automatic and ready and status == 'charging' and not paused
             and data.get('schedule_allowed', True)
             and data.get('electrical_ready') is not False
             and not data.get('awaiting_reduction')

@@ -60,6 +60,24 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         await site._apply({'a':6, 'b':14}, sample)
         self.assertEqual(self.commands, [('a',6),('b',14)])
 
+    async def test_unconfirmed_stop_retries_without_releasing_peer_capacity(self):
+        from datetime import timedelta
+        site = self.setup_site()
+        samples = {
+            'a': dict(status='charging', charger_current_a=22, charger_power_w=8771, kw_per_amp=.40),
+            'b': dict(status='charging', charger_current_a=10, charger_power_w=2300, kw_per_amp=.23),
+        }
+        with patch('smart_load_manager.site.dt_util.now', side_effect=lambda: self.now):
+            await site._apply({'a': 0, 'b': 14}, samples)
+            site._update_stop_feedback(samples)
+            self.assertFalse(samples['a']['stop_unconfirmed'])
+            self.now += timedelta(seconds=61)
+            await site._apply({'a': 0, 'b': 14}, samples)
+            site._update_stop_feedback(samples)
+            self.assertTrue(samples['a']['stop_unconfirmed'])
+            self.assertEqual(self.commands, [('a', 0), ('a', 0)])
+            self.assertIn('a', site.pending_reductions)
+
     async def test_new_takeover_first_establishes_zero(self):
         site = self.setup_site()
         for c in site.controllers.values(): c.last_commanded_current = None

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Tolerate the brief low-current IT startup transition with verified wiring and measured voltage. Flag sustained draw after a 0 A request and retain paired capacity until measured reduction.
+
 - Keep recommended and set charging current on one row during charging. Show a short hourly-limit reason for a 0 A recommendation and retain detailed explanations for actual waits and faults. Regenerate dashboard YAML to adopt the layout.
 
 ## 0.1.1-beta.23

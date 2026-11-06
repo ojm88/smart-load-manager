@@ -4,6 +4,8 @@ Updated: 2026-11-05
 
 ## Next beta
 
+Replayed the cabin IT startup samples: one conductor crosses 1 A first and causes repeated stops. The startup allowance uses confirmed wiring and measured voltage within a bounded window. Continued draw after a 0 A request is reported separately. Physical stop and resume verification remains open.
+
 Keep the charging current row stable as the recommendation changes. Show a short hourly-budget note on that row and retain actionable wait and fault explanations. Regenerate the dashboard YAML to use the revised layout.
 
 ## Published — 0.1.1-beta.23

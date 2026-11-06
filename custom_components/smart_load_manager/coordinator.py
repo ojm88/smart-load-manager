@@ -264,6 +264,11 @@ class ChargingCoordinator(DataUpdateCoordinator[dict[str, object]]):
                     grid_type_code=grid_type,
                     no_current_reason_code=no_current_reason,
                     status=status_state.state,
+                    starting=(
+                        0 <= (dt_util.utcnow() - status_state.last_changed).total_seconds() < 20
+                        and self.last_commanded_current is not None
+                        and self.last_commanded_current > 0
+                    ),
                     currents_a=currents,
                     voltages_v=voltages,
                 )
