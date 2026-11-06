@@ -223,6 +223,34 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                     self.assertIn('Tesla · **Frakoblet**', text)
                     self.assertNotIn('Bilen er koblet til', text)
 
+    async def test_markdown_shows_stable_draw_below_the_sent_limit(self):
+        from pathlib import Path
+        from jinja2 import Environment
+        from smart_load_manager.household_status import build_household_status
+        from smart_load_manager.power_reservation import PowerReservations
+
+        for name, sent in (('one.yaml', 25), ('two.yaml', 20)):
+            env = Environment()
+            env.filters['timestamp_custom'] = lambda *args: '13:20'
+            card = yaml.safe_load((Path(__file__).parents[1] /
+                'custom_components/smart_load_manager/dashboard' / name).read_text())
+            template = env.from_string(card['cards'][0]['content'])
+            tracker = PowerReservations()
+            data = dict(status='charging', auto_control=True, inputs_valid=True, han_fresh=True,
+                        site_control_ready=True, kw_per_amp=.4, max_current_a=sent,
+                        charger_power_w=6400, charger_current_a=16,
+                        recommended_current_a=sent, last_sent_current_a=sent)
+            for now in (0, 180):
+                reserved = tracker.estimate('a', data, offered_a=sent, command_at=0, now=now)
+                if reserved < sent * data['kw_per_amp']:
+                    data['settled_offer_a'] = sent
+                loads = [dict(id='a', name='Garasje', data=data)]
+                if name == 'two.yaml':
+                    loads.append(dict(id='b', name='Carport', data=dict(data, status='disconnected')))
+                state, payload = build_household_status(loads, limit_kwh=10)
+                env.globals.update(states=lambda _: state, state_attr=lambda _, k: payload.get(k))
+                self.assertEqual(template.render().count('Målt ladestrøm: 16 A'), int(now == 180))
+
     async def test_high_meter_values_stay_in_three_separate_value_cells(self):
         from pathlib import Path
         from jinja2 import Environment

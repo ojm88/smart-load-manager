@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Show measured charging current alongside the sent limit once lower demand has stabilised. The dashboard does not infer whether the charger or vehicle limits the current.
+
 ## 0.1.1-beta.25
 
 - Keep the three-phase IT/TT budget basis when the charger is configured for three phases, even if a single sample reports fewer active conductors.

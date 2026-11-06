@@ -202,6 +202,17 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             and data['last_sent_current_a'] > 0 and (data.get('charger_power_w') or 0) > 0
             and data.get('kw_per_amp') and data.get('max_current_a')
         )
+        regulation_note = ""
+        if compact_regulation:
+            sent = data['last_sent_current_a']
+            measured = data.get('charger_current_a')
+            if recommended <= 0:
+                regulation_note = tr("For lite plass innenfor timegrensen",
+                                     "Insufficient room within the hourly limit")
+            elif (data.get('settled_offer_a') == sent
+                  and isinstance(measured, (int, float)) and 0 < measured <= sent - 1):
+                regulation_note = tr(f"Målt ladestrøm: {measured:.0f} A",
+                                     f"Measured charging current: {measured:.0f} A")
         show_waiting_check = bool(automatic and ready and not paused
                                   and data.get('schedule_allowed', True)
                                   and allows_automatic_current(status) and status != 'charging'
@@ -230,8 +241,7 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "detail": detail, "show_charging_details": status == "charging",
             "show_waiting_check": show_waiting_check,
             "compact_regulation": bool(compact_regulation),
-            "regulation_note": tr("For lite plass innenfor timegrensen", "Insufficient room within the hourly limit")
-            if compact_regulation and recommended <= 0 else "",
+            "regulation_note": regulation_note,
             "manual_current_setting_a": data.get("manual_current_setting_a"),
             "first_priority": load["id"] == priority if len(loads) > 1 else None,
             "current_a": data.get("charger_current_a"),
