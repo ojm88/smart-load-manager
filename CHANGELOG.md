@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep the Markdown charging row stable as the live recommendation and measured power change during startup. Describe waiting with a positive limit as waiting for charging to start.
+
 - Show measured charging current alongside the sent limit once lower demand has stabilised. The dashboard does not infer whether the charger or vehicle limits the current.
 
 ## 0.1.1-beta.25

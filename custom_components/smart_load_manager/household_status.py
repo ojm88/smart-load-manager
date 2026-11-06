@@ -28,6 +28,8 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         other_running = any((other.get("data") or {}).get("recommended_current_a", 0) or 0
                             for other in loads if other["id"] != load["id"])
         priority_wait = bool(priority_name and load["id"] != priority and other_running)
+        sent = data.get("last_sent_current_a")
+        awaiting_start = status in {"awaiting_start", "ready_to_charge"} and sent is not None and sent > 0
         stage = "waiting"
         if not data or not load.get("available", True):
             explanation = tr("Opplysninger fra laderen mangler. Status kan ikke bekreftes.",
@@ -65,6 +67,10 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
         elif data.get("awaiting_reduction"):
             explanation = tr("Ladingen justeres. Mer strøm fordeles når reduksjonen er bekreftet.",
                              "Charging is being adjusted. More current is shared once the reduction is confirmed.")
+        elif awaiting_start:
+            explanation = tr(
+                f"SLM har satt {sent} A. Easee melder fortsatt venting. Kontroller bilens ladeplan eller ladegrense hvis dette vedvarer.",
+                f"SLM has set {sent} A. Easee still reports waiting. Check the vehicle schedule or charge limit if this persists.")
         elif data.get("last_sent_current_a") is not None and recommended != data["last_sent_current_a"]:
             sent = data["last_sent_current_a"]
             stage = "automatic" if sent > 0 and status == "charging" else "waiting"
@@ -173,7 +179,7 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 detail = data.get('control_reason') or explanation
             elif not automatic or not data.get('schedule_allowed', True):
                 detail = explanation
-            elif (data.get('awaiting_reduction') or recommended is None
+            elif (awaiting_start or data.get('awaiting_reduction') or recommended is None
                   or not data.get('kw_per_amp') or not data.get('max_current_a')
                   or recommended <= 0 or recommended != data.get('last_sent_current_a')
                   or status != 'charging'):
@@ -197,19 +203,16 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             and data.get('schedule_allowed', True)
             and data.get('electrical_ready') is not False
             and not data.get('awaiting_reduction')
-            and recommended is not None and (recommended > 0 or not priority_wait)
+            and recommended is not None
             and data.get('last_sent_current_a') is not None
-            and data['last_sent_current_a'] > 0 and (data.get('charger_power_w') or 0) > 0
+            and data['last_sent_current_a'] > 0
             and data.get('kw_per_amp') and data.get('max_current_a')
         )
         regulation_note = ""
         if compact_regulation:
             sent = data['last_sent_current_a']
             measured = data.get('charger_current_a')
-            if recommended <= 0:
-                regulation_note = tr("For lite plass innenfor timegrensen",
-                                     "Insufficient room within the hourly limit")
-            elif (data.get('settled_offer_a') == sent
+            if (data.get('settled_offer_a') == sent
                   and isinstance(measured, (int, float)) and 0 < measured <= sent - 1):
                 regulation_note = tr(f"Målt ladestrøm: {measured:.0f} A",
                                      f"Measured charging current: {measured:.0f} A")
@@ -225,6 +228,8 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 and allows_automatic_current(status) and status != 'charging'):
             if data.get('awaiting_reduction'):
                 label = tr('Avventer reduksjon', 'Waiting for reduction')
+            elif awaiting_start:
+                label = tr('Venter på ladestart', 'Waiting for charging to start')
             elif recommended is not None and recommended <= 0:
                 label = tr('Venter på kapasitet', 'Waiting for capacity')
             elif recommended and data.get('last_sent_current_a') == 0:

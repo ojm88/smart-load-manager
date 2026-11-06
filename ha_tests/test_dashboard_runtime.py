@@ -122,10 +122,10 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
             card = yaml.safe_load((Path(__file__).parents[1] /
                 'custom_components/smart_load_manager/dashboard' / name).read_text())
             template = env.from_string(card['cards'][0]['content'])
-            for current in (0, 12, 10):
+            for current, power in ((0, 0), (12, 200), (0, 200), (12, 800), (0, 800), (10, 2600)):
                 with self.subTest(layout=name, recommended=current):
                     state, payload = build_household_status([
-                        dict(id='a', name='Garasje', data=dict(data, recommended_current_a=current)),
+                        dict(id='a', name='Garasje', data=dict(data, recommended_current_a=current, charger_power_w=power)),
                     ], limit_kwh=10)
                     env.globals.update(states=lambda _: state,
                                        state_attr=lambda _, key: payload.get(key))
@@ -133,7 +133,8 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                     self.assertIn(f'Anbefalt: **{current} A** · Satt: **12 A**', text)
                     self.assertIn('Regulering: **18:05**', text)
                     self.assertNotIn('Laderen beholder', text)
-                    self.assertEqual('For lite plass innenfor timegrensen' in text, current == 0)
+                    self.assertNotIn('For lite plass innenfor timegrensen', text)
+                    self.assertNotIn('Avventer oppdaterte lademålinger', text)
 
     async def test_markdown_shows_name_and_independent_status_for_both_chargers(self):
         from pathlib import Path
