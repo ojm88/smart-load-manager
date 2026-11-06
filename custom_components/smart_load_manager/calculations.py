@@ -210,9 +210,13 @@ def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
     active = count if tn else (3 if count == 3 else 1 if count == 2 else 0)
     effective = active if charging and active else configured
     voltage_type = "400V" if tn else "230V"
+    # IT phase currents arrive separately. A temporary two-conductor reading
+    # must not raise the offer while the charger can return to three phases.
+    budget_phases = 3 if not tn and configured == 3 else effective
 
     def result(reason, *, line=None, neutral=None, factor=None):
-        valid = factor is not None and effective in {1, 2, 3}
+        valid = factor is not None and budget_phases in {1, 2, 3}
+        minimum = 11 if not tn and budget_phases == 3 else 6
         return ElectricalResult(
             configured_phases=configured, active_phases=active,
             effective_phases=effective, voltage_type=voltage_type if supported else "unknown",
@@ -223,7 +227,7 @@ def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
             output_phase_name=OUTPUT_PHASE_NAMES.get(output, f"Ukjent ({output})"),
             grid_type_name=GRID_TYPE_NAMES.get(snapshot.grid_type_code, f"Ikke rapportert ({snapshot.grid_type_code})"),
             no_current_reason=NO_CURRENT_REASONS.get(snapshot.no_current_reason_code, f"Ukjent Easee-kode ({snapshot.no_current_reason_code})"),
-            minimum_current_a=_minimum_current(voltage_type, active, effective, charging) if valid else None,
+            minimum_current_a=minimum if valid else None,
             charging_kw_per_amp=factor if valid else None, connection=connection,
         )
 
@@ -278,7 +282,7 @@ def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
 
     pairs = ["T2T3", "T2T4", "T3T4"] if supply_phases == 3 else ["T2T3"]
     single_pairs = {11: "T2T3", 13: "T2T4", 15: "T3T4"}
-    if effective == 1:
+    if budget_phases == 1:
         if charging and count == 2:
             pairs = ["".join(sorted(active_terminals & phase_terminals))]
         elif output in single_pairs:
@@ -291,26 +295,9 @@ def detect_electrical_setup(snapshot: ElectricalSnapshot) -> ElectricalResult:
     # Highest relevant measured voltage avoids granting too many amperes on
     # an unassigned path or uneven supply. No nominal 230 V is substituted.
     line = max(values)
-    factor = (sqrt(3) if effective == 3 else effective) * line / 1000
+    factor = (sqrt(3) if budget_phases == 3 else budget_phases) * line / 1000
     return result("Bekreftet IT/TT-tilkobling; målt spenning mellom faseledere",
                   line=line, factor=factor)
-
-
-def _minimum_current(
-    voltage_type: str, active_phases: int, effective_phases: int, charging: bool
-) -> int | None:
-    """Use measured phase use, or validated configuration before current rises.
-
-    Easee can report charging before its separate current sensor updates. Zero
-    measured phases does not invalidate confirmed wiring and measured voltage.
-    The caller only exposes this minimum after validating that electrical path.
-    """
-    phase_count = active_phases if charging and active_phases else effective_phases
-    if phase_count not in {1, 2, 3} or voltage_type not in {"230V", "400V"}:
-        return None
-    if voltage_type == "230V" and phase_count == 3:
-        return 11
-    return 6
 
 
 def power_to_watts(value: float, unit: str) -> float:

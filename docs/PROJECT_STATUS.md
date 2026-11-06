@@ -2,6 +2,10 @@
 
 Updated: 2026-11-06
 
+## Next candidate
+
+Cabin beta.24 trace replay: 25 → 21 → 25 A recommendations after a transient phase reading become 21 → 21 → 21 A. An incomplete current sample still stops regulation. Physical verification remains open.
+
 ## 0.1.1-beta.24 candidate
 
 Changing the household hourly limit requests immediate regulation for one or two chargers, subject to the existing control guards.
