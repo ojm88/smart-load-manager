@@ -78,7 +78,7 @@ cards:
     {{ load.name }} · **{{ load.status_label | default(''Venter'') }}**{% if load.mode_label | default('''')
     %} · {{ load.mode_label }}{% endif %}
 
-    {% if load.detail | default('''') %}
+    {% if load.detail | default('''') and not load.compact_regulation | default(false) %}
 
 
     {{ load.detail }}
@@ -99,15 +99,14 @@ cards:
 
     {% if load.automatic_control and load.recommended_current_a is number %}
 
-    {% if load.last_sent_current_a is number and load.recommended_current_a != load.last_sent_current_a
-    %}
+    {% if load.last_sent_current_a is number %}
 
     Anbefalt: **{{ load.recommended_current_a | round(0) | int }} A** · Satt: **{{ load.last_sent_current_a
     | round(0) | int }} A**.
 
     {% else %}
 
-    Strømgrense: **{{ load.recommended_current_a | round(0) | int }} A**.
+    Anbefalt: **{{ load.recommended_current_a | round(0) | int }} A**.
 
     {% endif %}
 
@@ -119,7 +118,8 @@ cards:
 
     {% elif load.last_sent_current_a is number %}
 
-    Manuell grense: **{{ load.last_sent_current_a | round(0) | int }} A**.
+    Manuell grense: **{{ load.last_sent_current_a | round(0) | int }} A**{% if load.regulation_note |
+    default('''') %} · {{ load.regulation_note }}{% endif %}.
 
     {% endif %}
 

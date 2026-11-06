@@ -3,6 +3,7 @@ from __future__ import annotations
 from .installation import charger_entries
 import asyncio
 import math
+import logging
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from .debug_trace import DebugTrace
 from .allocation import Demand, allocate, available_charging_kw
@@ -13,6 +14,9 @@ from .charger_status import allows_automatic_current, normalize_status
 from homeassistant.util import dt as dt_util
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_call_later
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class MeasurementPending(ValueError):
@@ -38,6 +42,8 @@ class SiteController:
         self.controllers = {}
         self.lock = asyncio.Lock()
         self.pending_reductions = {}
+        self._stop_unconfirmed_since = {}
+        self._reserve_pauses = {}
         from .power_reservation import PowerReservations
         self.power_reservations = PowerReservations()
         self.manual_requests = {}
@@ -136,7 +142,7 @@ class SiteController:
                              and c.last_commanded_current <= d.get('max_current_a', 0)
                              and key not in self._completion_resume)
                     d['completion_released'] = bool(quiet)
-                    if quiet:
+                    if quiet and key not in self._reserve_pauses:
                         released.add(key)
                         if key not in self._released_completed:
                             self.debug_trace.record('completed_capacity_released', key, data=d)
@@ -271,6 +277,7 @@ class SiteController:
                 for key, d in samples.items():
                     d["last_sent_current_a"] = self.controllers[key].last_commanded_current
                     d["next_regulation_at"] = self.cadence.next_regular_at
+                await self._update_stop_feedback(samples)
                 self.latest_samples = samples
                 self._arm_check()
                 for key, d in samples.items():
@@ -329,6 +336,7 @@ class SiteController:
                 for key, d in samples.items():
                     d["last_sent_current_a"] = self.controllers[key].last_commanded_current
                     d["next_regulation_at"] = self.cadence.next_regular_at
+                await self._update_stop_feedback(samples)
                 self.latest_samples = samples
                 self._arm_check()
                 for key, d in samples.items():
@@ -352,6 +360,89 @@ class SiteController:
                 raise UpdateFailed(str(err)) from err
             finally:
                 self._command_samples = None
+
+    @staticmethod
+    def _reported_after(state, timestamp):
+        return (state is not None
+                and state.state not in {'unknown', 'unavailable'}
+                and getattr(state, 'last_reported', state.last_updated).timestamp() > timestamp)
+
+    async def _easee_pause_action(self, controller, action):
+        await self.hass.services.async_call(
+            'easee', 'action_command',
+            {'device_id': str(controller.entry.data['charger_device']), 'action_command': action},
+            blocking=True,
+        )
+
+    def _reserve_stop_confirmed(self, controller, data, paused_at):
+        return (
+            self._idle_without_transfer(data)
+            and all(self._reported_after(self.hass.states.get(entity), paused_at)
+                    for entity in (controller.easee.current, controller.easee.power))
+        )
+
+    async def _send_allocated_current(self, key, target, data):
+        controller = self.controllers[key]
+        paused_at = self._reserve_pauses.get(key)
+        if target > 0 and paused_at is not None:
+            if not self._reserve_stop_confirmed(controller, data, paused_at):
+                data['reserve_stop_pending'] = True
+                return
+            # A positive limit can itself start the vehicle. Reach this path only
+            # after normal allocation and peer acknowledgement allow charging.
+            await controller._async_send_current(target)
+            self._reserve_pauses.pop(key)
+            try:
+                await self._easee_pause_action(controller, 'resume')
+            except Exception:
+                data['reserve_resume_failed'] = True
+                _LOGGER.exception("Easee reserve resume request failed")
+                self.debug_trace.record('reserve_resume_failed', key, data=data, target=target)
+            else:
+                self.debug_trace.record('reserve_resume_requested', key, data=data, target=target)
+            return
+        await controller._async_send_current(target)
+
+    async def _update_stop_feedback(self, samples):
+        now = dt_util.now().timestamp()
+        for key in self._stop_unconfirmed_since.keys() - self.controllers.keys():
+            self._stop_unconfirmed_since.pop(key)
+        for key in self._reserve_pauses.keys() - self.controllers.keys():
+            self._reserve_pauses.pop(key)
+        for key, data in samples.items():
+            controller = self.controllers[key]
+            if normalize_status(data.get('status')) == 'disconnected':
+                self._reserve_pauses.pop(key, None)
+            power = data.get('charger_power_w')
+            current = data.get('charger_current_a')
+            still_drawing = ((isinstance(power, (int, float)) and power > 100)
+                             or (isinstance(current, (int, float)) and current >= 1))
+            if controller.last_commanded_current != 0 or not still_drawing:
+                self._stop_unconfirmed_since.pop(key, None)
+                continue
+            since = self._stop_unconfirmed_since.setdefault(key, controller._last_command_at)
+            data['stop_unconfirmed'] = now - since >= 60
+            if data['stop_unconfirmed'] and not self.latest_samples.get(key, {}).get('stop_unconfirmed'):
+                _LOGGER.warning("SLM requested 0 A, but the charger still reports load")
+                self.debug_trace.record('stop_unconfirmed', key, data=data, target=0)
+            if (
+                data['stop_unconfirmed'] and key not in self._reserve_pauses
+                and normalize_status(data.get('status')) == 'charging'
+                and hasattr(self.hass, 'services')
+                and self.hass.services.has_service('easee', 'action_command')
+                and ((isinstance(power, (int, float)) and power > 100
+                      and self._reported_after(self.hass.states.get(controller.easee.power), since))
+                     or (isinstance(current, (int, float)) and current >= 1
+                         and self._reported_after(self.hass.states.get(controller.easee.current), since)))
+            ):
+                self._reserve_pauses[key] = now
+                try:
+                    await self._easee_pause_action(controller, 'pause')
+                except Exception:
+                    _LOGGER.exception("Easee reserve pause request failed")
+                    self.debug_trace.record('reserve_pause_failed', key, data=data, target=0)
+                else:
+                    self.debug_trace.record('reserve_pause_requested', key, data=data, target=0)
 
     @staticmethod
     def _quiet_completed(data):
@@ -522,7 +613,7 @@ class SiteController:
                 retry_due = now - c._last_command_at >= 60
                 if target != c.last_commanded_current or (
                         self._current_above_limit(samples[key], target) and retry_due):
-                    await c._async_send_current(target)
+                    await self._send_allocated_current(key, target, samples[key])
                 self.pending_reductions.pop(key, None)
         else:
             await self._apply(allowed, samples)
@@ -570,6 +661,10 @@ class SiteController:
         # zero heartbeat. HTTP/service success alone is never a confirmation.
         for key, (limit, sent_at) in list(self.pending_reductions.items()):
             c = self.controllers[key]
+            paused_at = self._reserve_pauses.get(key)
+            if paused_at is not None and not self._reserve_stop_confirmed(c, samples[key], paused_at):
+                samples[key]['reserve_stop_pending'] = True
+                continue
             if self._idle_without_transfer(samples[key]):
                 self.pending_reductions.pop(key)
                 self.debug_trace.record('reduction_not_required_idle', key,
@@ -599,9 +694,14 @@ class SiteController:
                 self.pending_reductions[key] = (reduction, c._last_command_at)
                 self.debug_trace.record('reduction_wait_started', key,
                                         data=samples[key], target=reduction)
+            elif (pending is not None and pending[0] == target == 0
+                  and self._current_above_limit(samples[key], 0)
+                  and dt_util.now().timestamp() - c._last_command_at >= 60):
+                # A retry must not discard the original reduction confirmation window.
+                await c._async_send_current(0)
         if self.pending_reductions:
             return
         for key, target in targets.items():
             c = self.controllers[key]
             if target != c.last_commanded_current:
-                await c._async_send_current(target)
+                await self._send_allocated_current(key, target, samples[key])

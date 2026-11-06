@@ -82,6 +82,7 @@ SLM uses a minimum of 11 A for measured 230 V three-phase charging, otherwise 6 
 
 - **Measurements and recommended charging current** update on source changes. A check every 30 seconds also follows time and measurement validity.
 - **Ordinary limit changes** occur every five minutes. An unchanged limit is normally not resent.
+- **Changing the household hourly limit** triggers regulation immediately. Measurement, pause and schedule checks still apply.
 - **Connection, user controls, schedule boundaries and recovered measurements** are assessed immediately, subject to capacity and all permissions.
 - **Risk of exhausting the hourly budget** can trigger an earlier reduction after 30 seconds; urgent risks reduce immediately. An early reduction holds ordinary increases for at least five minutes.
 - **Two chargers:** Actual active-load reductions require new measured confirmation before capacity is transferred. A known idle charger with zero power and less than 1 A standby current needs no repeated zero heartbeat.
@@ -139,6 +140,8 @@ Open **Settings → Devices & services → Smart Load Manager OJM → Configure*
 - **Charger connections:** Correct the physical connection if needed. The selected charger receives 0 A and its automation is disabled before reload. Check the choice before enabling control again.
 
 Successful 0 A service calls are not measured proof of a physical stop. Ordinary restart/update retains automation, manual settings, pause, schedules and household choices. Easee stores phase selection.
+
+If fresh readings still show charging 60 seconds after SLM requests 0 A, SLM tries a separate Easee pause once. SLM resumes its own reserve pause only when fresh measurements show that charging has stopped and control allows charging again.
 
 ## When charging waits
 

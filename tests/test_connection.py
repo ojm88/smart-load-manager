@@ -9,6 +9,19 @@ from custom_components.smart_load_manager.calculations import (
 
 
 class ConnectionTests(unittest.TestCase):
+    def test_it_startup_handles_one_conductor_crossing_threshold_first(self):
+        sample = ElectricalSnapshot(
+            connection="it_3", phase_mode=3, output_phase=22, status="charging",
+            starting=True, currents_a={"T2": 0, "T3": .3, "T4": 1.9},
+            voltages_v={"T2T3": 232, "T2T4": 236, "T3T4": 235},
+        )
+        self.assertAlmostEqual(kw_per_ampere(detect_electrical_setup(sample)), sqrt(3) * .236)
+        self.assertIsNone(kw_per_ampere(detect_electrical_setup(replace(sample, starting=False))))
+        self.assertIsNone(kw_per_ampere(detect_electrical_setup(
+            replace(sample, currents_a={"T4": 8}))))
+        self.assertIsNone(kw_per_ampere(detect_electrical_setup(
+            replace(sample, voltages_v={}))))
+
     def test_confirmed_it_capture_ignores_unused_t5_and_pe(self):
         sample = ElectricalSnapshot(connection="it_3", phase_mode=3,
             voltages_v={"T1T2": 1, "T1T3": 231, "T1T4": 238, "T1T5": 237,

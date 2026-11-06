@@ -82,6 +82,7 @@ SLM bruker minste ladestrøm 11 A ved målt 230 V trefaselading, ellers 6 A. Mak
 
 - **Målinger og anbefalt ladestrøm** beregnes ved kildeendringer. En kontroll hvert 30. sekund følger også tid og målingenes gyldighet.
 - **Vanlige strømendringer** skjer hvert femte minutt. En uendret grense sendes normalt ikke på nytt.
+- **Endring av boligens timegrense** utløser regulering med én gang. Målinger, ladepause og tidsvindu gjelder fortsatt.
 - **Tilkobling, brukerbetjening, tidsgrenser og gjenopprettede målinger** vurderes straks. Nødvendig kapasitet og øvrige tillatelser må fortsatt være på plass.
 - **Risiko for å bruke opp timebudsjettet** kan gi tidligere reduksjon etter 30 sekunder; ved akutt risiko reduseres det straks. Etter tidlig reduksjon holdes ordinær økning igjen i minst fem minutter.
 - **To ladere:** Reell reduksjon på en aktiv lader må bekreftes med nye målinger før kapasitet flyttes. En kjent, ubrukt lader med 0 W og under 1 A hvilestrøm behøver ikke rapportere samme nullverdi på nytt.
@@ -139,6 +140,8 @@ Grafene viser ladestrøm og valgte energi-/estimatsensorer de siste 12 timene. *
 - **Ladernes tilkobling:** Rett fysisk tilkobling ved behov. Valgt lader får 0 A og automatikk av før omlasting. Kontroller valget og aktiver styringen igjen når grunnlaget er riktig.
 
 En vellykket 0 A-kommando er ikke i seg selv en målt bekreftelse på fysisk stopp. Vanlig omstart og oppdatering beholder automatikk, manuell innstilling, pause, tidsstyring og boligens valg. Easee lagrer fasevalget.
+
+Hvis Easee fremdeles melder lading med ferske målinger 60 sekunder etter at SLM ba om 0 A, forsøker SLM én separat pausekommando. SLM gjenopptar sin egen reservepause først når ferske målinger viser stopp og styringen tillater lading igjen.
 
 ## Hvis ladingen venter
 

@@ -60,6 +60,72 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         await site._apply({'a':6, 'b':14}, sample)
         self.assertEqual(self.commands, [('a',6),('b',14)])
 
+    async def test_unconfirmed_stop_retries_without_releasing_peer_capacity(self):
+        from datetime import timedelta
+        site = self.setup_site()
+        samples = {
+            'a': dict(status='charging', charger_current_a=22, charger_power_w=8771, kw_per_amp=.40),
+            'b': dict(status='charging', charger_current_a=10, charger_power_w=2300, kw_per_amp=.23),
+        }
+        with patch('smart_load_manager.site.dt_util.now', side_effect=lambda: self.now):
+            await site._apply({'a': 0, 'b': 14}, samples)
+            await site._update_stop_feedback(samples)
+            self.assertFalse(samples['a']['stop_unconfirmed'])
+            self.now += timedelta(seconds=61)
+            await site._apply({'a': 0, 'b': 14}, samples)
+            await site._update_stop_feedback(samples)
+            self.assertTrue(samples['a']['stop_unconfirmed'])
+            self.assertEqual(self.commands, [('a', 0), ('a', 0)])
+            self.assertIn('a', site.pending_reductions)
+
+    async def test_reserve_pause_and_resume_with_fresh_feedback(self):
+        from datetime import timedelta
+        for paired in (False, True):
+            with self.subTest(paired=paired):
+                site = self.setup_site()
+                if not paired:
+                    site.controllers.pop('b')
+                c = site.controllers['a']
+                c.entry.data = {'charger_device': 'test-device'}
+
+                async def action(domain, service, payload, *, blocking):
+                    self.assertEqual((domain, service, blocking), ('easee', 'action_command', True))
+                    self.assertEqual(payload['device_id'], 'test-device')
+                    self.commands.append(('a', payload['action_command']))
+
+                site.hass.services = NS(has_service=lambda *_: True, async_call=action)
+                samples = {'a': dict(status='charging', charger_current_a=22,
+                                     charger_power_w=8771, kw_per_amp=.4,
+                                     inputs_valid=True, han_fresh=True)}
+                targets = {'a': 0}
+                if paired:
+                    samples['b'] = dict(status='charging', charger_current_a=10,
+                                        charger_power_w=2300, kw_per_amp=.23)
+                    targets['b'] = 14
+                with patch('smart_load_manager.site.dt_util.now', side_effect=lambda: self.now):
+                    await site._apply(targets, samples)
+                    self.now += timedelta(seconds=61)
+                    for entity in (c.easee.current, c.easee.power):
+                        self.states[entity] = NS(state='22', last_updated=self.now)
+                    await site._update_stop_feedback(samples)
+                    await site._update_stop_feedback(samples)
+                    self.assertEqual(self.commands, [('a', 0), ('a', 'pause')])
+
+                    # Old zero readings cannot release capacity or restart charging.
+                    samples['a'].update(status='awaiting_start', charger_current_a=0, charger_power_w=0)
+                    targets['a'] = 8
+                    await site._apply(targets, samples)
+                    self.assertEqual(self.commands, [('a', 0), ('a', 'pause')])
+                    self.now += timedelta(seconds=1)
+                    for entity in (c.easee.current, c.easee.power):
+                        self.states[entity] = NS(state='0', last_updated=self.now)
+                    targets['a'] = 0
+                    await site._apply(targets, samples)
+                    self.assertNotIn(('a', 'resume'), self.commands)
+                    targets['a'] = 8
+                    await site._apply(targets, samples)
+                    self.assertEqual(self.commands[-2:], [('a', 8), ('a', 'resume')])
+
     async def test_new_takeover_first_establishes_zero(self):
         site = self.setup_site()
         for c in site.controllers.values(): c.last_commanded_current = None
@@ -218,6 +284,49 @@ class SiteRuntimeTests(IsolatedAsyncioTestCase):
         from datetime import timedelta
         with patch('smart_load_manager.site.dt_util.now', return_value=self.now+timedelta(seconds=seconds)):
             return await site.refresh(next(iter(site.controllers.values())))
+
+    async def test_budget_selector_regulates_before_deadline_with_existing_guards(self):
+        from datetime import timedelta
+        from smart_load_manager.select import ConsumptionLimitSelect
+
+        for single in (True, False):
+            for blocked in (None, 'pause', 'schedule', 'measurements'):
+                with self.subTest(single=single, blocked=blocked):
+                    site = self.setup_regulation(single=single)
+                    for c in site.controllers.values():
+                        c.last_commanded_current = 0
+                        c.charging_paused = blocked == 'pause'
+                        c._async_sample.return_value.update(
+                            status='awaiting_start', charger_current_a=0, charger_power_w=0,
+                            energy_used_kwh=9.8, inputs_valid=blocked != 'measurements',
+                            schedule_allowed=blocked != 'schedule',
+                        )
+                    owner = self.entries[0]
+                    c = site.controllers['a']
+                    c.site = site
+                    c.async_publish_sample = c.async_set_updated_data
+                    c.async_request_refresh = AsyncMock()
+                    selector = ConsumptionLimitSelect(c, owner)
+                    selector.hass = site.hass
+
+                    def save_options(hass, entry, *, options):
+                        entry.options = options
+
+                    with (
+                        patch('smart_load_manager.select.update_load', side_effect=save_options),
+                        patch('smart_load_manager.site.dt_util.now',
+                              return_value=self.now + timedelta(seconds=10)),
+                    ):
+                        await selector.async_select_option('15')
+                        self.assertEqual(owner.options['consumption_limit_kwh'], 15)
+                        if blocked:
+                            self.assertEqual(self.commands, [])
+                        else:
+                            self.assertEqual({key for key, amps in self.commands if amps >= 6},
+                                             set(site.controllers))
+                            self.commands.clear()
+                            await selector.async_select_option('10')
+                            self.assertEqual(self.commands, [(key, 0) for key in site.controllers])
 
     async def test_live_recommendations_do_not_change_limits_between_five_minute_ticks(self):
         for single in (True, False):

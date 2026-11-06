@@ -740,3 +740,13 @@ Every functional PR reviews the maintained regression matrix, runs the full
 automated suite and records the scenarios it changes. New states need an
 expected behavior and concise status reason. Reported defects need a reproducing
 regression. Hardware and Companion acceptance are recorded separately.
+
+## 2026-11-06 — Separate Easee pause for unconfirmed 0 A
+
+Use Easee's pause action once per reserve pause only when charging is still
+reported with fresh positive current or power after a 60-second 0 A wait.
+Service return does not acknowledge physical stop. Require fresh zero-draw
+feedback before allowing paired increases or resuming the reserve-paused
+charger. Resume follows a normally permitted positive limit. Manual Easee
+actions were verified on the cabin charger with SLM removed. The integrated
+sequence and the original stuck case still require physical verification.

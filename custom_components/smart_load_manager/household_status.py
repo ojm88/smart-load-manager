@@ -117,12 +117,12 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 and status == 'charging' and recommended == 0
                 and data.get('last_sent_current_a') == 0):
             explanation = tr(
-                "SLM har satt 0 A for å holde forbruksgrensen. Avventer at laderen stanser.",
-                "SLM has set 0 A to stay within the consumption limit. Waiting for the charger to stop.")
+                "SLM har bedt om 0 A for å holde forbruksgrensen. Avventer at laderen stanser.",
+                "SLM requested 0 A to stay within the consumption limit. Waiting for the charger to stop.")
             if priority_wait:
                 explanation = tr(
-                    f"SLM har satt 0 A slik at {priority_name} får lade først. Avventer at laderen stanser.",
-                    f"SLM has set 0 A so {priority_name} can charge first. Waiting for the charger to stop.")
+                    f"SLM har bedt om 0 A slik at {priority_name} får lade først. Avventer at laderen stanser.",
+                    f"SLM requested 0 A so {priority_name} can charge first. Waiting for the charger to stop.")
         # Actual Easee charging is visible even while a stop is being applied.
         if not data or not load.get('available', True):
             label = tr('Utilgjengelig', 'Unavailable')
@@ -182,6 +182,26 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
                 and data.get('charger_power_w') == 0):
             detail = tr("Easee melder lading, men målt effekt er 0 W. Avventer oppdaterte lademålinger.",
                         "Easee reports charging, but measured power is 0 W. Waiting for updated charging measurements.")
+        if data.get('stop_unconfirmed'):
+            detail = tr("Stopp ikke bekreftet. Easee rapporterer fortsatt belastning. Kontroller ladingen i Easee-appen.",
+                        "Stop not confirmed. Easee still reports load. Check charging in the Easee app.")
+        elif data.get('reserve_stop_pending'):
+            detail = tr("Avventer ferske målinger som bekrefter at Easee har stoppet.",
+                        "Waiting for fresh measurements confirming that Easee has stopped.")
+        elif data.get('reserve_resume_failed'):
+            detail = tr("Easee kunne ikke bekrefte gjenopptakelse. Kontroller ladingen i Easee-appen.",
+                        "Easee could not confirm resumption. Check charging in the Easee app.")
+        compact_regulation = (
+            not any(data.get(key) for key in ('stop_unconfirmed', 'reserve_stop_pending', 'reserve_resume_failed'))
+            and automatic and ready and status == 'charging' and not paused
+            and data.get('schedule_allowed', True)
+            and data.get('electrical_ready') is not False
+            and not data.get('awaiting_reduction')
+            and recommended is not None and (recommended > 0 or not priority_wait)
+            and data.get('last_sent_current_a') is not None
+            and data['last_sent_current_a'] > 0 and (data.get('charger_power_w') or 0) > 0
+            and data.get('kw_per_amp') and data.get('max_current_a')
+        )
         show_waiting_check = bool(automatic and ready and not paused
                                   and data.get('schedule_allowed', True)
                                   and allows_automatic_current(status) and status != 'charging'
@@ -209,6 +229,9 @@ def build_household_status(loads, *, limit_kwh, mode="both", priority=None, norw
             "mode_label": tr("Auto", "Auto") if automatic else tr("Manuell", "Manual"),
             "detail": detail, "show_charging_details": status == "charging",
             "show_waiting_check": show_waiting_check,
+            "compact_regulation": bool(compact_regulation),
+            "regulation_note": tr("For lite plass innenfor timegrensen", "Insufficient room within the hourly limit")
+            if compact_regulation and recommended <= 0 else "",
             "manual_current_setting_a": data.get("manual_current_setting_a"),
             "first_priority": load["id"] == priority if len(loads) > 1 else None,
             "current_a": data.get("charger_current_a"),

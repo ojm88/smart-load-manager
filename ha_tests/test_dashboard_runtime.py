@@ -113,19 +113,27 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
         from jinja2 import Environment
         env = Environment()
         env.filters['timestamp_custom'] = lambda value, fmt, local: '18:05'
-        row = dict(name='Garasje', status='charging', explanation='Lading', power_w=2300,
-                   automatic_control=True, recommended_current_a=8,
-                   last_sent_current_a=10, next_regulation_at=1000)
-        payload = dict(controlled_loads=[row], summary='Lading', consumption_limit_kwh=10)
-        env.globals.update(states=lambda entity: 'automatic',
-                           state_attr=lambda entity, key: payload.get(key))
+        from smart_load_manager.household_status import build_household_status
+        data = dict(status='charging', auto_control=True, inputs_valid=True,
+                    han_fresh=True, kw_per_amp=.23, max_current_a=16,
+                    charger_power_w=2600, last_sent_current_a=12,
+                    next_regulation_at=1000)
         for name in ['one.yaml', 'two.yaml']:
             card = yaml.safe_load((Path(__file__).parents[1] /
                 'custom_components/smart_load_manager/dashboard' / name).read_text())
-            text = env.from_string(card['cards'][0]['content']).render()
-            self.assertIn('Anbefalt: **8 A**', text)
-            self.assertIn('Satt: **10 A**', text)
-            self.assertIn('18:05', text)
+            template = env.from_string(card['cards'][0]['content'])
+            for current in (0, 12, 10):
+                with self.subTest(layout=name, recommended=current):
+                    state, payload = build_household_status([
+                        dict(id='a', name='Garasje', data=dict(data, recommended_current_a=current)),
+                    ], limit_kwh=10)
+                    env.globals.update(states=lambda _: state,
+                                       state_attr=lambda _, key: payload.get(key))
+                    text = template.render()
+                    self.assertIn(f'Anbefalt: **{current} A** · Satt: **12 A**', text)
+                    self.assertIn('Regulering: **18:05**', text)
+                    self.assertNotIn('Laderen beholder', text)
+                    self.assertEqual('For lite plass innenfor timegrensen' in text, current == 0)
 
     async def test_markdown_shows_name_and_independent_status_for_both_chargers(self):
         from pathlib import Path
@@ -210,7 +218,7 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                 self.assertIn('Tesla · **', text)
                 self.assertEqual(text.count('Effekt:'),1)
                 self.assertEqual(text.count('Regulering:'),1)
-                self.assertEqual(text.count('Strømgrense:'),1)
+                self.assertEqual(text.count('Anbefalt:'),1)
                 if second_status == 'disconnected':
                     self.assertIn('Tesla · **Frakoblet**', text)
                     self.assertNotIn('Bilen er koblet til', text)
@@ -282,7 +290,7 @@ class DashboardRuntimeTests(IsolatedAsyncioTestCase):
                     content=yaml.safe_load((Path(__file__).parents[1]/'custom_components/smart_load_manager/dashboard'/name).read_text())['cards'][0]['content']
                     rendered=Template(content,hass).async_render(parse_result=False)
                     self.assertIn('Tesla · **Lader** · Auto',rendered)
-                    self.assertIn('Strømgrense: **10 A**',rendered)
+                    self.assertIn('Anbefalt: **10 A** · Satt: **10 A**',rendered)
                     self.assertNotIn('HAN-målingen er ikke oppdatert',rendered)
             finally:
                 await hass.async_stop(force=True)

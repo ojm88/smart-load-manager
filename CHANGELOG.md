@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1-beta.24
+
+- Apply changes to the household hourly consumption limit immediately, using the same measurement and charging permission checks as ordinary regulation.
+
+- Request a separate Easee pause once when fresh readings still show charging after 60 seconds at a requested 0 A. Require fresh measured stop and a newly permitted current before resuming an SLM reserve pause. Keep paired increases blocked until the stop is measured.
+
+- Tolerate the brief low-current IT startup transition with verified wiring and measured voltage. Flag sustained draw after a 0 A request and retain paired capacity until measured reduction.
+
+- Keep recommended and set charging current on one row during charging. Show a short hourly-limit reason for a 0 A recommendation and retain detailed explanations for actual waits and faults. Regenerate dashboard YAML to adopt the layout.
+
 ## 0.1.1-beta.23
 
 - Show the scheduled start time and wait reason when the charging window is closed in manual mode.

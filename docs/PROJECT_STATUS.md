@@ -1,8 +1,16 @@
 # Smart Load Manager OJM — current project status
 
-Updated: 2026-11-05
+Updated: 2026-11-06
 
-## Release candidate — 0.1.1-beta.23
+## 0.1.1-beta.24 candidate
+
+Changing the household hourly limit requests immediate regulation for one or two chargers, subject to the existing control guards.
+
+Replayed the cabin IT startup samples: one conductor crosses 1 A first and causes repeated stops. The startup allowance uses confirmed wiring and measured voltage within a bounded window. Continued draw after a 0 A request is reported separately. Manual Easee pause and resume worked on the cabin charger with SLM removed. The SLM candidate requests that separate pause once after 60 seconds of continued measured charging following a 0 A request. It requires fresh zero draw and a permitted target before resuming its own reserve pause. Paired increases wait for measured stop. Physical verification of the automatic sequence in the original stuck state remains open.
+
+Keep the charging current row stable as the recommendation changes. Show a short hourly-budget note on that row and retain actionable wait and fault explanations. Regenerate the dashboard YAML to use the revised layout.
+
+## Published — 0.1.1-beta.23
 
 Manual charging reports the scheduled start and wait reason when the SLM charging window is closed. The presenter regression covers waiting and reopening. Deadline regressions verify that regulation uses the latest valid inputs available at the decision. The regulation policy is unchanged.
 
